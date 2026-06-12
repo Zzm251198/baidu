@@ -1,0 +1,5 @@
+{
+  "name": "Shenzhen Metro Cargo Platform",
+  "description": "A big data visualization platform for Shenzhen Metro cargo operations, featuring real-time interactive map monitoring.",
+  "requestFramePermissions": []
+}

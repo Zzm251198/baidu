@@ -1,0 +1,531 @@
+.subway-map-shell {
+  background: #07111f;
+  isolation: isolate;
+}
+
+.subway-map-canvas {
+  background: #07111f;
+  transform: translateZ(0);
+}
+
+.subway-map-filter {
+  filter: invert(85%) sepia(30%) hue-rotate(180deg) brightness(110%) contrast(100%) saturate(118%);
+}
+
+.monitor-map-panel {
+  padding: 14px;
+  border: 1px solid rgba(34, 211, 238, 0.32);
+  border-radius: 12px;
+  background:
+    linear-gradient(135deg, rgba(8, 47, 73, 0.22), rgba(15, 23, 42, 0.64)),
+    rgba(2, 6, 23, 0.28);
+  box-shadow:
+    0 0 0 1px rgba(59, 130, 246, 0.12) inset,
+    0 18px 44px rgba(8, 145, 178, 0.12),
+    0 0 26px rgba(34, 211, 238, 0.08);
+}
+
+.monitor-map-title {
+  height: 34px;
+  gap: 10px;
+  color: #a5f3fc;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-shadow: 0 0 14px rgba(34, 211, 238, 0.35);
+}
+
+.monitor-map-title-bar {
+  width: 4px;
+  height: 20px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #22d3ee, #2563eb);
+  box-shadow: 0 0 12px rgba(34, 211, 238, 0.8);
+}
+
+.monitor-map-title-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #67e8f9;
+  box-shadow: 0 0 12px rgba(103, 232, 249, 0.9);
+}
+
+.monitor-map-frame {
+  border: 1px solid rgba(34, 211, 238, 0.16);
+  border-radius: 10px;
+  overflow: hidden;
+  background: #07111f;
+}
+
+.station-logistics-panel {
+  z-index: 1000;
+  width: min(480px, calc(100% - 32px));
+  padding: 18px;
+  border: 1px solid rgba(34, 211, 238, 0.48);
+  border-radius: 14px;
+  background:
+    linear-gradient(135deg, rgba(20, 184, 166, 0.13), rgba(37, 99, 235, 0.08) 38%, rgba(10, 25, 47, 0.85)),
+    rgba(10, 25, 47, 0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow:
+    0 0 0 1px rgba(125, 249, 255, 0.14) inset,
+    0 0 15px rgba(0, 255, 255, 0.2),
+    0 24px 70px rgba(2, 8, 23, 0.62);
+  clip-path: polygon(0 0, calc(100% - 24px) 0, 100% 24px, 100% 100%, 24px 100%, 0 calc(100% - 24px));
+  overflow: hidden;
+}
+
+.station-logistics-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, transparent, rgba(125, 249, 255, 0.12), transparent) 0 54px / 100% 1px no-repeat,
+    repeating-linear-gradient(90deg, rgba(125, 249, 255, 0.04) 0 1px, transparent 1px 16px);
+  opacity: 0.65;
+}
+
+.station-logistics-corner {
+  position: absolute;
+  width: 56px;
+  height: 56px;
+  pointer-events: none;
+}
+
+.station-logistics-corner-left {
+  left: 0;
+  top: 0;
+  border-top: 2px solid rgba(103, 232, 249, 0.9);
+  border-left: 2px solid rgba(103, 232, 249, 0.9);
+}
+
+.station-logistics-corner-right {
+  right: 0;
+  bottom: 0;
+  border-right: 2px solid rgba(59, 130, 246, 0.75);
+  border-bottom: 2px solid rgba(59, 130, 246, 0.75);
+}
+
+.station-logistics-header {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  padding-bottom: 16px;
+}
+
+.station-logistics-header::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 46px;
+  bottom: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #22d3ee, rgba(59, 130, 246, 0.64), transparent);
+  box-shadow: 0 0 16px rgba(34, 211, 238, 0.55);
+}
+
+.station-logistics-kicker {
+  color: rgba(165, 243, 252, 0.72);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+}
+
+.station-logistics-title {
+  margin-top: 6px;
+  color: #ecfeff;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-shadow: 0 0 18px rgba(34, 211, 238, 0.58);
+}
+
+.station-logistics-close {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(34, 211, 238, 0.38);
+  border-radius: 8px;
+  color: #cffafe;
+  background: rgba(8, 47, 73, 0.55);
+  cursor: pointer;
+  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
+}
+
+.station-logistics-close:hover {
+  transform: translateY(-1px);
+  border-color: rgba(125, 249, 255, 0.9);
+  background: rgba(14, 116, 144, 0.62);
+  box-shadow: 0 0 16px rgba(34, 211, 238, 0.28);
+}
+
+.station-logistics-metrics {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.station-metric-card {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid rgba(34, 211, 238, 0.18);
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(8, 145, 178, 0.18), rgba(15, 23, 42, 0.42));
+  box-shadow: inset 0 0 22px rgba(34, 211, 238, 0.05);
+}
+
+.station-metric-card span,
+.station-metric-card em {
+  display: block;
+  color: rgba(207, 250, 254, 0.62);
+  font-size: 11px;
+  font-style: normal;
+}
+
+.station-metric-card strong {
+  display: block;
+  margin-top: 4px;
+  color: #a5f3fc;
+  font-size: 25px;
+  line-height: 1;
+  text-shadow: 0 0 12px rgba(34, 211, 238, 0.4);
+}
+
+.station-metric-card-green strong {
+  color: #86efac;
+  text-shadow: 0 0 12px rgba(34, 197, 94, 0.4);
+}
+
+.station-metric-card-amber strong {
+  color: #fde68a;
+  text-shadow: 0 0 12px rgba(245, 158, 11, 0.38);
+}
+
+.station-logistics-charts {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 1.08fr 0.92fr;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.station-chart-card {
+  min-width: 0;
+  min-height: 166px;
+  padding: 12px;
+  border: 1px solid rgba(125, 249, 255, 0.18);
+  border-radius: 12px;
+  background: rgba(2, 6, 23, 0.34);
+}
+
+.station-chart-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.station-chart-title span {
+  color: #cffafe;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.station-chart-title b {
+  color: rgba(103, 232, 249, 0.68);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.station-trend-svg {
+  width: 100%;
+  height: 106px;
+  overflow: visible;
+}
+
+.station-trend-grid line {
+  stroke: rgba(125, 249, 255, 0.12);
+  stroke-width: 1;
+}
+
+.station-inventory-content {
+  display: grid;
+  grid-template-columns: 108px 1fr;
+  align-items: center;
+  gap: 10px;
+}
+
+.station-donut-svg {
+  width: 108px;
+  height: 108px;
+}
+
+.station-donut-svg circle {
+  fill: none;
+  stroke-linecap: round;
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+}
+
+.station-donut-track {
+  stroke: rgba(148, 163, 184, 0.18);
+  stroke-width: 10;
+}
+
+.station-donut-normal {
+  stroke: #22d3ee;
+  stroke-width: 10;
+  filter: drop-shadow(0 0 5px rgba(34, 211, 238, 0.55));
+}
+
+.station-donut-cold {
+  stroke: #60a5fa;
+  stroke-width: 8;
+  filter: drop-shadow(0 0 5px rgba(96, 165, 250, 0.5));
+}
+
+.station-donut-urgent {
+  stroke: #fb7185;
+  stroke-width: 7;
+  filter: drop-shadow(0 0 5px rgba(251, 113, 133, 0.55));
+}
+
+.station-donut-number {
+  fill: #ecfeff;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.station-donut-label {
+  fill: rgba(207, 250, 254, 0.58);
+  font-size: 10px;
+}
+
+.station-inventory-legend {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.station-inventory-legend div {
+  display: grid;
+  grid-template-columns: 8px 1fr auto;
+  align-items: center;
+  gap: 7px;
+  color: rgba(207, 250, 254, 0.72);
+  font-size: 11px;
+}
+
+.station-inventory-legend i {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+}
+
+.station-inventory-legend strong {
+  color: #ecfeff;
+  font-size: 12px;
+}
+
+.legend-normal {
+  background: #22d3ee;
+  box-shadow: 0 0 8px rgba(34, 211, 238, 0.75);
+}
+
+.legend-cold {
+  background: #60a5fa;
+  box-shadow: 0 0 8px rgba(96, 165, 250, 0.7);
+}
+
+.legend-urgent {
+  background: #fb7185;
+  box-shadow: 0 0 8px rgba(251, 113, 133, 0.75);
+}
+
+.train-status-panel {
+  z-index: 1001;
+  width: min(360px, calc(100% - 32px));
+  padding: 16px;
+  border: 1px solid rgba(96, 165, 250, 0.48);
+  border-radius: 14px;
+  background:
+    linear-gradient(135deg, rgba(59, 130, 246, 0.16), rgba(14, 165, 233, 0.08) 42%, rgba(10, 25, 47, 0.88)),
+    rgba(10, 25, 47, 0.88);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow:
+    0 0 0 1px rgba(125, 249, 255, 0.12) inset,
+    0 0 18px rgba(59, 130, 246, 0.24),
+    0 22px 60px rgba(2, 8, 23, 0.58);
+  clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px));
+  overflow: hidden;
+}
+
+.train-status-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 18% 18%, rgba(34, 211, 238, 0.18), transparent 30%),
+    linear-gradient(90deg, transparent, rgba(96, 165, 250, 0.14), transparent) 0 54px / 100% 1px no-repeat;
+}
+
+.train-status-header {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding-bottom: 14px;
+}
+
+.train-status-kicker {
+  color: rgba(191, 219, 254, 0.72);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+}
+
+.train-status-title {
+  margin-top: 5px;
+  color: #eff6ff;
+  font-size: 22px;
+  font-weight: 800;
+  text-shadow: 0 0 18px rgba(96, 165, 250, 0.6);
+}
+
+.train-status-grid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.train-status-grid div {
+  min-width: 0;
+  padding: 11px;
+  border: 1px solid rgba(96, 165, 250, 0.18);
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.38);
+}
+
+.train-status-grid span {
+  display: block;
+  color: rgba(219, 234, 254, 0.58);
+  font-size: 11px;
+}
+
+.train-status-grid strong {
+  display: block;
+  margin-top: 5px;
+  color: #bfdbfe;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.train-status-progress {
+  position: relative;
+  z-index: 1;
+  height: 8px;
+  margin-top: 14px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.82);
+  box-shadow: inset 0 0 12px rgba(2, 8, 23, 0.8);
+}
+
+.train-status-progress i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #22d3ee, #60a5fa, #a78bfa);
+  box-shadow: 0 0 14px rgba(96, 165, 250, 0.65);
+}
+
+@media (max-width: 560px) {
+  .station-logistics-panel {
+    width: calc(100% - 32px);
+    padding: 14px;
+  }
+
+  .station-logistics-metrics,
+  .station-logistics-charts {
+    grid-template-columns: 1fr;
+  }
+
+  .station-inventory-content {
+    grid-template-columns: 98px 1fr;
+  }
+}
+
+.simulation-layout {
+  height: auto;
+  max-height: none;
+  overflow-y: auto;
+}
+
+.simulation-main-grid {
+  min-height: 620px;
+}
+
+.simulation-bottom-grid {
+  align-items: start;
+}
+
+.simulation-route-panel {
+  min-width: 0;
+  height: auto;
+}
+
+.simulation-route-map-frame {
+  aspect-ratio: 1 / 1;
+  min-width: 400px;
+  min-height: 400px;
+  width: 100%;
+  flex: none;
+}
+
+.simulation-reserved-panel {
+  min-width: 0;
+  aspect-ratio: 1 / 1;
+  min-height: 400px;
+  border: 1px dashed rgba(34, 211, 238, 0.32);
+  border-radius: 12px;
+  background:
+    linear-gradient(135deg, rgba(14, 116, 144, 0.08), rgba(37, 99, 235, 0.06)),
+    rgba(15, 23, 42, 0.22);
+  box-shadow: inset 0 0 30px rgba(34, 211, 238, 0.05);
+}
+
+@media (max-width: 1023px) {
+  .simulation-main-grid {
+    min-height: auto;
+  }
+
+  .simulation-route-map-frame {
+    min-width: 0;
+    min-height: 320px;
+  }
+
+  .simulation-reserved-panel {
+    min-height: 320px;
+  }
+}
