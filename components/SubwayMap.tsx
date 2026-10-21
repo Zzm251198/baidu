@@ -1,4 +1,4 @@
-import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 
 const BMAP_SUBWAY_AK = 'YtDMQJzdKyowaQZB9UdWEp5ZEergp4km';
 const BMAP_SUBWAY_SCRIPT_ID = 'baidu-map-subway-api';
@@ -35,87 +35,6 @@ interface StationLogisticsData {
         coldChain: number;
         urgent: number;
     };
-}
-
-interface Line16StationCoord {
-    lng: number;
-    lat: number;
-}
-
-interface TrainState {
-    trainId: string;
-    startStation: string;
-    endStation: string;
-    progress: number;
-    speed: number;
-    marker: any;
-    currentStationIndex: number;
-    loadTon: number;
-    battery: number;
-}
-
-const LINE16_STATION_NAMES = [
-    '大运',
-    '大运中心',
-    '龙城公园',
-    '黄阁坑',
-    '愉园',
-    '回龙埔',
-    '尚景',
-    '盛平',
-    '龙园',
-    '双龙',
-    '新塘围',
-    '龙东',
-    '宝龙同乐',
-    '坪山',
-    '新和',
-    '六和',
-    '坪山围',
-    '坪环',
-    '东纵纪念馆',
-    '沙壆',
-    '燕子湖',
-    '石井',
-    '技术大学',
-    '田心'
-] as const;
-
-const Line16_Stations: Record<(typeof LINE16_STATION_NAMES)[number], Line16StationCoord> = {
-    大运: { lng: 114.222, lat: 22.690 },
-    大运中心: { lng: 114.236, lat: 22.681 },
-    龙城公园: { lng: 114.250, lat: 22.671 },
-    黄阁坑: { lng: 114.263, lat: 22.660 },
-    愉园: { lng: 114.276, lat: 22.649 },
-    回龙埔: { lng: 114.289, lat: 22.637 },
-    尚景: { lng: 114.302, lat: 22.626 },
-    盛平: { lng: 114.315, lat: 22.615 },
-    龙园: { lng: 114.328, lat: 22.604 },
-    双龙: { lng: 114.341, lat: 22.593 },
-    新塘围: { lng: 114.354, lat: 22.583 },
-    龙东: { lng: 114.367, lat: 22.573 },
-    宝龙同乐: { lng: 114.381, lat: 22.562 },
-    坪山: { lng: 114.396, lat: 22.552 },
-    新和: { lng: 114.410, lat: 22.543 },
-    六和: { lng: 114.424, lat: 22.535 },
-    坪山围: { lng: 114.438, lat: 22.527 },
-    坪环: { lng: 114.452, lat: 22.519 },
-    东纵纪念馆: { lng: 114.466, lat: 22.511 },
-    沙壆: { lng: 114.480, lat: 22.503 },
-    燕子湖: { lng: 114.494, lat: 22.496 },
-    石井: { lng: 114.508, lat: 22.489 },
-    技术大学: { lng: 114.522, lat: 22.482 },
-    田心: { lng: 114.536, lat: 22.476 }
-};
-
-function createLine16Stations(BMapSub: BMapSubAny): Record<string, any> {
-    return LINE16_STATION_NAMES.reduce<Record<string, any>>((points, stationName) => {
-        const coord = Line16_Stations[stationName];
-        points[stationName] = typeof BMapSub.Point === 'function'
-            ? new BMapSub.Point(coord.lng, coord.lat)
-            : { lng: coord.lng, lat: coord.lat };
-        return points;
-    }, {});
 }
 
 function createStationSeed(stationName: string): number {
@@ -180,6 +99,15 @@ interface SubwayMapProps {
     endStationName?: string;
     routeRequestKey?: number;
     onMapLoaded?: (stations: StationNode[]) => void;
+    onRouteResult?: (payload: {
+        direction: any;
+        json: any;
+        curSLines: any[];
+        directionPanel: any;
+        originStationName: string;
+        destinationStationName: string;
+        fallbackText: string;
+    }) => void;
 }
 
 function loadBMapSub(): Promise<BMapSubAny> {
@@ -305,65 +233,13 @@ function buildTrendPolyline(values: number[]): string {
         .join(' ');
 }
 
-function interpolateSubwayPoint(BMapSub: BMapSubAny, startPoint: any, endPoint: any, progress: number): any {
-    const lng = startPoint.lng + (endPoint.lng - startPoint.lng) * progress;
-    const lat = startPoint.lat + (endPoint.lat - startPoint.lat) * progress;
-    return typeof BMapSub.Point === 'function' ? new BMapSub.Point(lng, lat) : { lng, lat };
-}
-
-function createTrainIcon(BMapSub: BMapSubAny): any {
-    const svg = `
-<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
-  <defs>
-    <filter id="glow" x="-80%" y="-80%" width="260%" height="260%">
-      <feGaussianBlur stdDeviation="5" result="blur"/>
-      <feMerge>
-        <feMergeNode in="blur"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>
-    <linearGradient id="core" x1="12" y1="12" x2="52" y2="52">
-      <stop offset="0%" stop-color="#67e8f9"/>
-      <stop offset="58%" stop-color="#22d3ee"/>
-      <stop offset="100%" stop-color="#2563eb"/>
-    </linearGradient>
-  </defs>
-  <path d="M9 34 C17 26 27 22 45 19" fill="none" stroke="#22d3ee" stroke-width="8" stroke-linecap="round" opacity="0.2"/>
-  <circle cx="36" cy="28" r="16" fill="#0f172a" stroke="#7df9ff" stroke-width="2" filter="url(#glow)" opacity="0.96"/>
-  <circle cx="36" cy="28" r="8" fill="url(#core)" filter="url(#glow)"/>
-  <path d="M30 42 L54 50" stroke="#38bdf8" stroke-width="4" stroke-linecap="round" opacity="0.55" filter="url(#glow)"/>
-</svg>`;
-
-    return new BMapSub.Icon(
-        `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
-        new BMapSub.Size(64, 64),
-        { anchor: new BMapSub.Size(32, 32) }
-    );
-}
-
-function createTrainMock(seed: number, marker: any, currentStationIndex: number): TrainState {
-    const startStation = LINE16_STATION_NAMES[currentStationIndex];
-    const endStation = LINE16_STATION_NAMES[(currentStationIndex + 1) % LINE16_STATION_NAMES.length];
-
-    return {
-        trainId: `T-${3637 + seed * 17}`,
-        startStation,
-        endStation,
-        progress: seed * 0.12,
-        speed: 0.002 + seed * 0.00045,
-        marker,
-        currentStationIndex,
-        loadTon: 18 + seed * 6,
-        battery: 92 - seed * 7
-    };
-}
-
 const SubwayMapComponent: React.FC<SubwayMapProps> = ({
     mode = 'monitor',
     startStationName = '',
     endStationName = '',
     routeRequestKey = 0,
-    onMapLoaded
+    onMapLoaded,
+    onRouteResult
 }) => {
     const reactId = useId();
     const containerId = useMemo(
@@ -373,8 +249,8 @@ const SubwayMapComponent: React.FC<SubwayMapProps> = ({
     const containerRef = useRef<HTMLDivElement | null>(null);
     const subwayRef = useRef<BMapSubAny>(null);
     const directionRef = useRef<BMapSubAny>(null);
-    const trainsRef = useRef<TrainState[]>([]);
-    const animationFrameRef = useRef<number | null>(null);
+    const routeResultTimersRef = useRef<number[]>([]);
+    const onRouteResultRef = useRef(onRouteResult);
     const zoomRef = useRef(DEFAULT_ZOOM);
     const latestRouteRef = useRef({ startStationName, endStationName, routeRequestKey });
     const [error, setError] = useState('');
@@ -382,17 +258,56 @@ const SubwayMapComponent: React.FC<SubwayMapProps> = ({
         name: string;
         data: StationLogisticsData;
     } | null>(null);
-    const [selectedTrain, setSelectedTrain] = useState<TrainState | null>(null);
 
     useEffect(() => {
         latestRouteRef.current = { startStationName, endStationName, routeRequestKey };
     }, [startStationName, endStationName, routeRequestKey]);
 
     useEffect(() => {
+        onRouteResultRef.current = onRouteResult;
+    }, [onRouteResult]);
+
+    const clearRouteResultTimers = useCallback(() => {
+        routeResultTimersRef.current.forEach((timerId) => window.clearTimeout(timerId));
+        routeResultTimersRef.current = [];
+    }, []);
+
+    const notifyRouteResult = useCallback((direction: BMapSubAny, start: string, end: string) => {
+        const routeResultHandler = onRouteResultRef.current;
+        if (!routeResultHandler || !direction) return;
+
+        clearRouteResultTimers();
+
+        let attempts = 0;
+        const poll = () => {
+            const curSLines = Array.isArray(direction.curSLines) ? direction.curSLines : [];
+            const hasRoutePayload = Boolean(direction.json) || curSLines.length > 0;
+
+            if (hasRoutePayload || attempts >= 16) {
+                routeResultHandler({
+                    direction,
+                    json: direction.json || null,
+                    curSLines,
+                    directionPanel: direction.subway?.directionPanel || null,
+                    originStationName: start,
+                    destinationStationName: end,
+                    fallbackText: `${start} -> ${end}`
+                });
+                return;
+            }
+
+            attempts += 1;
+            const timerId = window.setTimeout(poll, 180);
+            routeResultTimersRef.current.push(timerId);
+        };
+
+        poll();
+    }, [clearRouteResultTimers]);
+
+    useEffect(() => {
         let cancelled = false;
         let removeWheelListener: (() => void) | undefined;
         let removeTapListener: (() => void) | undefined;
-        const removeTrainListeners: Array<() => void> = [];
 
         const runRouteSearch = () => {
             const subway = subwayRef.current;
@@ -409,6 +324,7 @@ const SubwayMapComponent: React.FC<SubwayMapProps> = ({
             }
 
             direction.search(start, end);
+            notifyRouteResult(direction, start, end);
         };
 
         loadBMapSub()
@@ -450,85 +366,6 @@ const SubwayMapComponent: React.FC<SubwayMapProps> = ({
 
                     const stations = collectStations(subway);
                     onMapLoaded?.(stations);
-                    const line16Stations = createLine16Stations(BMapSub);
-                    const trainIcon = createTrainIcon(BMapSub);
-
-                    const bindTrainTap = (train: TrainState) => {
-                        const handleTrainTap = () => {
-                            setSelectedTrain({ ...train });
-                        };
-
-                        if (typeof train.marker?.addEventListener === 'function') {
-                            train.marker.addEventListener('tap', handleTrainTap);
-                            removeTrainListeners.push(() => {
-                                if (typeof train.marker?.removeEventListener === 'function') {
-                                    train.marker.removeEventListener('tap', handleTrainTap);
-                                }
-                            });
-                        }
-                    };
-
-                    const createTrainMarker = (stationIndex: number) => {
-                        const stationName = LINE16_STATION_NAMES[stationIndex];
-                        const stationPoint = line16Stations[stationName];
-                        const markerTarget = typeof BMapSub.Point === 'function' ? stationPoint : stationName;
-                        let marker;
-
-                        try {
-                            marker = new BMapSub.Marker(markerTarget, { icon: trainIcon });
-                        } catch {
-                            marker = new BMapSub.Marker(stationName, { icon: trainIcon });
-                        }
-
-                        subway.addMarker(marker);
-                        return marker;
-                    };
-
-                    trainsRef.current = [0, 1, 2, 3, 4].map((seed) => {
-                        const stationIndex = (seed * 4) % LINE16_STATION_NAMES.length;
-                        const marker = createTrainMarker(stationIndex);
-                        const train = createTrainMock(seed, marker, stationIndex);
-                        bindTrainTap(train);
-                        return train;
-                    });
-
-                    const animateTrains = () => {
-                        if (cancelled) return;
-
-                        trainsRef.current.forEach((train) => {
-                            train.progress += train.speed;
-
-                            if (train.progress >= 1) {
-                                train.currentStationIndex = (train.currentStationIndex + 1) % LINE16_STATION_NAMES.length;
-                                train.startStation = LINE16_STATION_NAMES[train.currentStationIndex];
-                                train.endStation = LINE16_STATION_NAMES[(train.currentStationIndex + 1) % LINE16_STATION_NAMES.length];
-                                train.progress = 0;
-                                train.battery = Math.max(12, Math.round((train.battery - 0.2) * 10) / 10);
-
-                                if (typeof train.marker?.setPosition !== 'function' && typeof train.marker?.setStation !== 'function') {
-                                    if (typeof subway.removeMarker === 'function') {
-                                        subway.removeMarker(train.marker);
-                                    }
-                                    train.marker = createTrainMarker(train.currentStationIndex);
-                                    bindTrainTap(train);
-                                }
-                            }
-
-                            const startPoint = line16Stations[train.startStation];
-                            const endPoint = line16Stations[train.endStation];
-                            const currentPoint = interpolateSubwayPoint(BMapSub, startPoint, endPoint, train.progress);
-
-                            if (typeof train.marker?.setPosition === 'function') {
-                                train.marker.setPosition(currentPoint);
-                            } else if (typeof train.marker?.setStation === 'function') {
-                                train.marker.setStation(train.progress < 0.5 ? train.startStation : train.endStation);
-                            }
-                        });
-
-                        animationFrameRef.current = window.requestAnimationFrame(animateTrains);
-                    };
-
-                    animationFrameRef.current = window.requestAnimationFrame(animateTrains);
 
                     const handleStationTap = (event: any) => {
                         const stationName = event?.station?.name || event?.station?.title || '';
@@ -562,32 +399,22 @@ const SubwayMapComponent: React.FC<SubwayMapProps> = ({
             })
             .catch(() => {
                 if (!cancelled) {
-                    setError('百度地铁独立库加载失败，请检查 AK、网络或脚本地址。');
+                    setError('百度地图地铁独立库加载失败，请检查 AK、网络或脚本地址。');
                 }
             });
 
         return () => {
             cancelled = true;
+            clearRouteResultTimers();
             removeWheelListener?.();
             removeTapListener?.();
-            removeTrainListeners.forEach((remove) => remove());
-            if (animationFrameRef.current !== null) {
-                window.cancelAnimationFrame(animationFrameRef.current);
-                animationFrameRef.current = null;
-            }
-            if (subwayRef.current && typeof subwayRef.current.removeMarker === 'function') {
-                trainsRef.current.forEach((train) => {
-                    subwayRef.current?.removeMarker(train.marker);
-                });
-            }
-            trainsRef.current = [];
             subwayRef.current = null;
             directionRef.current = null;
             if (containerRef.current) {
                 containerRef.current.innerHTML = '';
             }
         };
-    }, [containerId, mode, onMapLoaded]);
+    }, [clearRouteResultTimers, containerId, mode, notifyRouteResult, onMapLoaded]);
 
     useEffect(() => {
         if (mode !== 'simulation' || routeRequestKey <= 0) return;
@@ -604,7 +431,8 @@ const SubwayMapComponent: React.FC<SubwayMapProps> = ({
         }
 
         direction.search(startStationName, endStationName);
-    }, [endStationName, mode, routeRequestKey, startStationName]);
+        notifyRouteResult(direction, startStationName, endStationName);
+    }, [endStationName, mode, notifyRouteResult, routeRequestKey, startStationName]);
 
     const trendPolyline = selectedStation ? buildTrendPolyline(selectedStation.data.throughputTrend) : '';
     const inventoryTotal = selectedStation
@@ -631,7 +459,7 @@ const SubwayMapComponent: React.FC<SubwayMapProps> = ({
 
                     <header className="station-logistics-header">
                         <div>
-                            <div className="station-logistics-kicker">16号线站点物流态势</div>
+                            <div className="station-logistics-kicker">地铁站点物流态势 · 示例数据</div>
                             <div className="station-logistics-title">{selectedStation.name}</div>
                         </div>
                         <button
@@ -666,7 +494,7 @@ const SubwayMapComponent: React.FC<SubwayMapProps> = ({
                         <div className="station-chart-card station-trend-card">
                             <div className="station-chart-title">
                                 <span>近12小时吞吐量趋势</span>
-                                <b>{Math.max(...selectedStation.data.throughputTrend)}峰值</b>
+                                <b>{Math.max(...selectedStation.data.throughputTrend)} 峰值</b>
                             </div>
                             <svg className="station-trend-svg" viewBox="0 0 210 90" role="img" aria-label="近12小时吞吐量趋势折线图">
                                 <defs>
@@ -699,7 +527,7 @@ const SubwayMapComponent: React.FC<SubwayMapProps> = ({
                         <div className="station-chart-card station-inventory-card">
                             <div className="station-chart-title">
                                 <span>库存结构占比</span>
-                                <b>{inventoryTotal}件</b>
+                                <b>{inventoryTotal} 件</b>
                             </div>
                             <div className="station-inventory-content">
                                 <svg className="station-donut-svg" viewBox="0 0 120 120" role="img" aria-label="库存结构环形图">
@@ -740,45 +568,6 @@ const SubwayMapComponent: React.FC<SubwayMapProps> = ({
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </section>
-            )}
-            {selectedTrain && (
-                <section className="train-status-panel absolute right-4 top-4 max-w-[calc(100%-32px)] text-cyan-50">
-                    <header className="train-status-header">
-                        <div>
-                            <div className="train-status-kicker">车载 AGV 状态监控</div>
-                            <div className="train-status-title">{selectedTrain.trainId}</div>
-                        </div>
-                        <button
-                            type="button"
-                            aria-label="关闭车载AGV状态监控"
-                            className="station-logistics-close"
-                            onClick={() => setSelectedTrain(null)}
-                        >
-                            X
-                        </button>
-                    </header>
-                    <div className="train-status-grid">
-                        <div>
-                            <span>当前驶向</span>
-                            <strong>{selectedTrain.startStation} → {selectedTrain.endStation}</strong>
-                        </div>
-                        <div>
-                            <span>区间进度</span>
-                            <strong>{Math.round(selectedTrain.progress * 100)}%</strong>
-                        </div>
-                        <div>
-                            <span>载重</span>
-                            <strong>{selectedTrain.loadTon} 吨</strong>
-                        </div>
-                        <div>
-                            <span>电量</span>
-                            <strong>{selectedTrain.battery}%</strong>
-                        </div>
-                    </div>
-                    <div className="train-status-progress">
-                        <i style={{ width: `${Math.round(selectedTrain.progress * 100)}%` }}></i>
                     </div>
                 </section>
             )}

@@ -1,0 +1,6 @@
+{
+  "carriageCapacityKg": 1800,
+  "standardBoxCapacityKg": 600,
+  "agvPayloadKg": 900,
+  "warningUtilization": 0.82
+}

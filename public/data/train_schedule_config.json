@@ -1,0 +1,7 @@
+{
+  "defaultStartTime": "10:00",
+  "headwayMin": 6,
+  "transferBufferMin": 4,
+  "trainPrefix": "SZM",
+  "dwellSeconds": 45
+}

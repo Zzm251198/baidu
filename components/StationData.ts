@@ -1,4 +1,6 @@
 
+// ⚠️ 预留数据（当前未接入）：静态深圳地铁线网（17 条线路 + 全部站点坐标与站名）。
+// 原用于 Metro3DView（已删除），保留作为百度地铁独立库加载失败时的离线降级素材。
 // Line Definitions mapped from SVG IDs
 export const LINES: Record<string, { name: string, color: string }> = {
   "440300024063": { name: "1号线/罗宝线", color: "#00AB4F" },

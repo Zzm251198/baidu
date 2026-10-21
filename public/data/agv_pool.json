@@ -1,0 +1,34 @@
+{
+  "lowBatteryThreshold": 25,
+  "fallbackCapacityKg": 900,
+  "agvs": [
+    {
+      "id": "AGV-BASE-01",
+      "homeStation": "default",
+      "status": "idle",
+      "battery": 92,
+      "capacityKg": 900
+    },
+    {
+      "id": "AGV-BASE-02",
+      "homeStation": "default",
+      "status": "idle",
+      "battery": 84,
+      "capacityKg": 850
+    },
+    {
+      "id": "AGV-BASE-03",
+      "homeStation": "default",
+      "status": "idle",
+      "battery": 76,
+      "capacityKg": 800
+    },
+    {
+      "id": "AGV-HUB-11",
+      "homeStation": "枢纽池",
+      "status": "idle",
+      "battery": 88,
+      "capacityKg": 950
+    }
+  ]
+}

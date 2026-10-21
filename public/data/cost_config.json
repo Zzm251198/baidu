@@ -1,0 +1,11 @@
+{
+  "baseFare": 38,
+  "perStationRevenue": 5,
+  "perKgRevenue": 0.35,
+  "transferSurcharge": 10,
+  "baseOperationCost": 18,
+  "perStationCost": 1.6,
+  "perMinuteCost": 0.45,
+  "agvOperationCost": 7.5,
+  "transferCost": 9
+}

@@ -1,0 +1,11 @@
+{
+  "pickupSeconds": 120,
+  "inboundSeconds": 180,
+  "decoupleSeconds": 45,
+  "transferSecondsBase": 180,
+  "rebindSeconds": 52,
+  "outboundSeconds": 210,
+  "minPlatformHandoffSeconds": 8,
+  "maxPlatformHandoffSeconds": 15,
+  "timelinessWarningMin": 90
+}
