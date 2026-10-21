@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 
-const BMAP_SUBWAY_AK = 'YtDMQJzdKyowaQZB9UdWEp5ZEergp4km';
+// 百度地图 AK 从 .env.local 的 VITE_BMAP_SUBWAY_AK 读取（*.local 已被 .gitignore 排除，不入库）
+const BMAP_SUBWAY_AK = String(import.meta.env.VITE_BMAP_SUBWAY_AK ?? '');
 const BMAP_SUBWAY_SCRIPT_ID = 'baidu-map-subway-api';
 const BMAP_SUBWAY_SCRIPT_SRC = `https://api.map.baidu.com/api?type=subway&v=1.0&ak=${BMAP_SUBWAY_AK}`;
 const SHENZHEN_CITY_NAME = '深圳';
@@ -111,6 +112,10 @@ interface SubwayMapProps {
 }
 
 function loadBMapSub(): Promise<BMapSubAny> {
+    if (!BMAP_SUBWAY_AK) {
+        return Promise.reject(new Error('未配置 VITE_BMAP_SUBWAY_AK，请在项目根目录 .env.local 中填入百度地图 AK'));
+    }
+
     if (window.BMapSub?.Subway) {
         return Promise.resolve(window.BMapSub);
     }
@@ -397,9 +402,12 @@ const SubwayMapComponent: React.FC<SubwayMapProps> = ({
                     }
                 });
             })
-            .catch(() => {
+            .catch((loadError: unknown) => {
                 if (!cancelled) {
-                    setError('百度地图地铁独立库加载失败，请检查 AK、网络或脚本地址。');
+                    const detail = loadError instanceof Error && loadError.message
+                        ? `：${loadError.message}`
+                        : '，请检查 AK、网络或脚本地址。';
+                    setError(`百度地图地铁独立库加载失败${detail}`);
                 }
             });
 
