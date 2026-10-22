@@ -7,6 +7,7 @@ import { RightPanel } from './components/RightPanel';
 import { ChartsPanel } from './components/ChartsPanel';
 import { SimulationInsightPanel, type RouteData } from './components/SimulationInsightPanel';
 import { parseBaiduTransitRoute } from './src/simulation/baiduRouteParser.js';
+import { planLocalRoute } from './src/simulation/localRouteEngine.js';
 import { loadSimulationConfigs, simulateOrder } from './src/simulation/simulationEngine.js';
 
 type TabKey = 'monitor' | 'data' | 'simulation';
@@ -169,6 +170,18 @@ const App: React.FC = () => {
       fallbackText: payload?.fallbackText
     });
 
+    // 兜底链路：百度未返回可用方案（超时/失败/无结果）时，切换本地线网引擎规划路径。
+    // 本地引擎输出与百度解析器同构，simulateOrder 之后的流程完全不变。
+    let effectiveRoute = parsedRoute;
+    let routeSourceNote = '';
+    if (!parsedRoute.segments || parsedRoute.segments.length === 0) {
+      const localRoute = planLocalRoute(simParams.startStationName, simParams.endStationName);
+      if (localRoute) {
+        effectiveRoute = localRoute;
+        routeSourceNote = '｜本地线网引擎';
+      }
+    }
+
     const output = simulateOrder({
       startLineName,
       startStationName: simParams.startStationName,
@@ -177,11 +190,11 @@ const App: React.FC = () => {
       cargoWeightKg: simParams.cargoMode === 'weight' ? cargoValue : cargoValue * 20,
       cargoCount: simParams.cargoMode === 'count' ? cargoValue : Math.max(1, Math.ceil(cargoValue / 60)),
       startTime: '10:00'
-    }, parsedRoute);
+    }, effectiveRoute);
 
     if (!output.success || !output.metrics) {
       setIsSimulating(false);
-      alert('路线查询无结果：未能从百度地铁路径结果中解析到可用方案');
+      alert('路线查询无结果：百度路径与本地线网引擎（1/2/3/5/11/14 号线）均未能规划该起终点，请更换站点后重试。');
       return;
     }
 
@@ -195,7 +208,7 @@ const App: React.FC = () => {
       stationCount: metrics.totalStationCount,
       transferCount: metrics.transferCount,
       transferStations: routeSummary.transferStations || [],
-      routeDescription: `${routeSummary.originStationName} → ${routeSummary.destinationStationName}｜${metrics.totalDurationMin}分钟｜${metrics.totalStationCount}站`,
+      routeDescription: `${routeSummary.originStationName} → ${routeSummary.destinationStationName}｜${metrics.totalDurationMin}分钟｜${metrics.totalStationCount}站${routeSourceNote}`,
       baseCost: metrics.revenue,
       transferCost: metrics.transferCount * 10,
       totalCost: metrics.totalCost,

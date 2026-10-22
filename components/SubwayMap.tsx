@@ -5,6 +5,10 @@ const BMAP_SUBWAY_AK = String(import.meta.env.VITE_BMAP_SUBWAY_AK ?? '');
 const BMAP_SUBWAY_SCRIPT_ID = 'baidu-map-subway-api';
 const BMAP_SUBWAY_SCRIPT_SRC = `https://api.map.baidu.com/api?type=subway&v=1.0&ak=${BMAP_SUBWAY_AK}`;
 const SHENZHEN_CITY_NAME = '深圳';
+// 路线结果轮询参数：BMapSub.Direction.search() 发起后，结果异步写回 direction.json/curSLines。
+// 窗口太小会误判"查不到路线"：30 次 × 300ms ≈ 9 秒，覆盖弱网场景。
+const ROUTE_RESULT_POLL_INTERVAL_MS = 300;
+const ROUTE_RESULT_POLL_MAX_ATTEMPTS = 30;
 const DEFAULT_ZOOM = 0.75;
 const MIN_ZOOM = 0.1;
 const MAX_ZOOM = 2.0;
@@ -288,7 +292,7 @@ const SubwayMapComponent: React.FC<SubwayMapProps> = ({
             const curSLines = Array.isArray(direction.curSLines) ? direction.curSLines : [];
             const hasRoutePayload = Boolean(direction.json) || curSLines.length > 0;
 
-            if (hasRoutePayload || attempts >= 16) {
+            if (hasRoutePayload || attempts >= ROUTE_RESULT_POLL_MAX_ATTEMPTS) {
                 routeResultHandler({
                     direction,
                     json: direction.json || null,
@@ -296,13 +300,14 @@ const SubwayMapComponent: React.FC<SubwayMapProps> = ({
                     directionPanel: direction.subway?.directionPanel || null,
                     originStationName: start,
                     destinationStationName: end,
-                    fallbackText: `${start} -> ${end}`
+                    fallbackText: `${start} -> ${end}`,
+                    timedOut: !hasRoutePayload
                 });
                 return;
             }
 
             attempts += 1;
-            const timerId = window.setTimeout(poll, 180);
+            const timerId = window.setTimeout(poll, ROUTE_RESULT_POLL_INTERVAL_MS);
             routeResultTimersRef.current.push(timerId);
         };
 
