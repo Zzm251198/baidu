@@ -22,6 +22,17 @@ npm run build               # 生产构建（输出 dist/）
 AK 申请：[百度地图开放平台控制台](https://lbsyun.baidu.com/apiconsole/key)。
 建议为 AK 配置 Referer 白名单，防止被盗刷配额。
 
+## 分发到别的机器（单文件版）
+
+1. `npm run build` 生成 `dist/index.html`（约 700KB，JS/CSS 已全部内联成一个文件）
+2. 把这一个文件拷到目标机器（U 盘 / 微信 / 网盘均可），双击用 Chrome 或 Edge 打开即可运行
+3. 需要联网：运行时加载百度地铁库、Tailwind 与 Font Awesome 的 CDN 资源
+
+说明：
+
+- file:// 模式下 5 个仿真配置 JSON 不再加载，自动使用与 `public/data` 同步的内置默认值，两套数字一致
+- 若需以 http 方式运行：把整个 `dist/` 目录放到任意静态服务器根目录（此时配置 JSON 正常加载）
+
 ## 目录结构
 
 ```

@@ -5,14 +5,16 @@ const DEFAULT_CONFIGS = {
     agvs: [
       { id: 'AGV-BASE-01', homeStation: 'default', status: 'idle', battery: 92, capacityKg: 900 },
       { id: 'AGV-BASE-02', homeStation: 'default', status: 'idle', battery: 84, capacityKg: 850 },
-      { id: 'AGV-BASE-03', homeStation: 'default', status: 'idle', battery: 76, capacityKg: 800 }
+      { id: 'AGV-BASE-03', homeStation: 'default', status: 'idle', battery: 76, capacityKg: 800 },
+      { id: 'AGV-HUB-11', homeStation: '枢纽池', status: 'idle', battery: 88, capacityKg: 950 }
     ]
   },
   trainSchedule: {
     defaultStartTime: '10:00',
     headwayMin: 6,
     transferBufferMin: 4,
-    trainPrefix: 'SZM'
+    trainPrefix: 'SZM',
+    dwellSeconds: 45
   },
   cost: {
     baseFare: 38,
@@ -66,6 +68,12 @@ async function fetchJson(path) {
 }
 
 export async function loadSimulationConfigs() {
+  // 单文件分发（file:// 协议）下浏览器禁止 fetch 本地文件，直接使用内置默认配置，
+  // 避免控制台报错；默认值与 public/data 保持同步。
+  if (typeof location !== 'undefined' && location.protocol === 'file:') {
+    return activeConfigs;
+  }
+
   const [agvPool, trainSchedule, cost, capacity, operation] = await Promise.all([
     fetchJson('/data/agv_pool.json'),
     fetchJson('/data/train_schedule_config.json'),
