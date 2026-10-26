@@ -326,7 +326,8 @@ export const SimulationInsightPanel: React.FC<SimulationInsightPanelProps> = ({
     const relayCount = metrics.relayCount ?? Math.max(0, agvPlan.length - 1);
     const agvUniqueCount = new Set(agvPlan.map((item) => item.agvId).filter(Boolean)).size || agvPlan.length || undefined;
     const trainCount = trainPlan.length || undefined;
-    const agvOccupiedCount = trainCount ? trainCount * 2 : undefined;
+    // 设备占用改为实际投入的唯一 AGV 台数（旧值 trainCount*2 是拍脑袋公式，与接力次数无关）
+    const agvOccupiedCount = agvUniqueCount;
     const arrivalTime = trainPlan[trainPlan.length - 1]?.arrivalTime;
     const agvOperationMin =
       typeof metrics.agvOperationSeconds === 'number' ? Math.ceil(metrics.agvOperationSeconds / 60) : undefined;
@@ -418,9 +419,9 @@ export const SimulationInsightPanel: React.FC<SimulationInsightPanelProps> = ({
       id: 'device',
       label: '设备占用情况',
       icon: 'fa-cubes',
-      value: `${formatNumber(model.agvOccupiedCount)} 台次`,
-      hint: model.trainCount
-        ? `${formatNumber(model.trainCount)} 趟列车 × 每趟2个接驳节点`
+      value: `${formatNumber(model.agvOccupiedCount)} 台`,
+      hint: model.agvOccupiedCount
+        ? `${formatNumber(model.trainCount)} 趟列车 · ${formatNumber(model.relayCount)} 次接力 · ${formatNumber(model.agvOccupiedCount)} 台 AGV`
         : `作业节点 ${formatNumber(nodeCount)} 个`,
       tone: 'cyan'
     },

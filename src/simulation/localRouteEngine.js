@@ -9,7 +9,8 @@
 
 // ─────────────────────────── 线网数据 ───────────────────────────
 
-const LINE_DEFINITIONS = [
+// 同时导出线网定义：数据页在百度线网尚未加载时用它做兜底线网
+export const LINE_DEFINITIONS = [
   {
     id: 'line1',
     name: '1号线/罗宝线',

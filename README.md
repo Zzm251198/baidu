@@ -41,18 +41,26 @@ index.html / index.tsx        挂载点
 components/
   SubwayMap.tsx               百度地铁地图（AK 加载、路线查询、站点弹窗）
   SimulationInsightPanel.tsx  仿真结果看板（指标卡 / T1-T5 作业链 / 换乘风险）
-  ChartsPanel.tsx             货运数据页图表
-  RightPanel.tsx              异常监控 / 站点吞吐 / AGV 电量（示例）
+  ChartsPanel.tsx             货运数据页图表（纯展示，数据由上层聚合后传入）
+  RightPanel.tsx              异常监控 / 站点吞吐 / AGV 电量
   StatsCards.tsx / agv.tsx / AutoScrollChart.tsx  KPI 卡片与滚动表格
-  StationData.ts              静态深圳线网（离线降级素材，当前未接入）
+src/data/
+  mockWaybills.ts             演示运单数据集（由线网确定性生成，可复现）
+  mockFleet.ts                车队与告警的单一数据源
+  aggregations.ts             运单 → 各图表序列的聚合口径
 src/simulation/
-  baiduRouteParser.js         百地路线结果解析器
+  baiduRouteParser.js         百度路线结果解析器
+  localRouteEngine.js         本地线网兜底引擎（百度无结果时降级）
   simulationEngine.js         仿真引擎（列车/AGV/成本/风险）
 public/data/*.json            可热加载的仿真配置（AGV 池 / 运力 / 成本 / 时刻表等）
 ```
 
 ## 说明与已知限制
 
-- 监控页与数据页的统计数字为**示例数据**（页面已标注），仅仿真页链路为真实计算。
+- 数据页的 5 个筛选器（线路 / 车站 / 时间 / 品类 / 运单号）已真正驱动图表：
+  所有数字都由 `src/data/mockWaybills.ts` 的同一份运单集聚合而来，改筛选条件图表会随之变化。
+- 数据仍是**演示数据**（页面已标注）。接真实数据时替换 `buildWaybills()` 为接口调用即可，
+  聚合层与组件不需要改动。
 - 依赖在线资源：百度地铁库、Tailwind CDN、Font Awesome CDN，需联网运行。
-- 路线查询依赖百度 `BMapSub.Direction`，无网络或 AK 失效时仿真不可用（离线降级方案开发中）。
+- 路线查询依赖百度 `BMapSub.Direction`；无网络、AK 失效或起终点在城际/云巴等非常规线路上时，
+  会自动降级到本地线网引擎（覆盖 1/2/3/5/11/14 号线），两套都失败才提示更换站点。

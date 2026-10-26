@@ -1,29 +1,7 @@
 import React from 'react';
 import { Bar, BarChart, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-
-const logs = [
-  { id: 1, time: '10:42:15', type: 'error', message: '福田站 - 货物积压预警（Level 2）' },
-  { id: 2, time: '10:41:03', type: 'warning', message: '1号线 - 即将进入早高峰限流窗口' },
-  { id: 3, time: '10:38:22', type: 'info', message: 'ST-7825 到达 会展中心站' },
-  { id: 4, time: '10:35:10', type: 'success', message: '任务 #9021 已下发至 11号线' },
-  { id: 5, time: '10:32:05', type: 'warning', message: 'ST-6612 电量偏低（15%）- 请回库' },
-  { id: 6, time: '10:28:45', type: 'info', message: '深圳北站 - 关键医疗物资已装车' }
-];
-
-const rankData = [
-  { name: '深圳北站', value: 850 },
-  { name: '岗厦北', value: 720 },
-  { name: '前海湾', value: 680 },
-  { name: '车公庙', value: 590 },
-  { name: '布吉', value: 510 },
-  { name: '福田', value: 480 }
-];
-
-const deviceData = [
-  { name: '电量充足', value: 65, color: '#10B981', glow: 'rgba(16, 185, 129, 0.6)' },
-  { name: '中等电量', value: 25, color: '#3B82F6', glow: 'rgba(59, 130, 246, 0.6)' },
-  { name: '低电量', value: 10, color: '#EF4444', glow: 'rgba(239, 68, 68, 0.6)' }
-];
+import { AGV_FLEET, ALERTS, countAbnormalAlerts } from '../src/data/mockFleet';
+import type { StationThroughput } from '../src/data/aggregations';
 
 const rankColors = ['#06b6d4', '#22d3ee', '#38bdf8', '#60a5fa', '#818cf8', '#a78bfa'];
 
@@ -60,7 +38,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return (
     <div className="bg-black/60 backdrop-blur-md border border-cyan-500/30 rounded-lg p-3 shadow-[0_0_15px_rgba(6,182,212,0.3)]">
       <p className="text-xs text-gray-400">{label}</p>
-      <p className="text-sm font-bold text-white">{`${payload[0].value} 吨/小时`}</p>
+      <p className="text-sm font-bold text-white">{`${payload[0].value} 吨`}</p>
     </div>
   );
 };
@@ -76,7 +54,15 @@ const BatteryTooltip = ({ active, payload }: any) => {
   );
 };
 
-export const RightPanel: React.FC = () => {
+export interface RightPanelProps {
+  /** 热门站点排行，由数据页同一份运单数据集派生 */
+  topStations?: StationThroughput[];
+}
+
+export const RightPanel: React.FC<RightPanelProps> = ({ topStations = [] }) => {
+  const logs = ALERTS;
+  const deviceData = AGV_FLEET.battery;
+  const rankData = topStations;
   return (
     <div className="flex flex-col gap-4 h-full w-full bg-transparent relative">
       <div className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none"></div>
@@ -87,7 +73,7 @@ export const RightPanel: React.FC = () => {
           <i className="fa fa-bell-o text-red-500 mr-2 animate-pulse"></i>
           异常监控（示例）
           <span className="ml-2 text-xs bg-red-500/10 text-red-400 px-2 py-0.5 rounded-full border border-red-500/20">
-            {logs.filter((log) => log.type === 'error' || log.type === 'warning').length} 个异常
+            {countAbnormalAlerts(logs)} 个异常
           </span>
         </h3>
 
@@ -122,7 +108,7 @@ export const RightPanel: React.FC = () => {
         <div className="flex-1 w-full min-h-0 relative z-10">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={rankData} layout="vertical" margin={{ top: 5, right: 10, left: 10, bottom: 5 }} barSize={14}>
-              <XAxis type="number" hide domain={[0, 'dataMax + 100']} />
+              <XAxis type="number" hide domain={[0, 'dataMax']} />
               <YAxis type="category" dataKey="name" stroke="#94A3B8" fontSize={11} tickLine={false} axisLine={false} width={70} tick={{ fill: '#e2e8f0' }} />
               <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(6, 182, 212, 0.05)' }} />
               <Bar dataKey="value" radius={[0, 6, 6, 0]} animationDuration={1500}>
@@ -171,11 +157,11 @@ export const RightPanel: React.FC = () => {
             <div className="mt-2 pt-2 border-t border-gray-800/20 text-[10px] text-gray-400 bg-black/10 rounded-lg p-1.5">
               <div className="flex justify-between mb-0.5">
                 <span><i className="fa fa-server mr-1 text-cyan-500 text-[9px]"></i>在线设备总数:</span>
-                <span className="text-white font-medium text-xs">248 台</span>
+                <span className="text-white font-medium text-xs">{AGV_FLEET.total} 台</span>
               </div>
               <div className="flex justify-between">
                 <span><i className="fa fa-battery-quarter mr-1 text-red-500 text-[9px]"></i>低电量需充电:</span>
-                <span className="text-red-400 font-medium text-xs">25 台</span>
+                <span className="text-red-400 font-medium text-xs">{AGV_FLEET.lowBattery} 台</span>
               </div>
             </div>
           </div>

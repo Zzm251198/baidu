@@ -807,7 +807,7 @@ textarea {
 }
 
 .simulation-main-grid {
-  min-height: 620px;
+  min-height: 440px;
 }
 
 .simulation-bottom-grid {
@@ -819,18 +819,19 @@ textarea {
   height: auto;
 }
 
+/* 注意：这里曾经是 aspect-ratio: 1/1。在半宽栅格列里，1:1 会把面板算成 ~900px 高，
+   把「线路规划可视化」与「效益评估看板」整块推到 1080p 首屏之外。
+   改成与视口挂钩的固定高度后，仿真结果才能和参数区同屏。 */
 .simulation-route-map-frame {
-  aspect-ratio: 1 / 1;
-  min-width: 400px;
-  min-height: 400px;
+  min-width: 0;
   width: 100%;
+  height: clamp(190px, 21vh, 250px);
   flex: none;
 }
 
 .simulation-reserved-panel {
   min-width: 0;
-  aspect-ratio: 1 / 1;
-  min-height: 400px;
+  height: clamp(240px, 26vh, 300px);
   border: 1px solid rgba(34, 211, 238, 0.22);
   border-radius: 12px;
   overflow: hidden;
@@ -1550,10 +1551,11 @@ textarea {
 
   .simulation-route-map-frame {
     min-width: 0;
-    min-height: 320px;
+    height: 300px;
   }
 
   .simulation-reserved-panel {
+    height: auto;
     min-height: 320px;
   }
 

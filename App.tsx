@@ -7,8 +7,26 @@ import { RightPanel } from './components/RightPanel';
 import { ChartsPanel } from './components/ChartsPanel';
 import { SimulationInsightPanel, type RouteData } from './components/SimulationInsightPanel';
 import { parseBaiduTransitRoute } from './src/simulation/baiduRouteParser.js';
-import { planLocalRoute } from './src/simulation/localRouteEngine.js';
+import { LINE_DEFINITIONS, planLocalRoute } from './src/simulation/localRouteEngine.js';
 import { loadSimulationConfigs, simulateOrder } from './src/simulation/simulationEngine.js';
+import {
+  buildWaybills,
+  CATEGORIES,
+  CATEGORY_COLORS,
+  filterWaybills,
+  MONTHS,
+  type LineInfo
+} from './src/data/mockWaybills';
+import {
+  buildCategoryPie,
+  buildEfficiencyScatter,
+  buildHourlyTrend,
+  buildLineLoad,
+  buildLineRanking,
+  buildTopStations,
+  summarize
+} from './src/data/aggregations';
+import { AGV_FLEET } from './src/data/mockFleet';
 
 type TabKey = 'monitor' | 'data' | 'simulation';
 
@@ -95,44 +113,106 @@ const App: React.FC = () => {
     [endLineName, subwayStationsByLine]
   );
 
-  const lineOptions = [
-    { value: 'all', label: '全部线路' },
-    { value: '1', label: '1号线/罗宝线' },
-    { value: '2', label: '2号线/8号线' },
-    { value: '5', label: '5号线/环中线' },
-    { value: '11', label: '11号线/机场线' },
-    { value: '14', label: '14号线/东部快线' }
-  ];
-  const stationOptions = [
-    { value: 'all', label: '全部车站' },
-    { value: 'futian', label: '福田站' },
-    { value: 'nanshan', label: '南山站' },
-    { value: 'luohu', label: '罗湖站' },
-    { value: 'baoan', label: '宝安站' },
-    { value: 'longgang', label: '龙岗站' }
-  ];
-  const transportTimeOptions = [
-    { value: 'all', label: '全部时间' },
-    { value: '202403', label: '2024年3月' },
-    { value: '202402', label: '2024年2月' },
-    { value: '202401', label: '2024年1月' },
-    { value: '202312', label: '2023年12月' }
-  ];
-  const cargoCategoryOptions = [
-    { value: 'all', label: '全部品类' },
-    { value: 'electronics', label: '电子产品' },
-    { value: 'food', label: '生鲜食品' },
-    { value: 'daily', label: '日用百货' },
-    { value: 'industrial', label: '工业配件' },
-    { value: 'medical', label: '医疗物资' }
-  ];
-  const waybillNoOptions = [
-    { value: 'all', label: '全部运单' },
-    { value: 'YD202403001', label: 'YD202403001' },
-    { value: 'YD202403002', label: 'YD202403002' },
-    { value: 'YD202403003', label: 'YD202403003' },
-    { value: 'YD202403004', label: 'YD202403004' }
-  ];
+  // 数据页线网：优先用百度返回的真实深圳线网；线网尚未加载完时回退本地兜底线网
+  const lineInfos = useMemo<LineInfo[]>(() => {
+    const fromMap = Object.entries(subwayStationsByLine)
+      .map(([name, stations]) => ({ name, stations }))
+      .filter((line) => line.stations.length > 0);
+
+    if (fromMap.length > 0) return fromMap;
+
+    return (LINE_DEFINITIONS as Array<{ name: string; stations: string[] }>).map((line) => ({
+      name: line.name,
+      stations: line.stations
+    }));
+  }, [subwayStationsByLine]);
+
+  // 演示运单数据集：由线网确定性生成，线网变化时自动重建
+  const waybills = useMemo(() => buildWaybills(lineInfos), [lineInfos]);
+
+  const lineOptions = useMemo(
+    () => [
+      { value: 'all', label: '全部线路' },
+      ...lineInfos.map((line) => ({ value: line.name, label: line.name }))
+    ],
+    [lineInfos]
+  );
+
+  // 车站选项跟随"已选线路"收敛，避免把 20 条线的站名全堆进一个下拉
+  const stationOptions = useMemo(() => {
+    const pool = selectedLine === 'all' ? waybills : waybills.filter((item) => item.lineName === selectedLine);
+    const names = Array.from(new Set(pool.map((item) => item.station))).sort((a, b) => a.localeCompare(b, 'zh'));
+    return [{ value: 'all', label: '全部车站' }, ...names.map((name) => ({ value: name, label: name }))];
+  }, [selectedLine, waybills]);
+
+  const transportTimeOptions = useMemo(
+    () => [
+      { value: 'all', label: '全部时间' },
+      ...MONTHS.map((month) => ({
+        value: month,
+        label: `${month.slice(0, 4)}年${Number(month.slice(5, 7))}月`
+      }))
+    ],
+    []
+  );
+
+  const cargoCategoryOptions = useMemo(
+    () => [
+      { value: 'all', label: '全部品类' },
+      ...CATEGORIES.map((category) => ({ value: category, label: category }))
+    ],
+    []
+  );
+
+  // 运单号下拉只列出"其它筛选条件命中"的运单，最多 40 条
+  const waybillNoOptions = useMemo(() => {
+    const pool = filterWaybills(waybills, {
+      line: selectedLine,
+      station: selectedStation,
+      month: selectedTransportTime,
+      category: selectedCargoCategory,
+      waybillNo: 'all'
+    });
+    const numbers = Array.from(new Set(pool.map((item) => item.waybillNo))).slice(0, 40);
+    return [{ value: 'all', label: '全部运单' }, ...numbers.map((no) => ({ value: no, label: no }))];
+  }, [selectedCargoCategory, selectedLine, selectedStation, selectedTransportTime, waybills]);
+
+  // ── 筛选 → 聚合（五个筛选器真正驱动这里） ──
+  const activeFilters = useMemo(
+    () => ({
+      line: selectedLine,
+      station: selectedStation,
+      month: selectedTransportTime,
+      category: selectedCargoCategory,
+      waybillNo: selectedWaybillNo
+    }),
+    [selectedCargoCategory, selectedLine, selectedStation, selectedTransportTime, selectedWaybillNo]
+  );
+
+  const filteredWaybills = useMemo(() => filterWaybills(waybills, activeFilters), [activeFilters, waybills]);
+  const lineLoadData = useMemo(() => buildLineLoad(filteredWaybills, lineInfos), [filteredWaybills, lineInfos]);
+  const categoryPieData = useMemo(() => buildCategoryPie(filteredWaybills), [filteredWaybills]);
+  const efficiencyData = useMemo(() => buildEfficiencyScatter(filteredWaybills), [filteredWaybills]);
+  const hourlyTrend = useMemo(() => buildHourlyTrend(filteredWaybills), [filteredWaybills]);
+  const lineRanking = useMemo(() => buildLineRanking(filteredWaybills, lineInfos), [filteredWaybills, lineInfos]);
+  const dataSummary = useMemo(() => summarize(filteredWaybills), [filteredWaybills]);
+
+  // 监控页没有筛选器，用全量数据；与数据页共享同一份数据集，数字口径一致
+  const overallSummary = useMemo(() => summarize(waybills), [waybills]);
+  const topStations = useMemo(() => buildTopStations(waybills), [waybills]);
+
+  // 换线路后，原先选中的车站/运单号可能已不在候选里 → 自动回落，避免"永远 0 条"
+  useEffect(() => {
+    setSelectedStation('all');
+    setSelectedWaybillNo('all');
+  }, [selectedLine]);
+
+  // 其它筛选条件收窄后，已选运单若不在候选中同样回落
+  useEffect(() => {
+    if (selectedWaybillNo !== 'all' && !waybillNoOptions.some((option) => option.value === selectedWaybillNo)) {
+      setSelectedWaybillNo('all');
+    }
+  }, [selectedWaybillNo, waybillNoOptions]);
 
   const plannedRouteData: RouteData | null = useMemo(() => {
     if (!simResult) return null;
@@ -305,7 +385,14 @@ const App: React.FC = () => {
 
             <div className="flex-grow min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-6">
               <div className="lg:col-span-2 h-full flex flex-col overflow-hidden">
-                <StatsCards />
+                <StatsCards
+                  activeAgv={AGV_FLEET.active}
+                  totalAgv={AGV_FLEET.total}
+                  totalWeightTon={overallSummary.totalWeightTon}
+                  waybillCount={overallSummary.waybillCount}
+                  lineCount={lineInfos.length}
+                  avgDurationMin={overallSummary.avgDurationMin}
+                />
               </div>
               <div className="lg:col-span-8 h-full flex flex-col overflow-hidden">
                 <section className="monitor-map-panel h-full flex flex-col overflow-hidden">
@@ -320,7 +407,7 @@ const App: React.FC = () => {
                 </section>
               </div>
               <div className="lg:col-span-2 h-full flex flex-col overflow-hidden">
-                <RightPanel />
+                <RightPanel topStations={topStations} />
               </div>
             </div>
           </div>
@@ -336,15 +423,46 @@ const App: React.FC = () => {
               {renderDataSelect('运单号', selectedWaybillNo, setSelectedWaybillNo, waybillNoOptions)}
             </div>
 
+            {/* 筛选结果回执：让"筛选真的生效"这件事一眼可见 */}
+            <div className="flex flex-wrap items-center gap-4 -mt-4 text-xs">
+              <span className="text-cyan-300 bg-cyan-500/10 border border-cyan-500/25 rounded-full px-3 py-1">
+                命中 <b className="text-white">{dataSummary.waybillCount}</b> 条运单
+              </span>
+              <span className="text-gray-400">
+                总货量 <b className="text-white">{dataSummary.totalWeightTon}</b> 吨
+              </span>
+              <span className="text-gray-400">
+                覆盖车站 <b className="text-white">{dataSummary.stationCount}</b> 个
+              </span>
+              <span className="text-gray-400">
+                平均时效 <b className="text-white">{dataSummary.avgDurationMin}</b> 分钟
+              </span>
+              {dataSummary.waybillCount === 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedLine('all');
+                    setSelectedStation('all');
+                    setSelectedTransportTime('all');
+                    setSelectedCargoCategory('all');
+                    setSelectedWaybillNo('all');
+                  }}
+                  className="ml-auto px-3 py-1 rounded-full border border-amber-500/40 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 transition-colors"
+                >
+                  <i className="fa fa-undo mr-1"></i>重置筛选
+                </button>
+              )}
+            </div>
+
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 h-[400px]">
               <div className="lg:col-span-2 h-full">
                 <div className="h-full w-full bg-transparent border border-cyan-500/20 rounded-xl p-4 relative overflow-hidden">
-                  <ChartsPanel type="composed" title="各线路运力与实际负载分析" />
+                  <ChartsPanel type="composed" title="各线路运力与实际负载分析" data={lineLoadData} />
                 </div>
               </div>
               <div className="lg:col-span-1 h-full">
                 <div className="h-full w-full bg-transparent border border-cyan-500/20 rounded-xl p-4 relative overflow-hidden">
-                  <ChartsPanel type="pie" title="运输货物类型分布" />
+                  <ChartsPanel type="pie" title="运输货物类型分布" data={categoryPieData} colors={CATEGORY_COLORS} />
                 </div>
               </div>
             </div>
@@ -352,12 +470,18 @@ const App: React.FC = () => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-[380px]">
               <div className="h-full">
                 <div className="h-full w-full bg-transparent border border-cyan-500/20 rounded-xl p-4 relative overflow-hidden">
-                  <ChartsPanel type="scatter" title="线路运输效能矩阵（距离/耗时/货量）" />
+                  <ChartsPanel type="scatter" title="线路运输效能矩阵（距离/耗时/货量）" data={efficiencyData} />
                 </div>
               </div>
               <div className="h-full">
                 <div className="h-full w-full bg-transparent border border-cyan-500/20 rounded-xl p-4 relative overflow-hidden">
-                  <ChartsPanel type="area" title="全网24小时货运流量趋势" />
+                  <ChartsPanel
+                    type="area"
+                    title="全网24小时货运流量趋势（按品类，吨）"
+                    data={hourlyTrend.data}
+                    series={hourlyTrend.series}
+                    colors={CATEGORY_COLORS}
+                  />
                 </div>
               </div>
             </div>
@@ -370,7 +494,7 @@ const App: React.FC = () => {
                   <div className="ml-4 h-1 flex-1 bg-gradient-to-r from-cyan-500/50 to-transparent rounded-full"></div>
                 </h3>
                 <div className="h-[220px] relative z-10 bg-transparent">
-                  <AutoScrollChart />
+                  <AutoScrollChart rows={lineRanking} />
                 </div>
               </div>
             </div>
@@ -380,7 +504,7 @@ const App: React.FC = () => {
         {activeTab === 'simulation' && (
           <div className="animate-fade-in simulation-layout flex flex-col h-full min-h-0 p-4 lg:p-6 gap-6 overflow-y-auto custom-scrollbar bg-transparent">
             <div className="simulation-main-grid grid grid-cols-1 lg:grid-cols-12 gap-6 bg-transparent">
-              <div className="lg:col-span-4 bg-transparent rounded-xl p-6 border border-cyan-500/20 shadow-lg shadow-cyan-500/5 h-full min-h-[620px] flex flex-col relative overflow-hidden">
+              <div className="lg:col-span-4 bg-transparent rounded-xl p-6 border border-cyan-500/20 shadow-lg shadow-cyan-500/5 h-full min-h-[440px] flex flex-col relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-16 h-16 border-t border-l border-cyan-400/30 rounded-tl-xl pointer-events-none"></div>
                 <div className="absolute bottom-0 right-0 w-16 h-16 border-b border-r border-cyan-400/30 rounded-br-xl pointer-events-none"></div>
                 <h3 className="text-cyan-300 font-bold mb-6 flex items-center flex-shrink-0 relative z-10">
@@ -510,7 +634,7 @@ const App: React.FC = () => {
               </div>
 
               <div className="lg:col-span-8 w-full bg-transparent">
-                <div className="bg-transparent rounded-xl p-6 border border-cyan-500/20 relative overflow-hidden h-full min-h-[620px] flex flex-col">
+                <div className="bg-transparent rounded-xl p-6 border border-cyan-500/20 relative overflow-hidden h-full min-h-[440px] flex flex-col">
                   <div className="absolute top-0 left-0 w-20 h-20 border-t border-l border-cyan-400/30 rounded-tl-xl pointer-events-none"></div>
                   <div className="absolute bottom-0 right-0 w-20 h-20 border-b border-r border-cyan-400/30 rounded-br-xl pointer-events-none"></div>
                   <h3 className="font-bold text-cyan-300 mb-6 flex items-center relative z-10 flex-shrink-0">

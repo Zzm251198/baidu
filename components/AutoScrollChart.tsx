@@ -1,19 +1,19 @@
 import React from 'react';
+import type { LineRanking } from '../src/data/aggregations';
 
-const rankData = [
-  { rank: 1, line: '14号线/东部快线', score: 98.5, load: '高负载', efficiency: 'A+' },
-  { rank: 2, line: '11号线/机场线', score: 97.2, load: '高负载', efficiency: 'A' },
-  { rank: 3, line: '6号线/光明线', score: 96.8, load: '低负载', efficiency: 'A' },
-  { rank: 4, line: '1号线/罗宝线', score: 95.4, load: '高负载', efficiency: 'B+' },
-  { rank: 5, line: '5号线/环中线', score: 94.9, load: '中负载', efficiency: 'B' },
-  { rank: 6, line: '10号线/坂田线', score: 93.5, load: '中负载', efficiency: 'B' },
-  { rank: 7, line: '3号线/龙岗线', score: 92.1, load: '高负载', efficiency: 'C+' },
-  { rank: 8, line: '2号线/8号线', score: 91.0, load: '低负载', efficiency: 'C' },
-  { rank: 9, line: '20号线/福永线', score: 89.5, load: '低负载', efficiency: 'C' },
-  { rank: 10, line: '7号线/西丽线', score: 88.2, load: '中负载', efficiency: 'C-' }
-];
+export const AutoScrollChart: React.FC<{ rows?: LineRanking[] }> = ({ rows = [] }) => {
+  if (rows.length === 0) {
+    return (
+      <div className="h-full w-full flex flex-col items-center justify-center text-cyan-500/60 text-sm gap-2">
+        <i className="fa fa-filter text-2xl opacity-60"></i>
+        <span>当前筛选条件下没有线路数据</span>
+      </div>
+    );
+  }
 
-export const AutoScrollChart: React.FC = () => {
+  // 跑马灯需要首尾相接，复制一份即可；行数多时这份复制不会被注意到
+  const displayRows = [...rows, ...rows];
+
   return (
     <div className="w-full h-full flex flex-col overflow-hidden bg-transparent">
       <div className="grid grid-cols-12 text-xs text-cyan-300 border-b border-cyan-500/30 pb-3 mb-3 px-3 uppercase tracking-wider font-semibold relative">
@@ -27,7 +27,7 @@ export const AutoScrollChart: React.FC = () => {
 
       <div className="flex-1 relative overflow-hidden group bg-transparent">
         <div className="absolute top-0 left-0 w-full animate-marquee hover:pause-animation bg-transparent">
-          {[...rankData, ...rankData].map((item, index) => (
+          {displayRows.map((item, index) => (
             <div key={`${item.rank}-${index}`} className="grid grid-cols-12 items-center text-sm py-3 px-3 border-b border-cyan-900/20 hover:bg-cyan-900/10 transition-all duration-300 bg-transparent">
               <div className="col-span-1 text-center bg-transparent">
                 <span className={`inline-flex items-center justify-center w-7 h-7 rounded-lg font-bold text-xs ${

@@ -1,61 +1,88 @@
 import React from 'react';
 
-const cards = [
-  {
-    label: '活跃运输小车',
-    value: '1,286 辆',
-    icon: 'fa-truck',
-    color: 'text-cyan-400',
-    bg: 'bg-cyan-500/5',
-    glow: 'shadow-cyan-500/30',
-    gradient: 'from-cyan-500/15 to-transparent',
-    ring: 'ring-cyan-500/20',
-    trend: '8.2%',
-    trendIcon: 'fa-arrow-up',
-    trendColor: 'text-green-400'
-  },
-  {
-    label: '今日货运量',
-    value: '4,589 吨',
-    icon: 'fa-cubes',
-    color: 'text-purple-400',
-    bg: 'bg-purple-500/5',
-    glow: 'shadow-purple-500/30',
-    gradient: 'from-purple-500/15 to-transparent',
-    ring: 'ring-purple-500/20',
-    trend: '12.5%',
-    trendIcon: 'fa-arrow-up',
-    trendColor: 'text-green-400'
-  },
-  {
-    label: '运行线路',
-    value: '16 条',
-    icon: 'fa-map-signs',
-    color: 'text-blue-400',
-    bg: 'bg-blue-500/5',
-    glow: 'shadow-blue-500/30',
-    gradient: 'from-blue-500/15 to-transparent',
-    ring: 'ring-blue-500/20',
-    trend: '0%',
-    trendIcon: 'fa-minus',
-    trendColor: 'text-blue-400'
-  },
-  {
-    label: '平均运输时效',
-    value: '28 分钟',
-    icon: 'fa-clock-o',
-    color: 'text-green-400',
-    bg: 'bg-green-500/5',
-    glow: 'shadow-green-500/30',
-    gradient: 'from-green-500/15 to-transparent',
-    ring: 'ring-green-500/20',
-    trend: '3.1%',
-    trendIcon: 'fa-arrow-down',
-    trendColor: 'text-red-400'
-  }
-];
+export interface StatsCardsProps {
+  /** 执行任务中的 AGV 数 */
+  activeAgv: number;
+  /** 在线设备总数 */
+  totalAgv: number;
+  /** 累计货运量（吨） */
+  totalWeightTon: number;
+  /** 数据集覆盖的运单条数 */
+  waybillCount: number;
+  /** 纳入建模的线路数 */
+  lineCount: number;
+  /** 平均运输时效（分钟） */
+  avgDurationMin: number;
+}
 
-export const StatsCards: React.FC = () => {
+interface CardModel {
+  label: string;
+  value: string;
+  hint: string;
+  icon: string;
+  color: string;
+  bg: string;
+  glow: string;
+  gradient: string;
+  ring: string;
+}
+
+export const StatsCards: React.FC<StatsCardsProps> = ({
+  activeAgv,
+  totalAgv,
+  totalWeightTon,
+  waybillCount,
+  lineCount,
+  avgDurationMin
+}) => {
+  // 所有数字都由上层从同一份数据集派生，不再有第二套口径
+  const cards: CardModel[] = [
+    {
+      label: '活跃运输小车',
+      value: `${activeAgv} 辆`,
+      hint: `在线 ${totalAgv} 台中的 ${activeAgv} 台`,
+      icon: 'fa-truck',
+      color: 'text-cyan-400',
+      bg: 'bg-cyan-500/5',
+      glow: 'shadow-cyan-500/30',
+      gradient: 'from-cyan-500/15 to-transparent',
+      ring: 'ring-cyan-500/20'
+    },
+    {
+      label: '累计货运量',
+      value: `${totalWeightTon} 吨`,
+      hint: `来自 ${waybillCount} 条运单`,
+      icon: 'fa-cubes',
+      color: 'text-purple-400',
+      bg: 'bg-purple-500/5',
+      glow: 'shadow-purple-500/30',
+      gradient: 'from-purple-500/15 to-transparent',
+      ring: 'ring-purple-500/20'
+    },
+    {
+      label: '纳入建模线路',
+      value: `${lineCount} 条`,
+      hint: '含云巴 / 有轨电车 / 城际',
+      icon: 'fa-map-signs',
+      color: 'text-blue-400',
+      bg: 'bg-blue-500/5',
+      glow: 'shadow-blue-500/30',
+      gradient: 'from-blue-500/15 to-transparent',
+      ring: 'ring-blue-500/20'
+    },
+    {
+      label: '平均运输时效',
+      value: `${avgDurationMin} 分钟`,
+      hint: '含换乘与站停时间',
+      icon: 'fa-clock-o',
+      color: 'text-green-400',
+      bg: 'bg-green-500/5',
+      glow: 'shadow-green-500/30',
+      gradient: 'from-green-500/15 to-transparent',
+      ring: 'ring-green-500/20'
+    }
+  ];
+
   return (
     <div className="grid grid-cols-1 gap-3 h-full px-1">
       {cards.map((card) => (
@@ -78,12 +105,8 @@ export const StatsCards: React.FC = () => {
             <h3 className="text-3xl font-bold text-white tracking-tight drop-shadow-[0_0_2px_rgba(255,255,255,0.2)] mb-2">
               {card.value}
             </h3>
-            <div className="flex items-center text-sm bg-black/20 px-3 py-1 rounded-md border border-white/5 backdrop-blur-md">
-              <span className={`${card.trendColor} flex items-center font-medium drop-shadow-[0_0_1px_currentColor]`}>
-                <i className={`fa ${card.trendIcon} mr-1.5`}></i>
-                {card.trend}
-              </span>
-              <span className="text-gray-400 ml-2 text-xs opacity-80">较昨日</span>
+            <div className="flex items-center text-xs text-gray-400 bg-black/20 px-3 py-1 rounded-md border border-white/5 backdrop-blur-md">
+              {card.hint}
             </div>
           </div>
         </div>

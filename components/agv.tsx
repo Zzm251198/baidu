@@ -50,6 +50,9 @@ const fallbackRows: AgvOperationRow[] = [
 
 export const AGV: React.FC<{ rows?: AgvOperationRow[] }> = ({ rows }) => {
     const displayData = rows && rows.length > 0 ? rows : fallbackRows;
+    // 行数少时不做跑马灯（否则会把同一订单复制 4 份，看起来像重复下单）
+    const shouldScroll = displayData.length > 4;
+    const renderedRows = shouldScroll ? [...displayData, ...displayData] : displayData;
 
     const getOrderTypeClass = (type: string) => {
         if (type.includes('始发')) return 'text-emerald-400 glow-green';
@@ -76,8 +79,8 @@ export const AGV: React.FC<{ rows?: AgvOperationRow[] }> = ({ rows }) => {
             <div className="flex-1 relative overflow-hidden group bg-gray-900/10 rounded-lg border border-cyan-500/10">
                 <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(6,182,212,0.1)_1px,transparent_1px),linear-gradient(to_bottom,rgba(6,182,212,0.1)_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none"></div>
 
-                <div className="absolute top-0 left-0 w-full animate-marquee hover:pause-animation z-10">
-                    {[...displayData, ...displayData, ...displayData, ...displayData].map((item, index) => (
+                <div className={`absolute top-0 left-0 w-full z-10 ${shouldScroll ? 'animate-marquee hover:pause-animation' : ''}`}>
+                    {renderedRows.map((item, index) => (
                         <div
                             key={`${item.orderId}-${index}`}
                             className="grid grid-cols-9 items-center text-sm py-2.5 px-3 border-b border-cyan-900/10 hover:bg-cyan-900/20 hover:border-cyan-500/30 transition-all duration-300"

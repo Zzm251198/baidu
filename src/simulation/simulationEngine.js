@@ -147,35 +147,62 @@ function createTrainId(segment, departureTime) {
   return `${activeConfigs.trainSchedule.trainPrefix}-${lineName}-${suffix}`;
 }
 
-function selectAgv(stationName, role, sequence, cargoWeightKg) {
-  const station = normalizeStation(stationName);
+/**
+ * AGV 分配器：每次下单创建一个实例，池内车辆"用过即占用"。
+ * 旧实现每次都取第一个空闲车，导致一条多段路径的所有节点都绑同一台 AGV，
+ * 与"接力（换车）"的业务语义直接矛盾。现在保证 N 个作业节点对应 N 台不同车。
+ */
+function createAgvAllocator() {
   const agvs = Array.isArray(activeConfigs.agvPool.agvs) ? activeConfigs.agvPool.agvs : [];
-  const sameStationAgv = agvs.find((agv) => {
-    return agv.status === 'idle' && normalizeStation(agv.homeStation, 'default') === station;
-  });
-  const defaultAgv = agvs.find((agv) => agv.status === 'idle' && normalizeStation(agv.homeStation, 'default') === 'default');
-  const selected = sameStationAgv || defaultAgv;
+  const available = agvs
+    .filter((agv) => agv.status === 'idle')
+    .map((agv) => ({ ...agv, taken: false }));
 
-  if (selected) {
+  const take = (stationName, role, sequence, cargoWeightKg) => {
+    const station = normalizeStation(stationName);
+    const idle = available.filter((agv) => !agv.taken);
+
+    // 1) 本站待命车优先
+    let picked = idle.find((agv) => normalizeStation(agv.homeStation, 'default') === station);
+    let source = 'station-pool';
+
+    // 2) 退回默认底座池
+    if (!picked) {
+      picked = idle.find((agv) => normalizeStation(agv.homeStation, 'default') === 'default');
+      source = 'default-pool';
+    }
+
+    // 3) 跨站调度：仍有空闲车就调过来，避免不必要的兜底编号
+    if (!picked && idle.length > 0) {
+      picked = idle[0];
+      source = 'cross-station';
+    }
+
+    if (picked) {
+      picked.taken = true;
+      return {
+        agvId: picked.id,
+        station,
+        role,
+        battery: toNumber(picked.battery, 80),
+        capacityKg: toNumber(picked.capacityKg, activeConfigs.agvPool.fallbackCapacityKg),
+        source
+      };
+    }
+
+    // 4) 池子耗尽：确定性兜底，保证同一输入可复现
+    const seed = `${station}-${role}-${sequence}-${cargoWeightKg}`;
     return {
-      agvId: selected.id,
+      agvId: `AGV-FB-${String(hashString(seed) % 10000).padStart(4, '0')}`,
       station,
       role,
-      battery: toNumber(selected.battery, 80),
-      capacityKg: toNumber(selected.capacityKg, activeConfigs.agvPool.fallbackCapacityKg),
-      source: sameStationAgv ? 'station-pool' : 'default-pool'
+      battery: stableRange(seed, 58, 92),
+      capacityKg: activeConfigs.agvPool.fallbackCapacityKg,
+      source: 'deterministic-fallback'
     };
-  }
-
-  const seed = `${station}-${role}-${sequence}-${cargoWeightKg}`;
-  return {
-    agvId: `AGV-FB-${String(hashString(seed) % 10000).padStart(4, '0')}`,
-    station,
-    role,
-    battery: stableRange(seed, 58, 92),
-    capacityKg: activeConfigs.agvPool.fallbackCapacityKg,
-    source: 'deterministic-fallback'
   };
+
+  return { take };
 }
 
 function buildTrainPlan(routeSummary, startTime) {
@@ -228,9 +255,11 @@ function buildAgvPlan(routeSummary, trainPlan, input) {
     }
   ];
 
+  const allocate = createAgvAllocator();
+
   return nodes.map((node, index) => ({
     nodeId: `AGV-NODE-${index + 1}`,
-    ...selectAgv(node.station, node.role, index + 1, cargoWeightKg),
+    ...allocate.take(node.station, node.role, index + 1, cargoWeightKg),
     action: node.action,
     bindTrain: node.trainId,
     operationTime: node.time
