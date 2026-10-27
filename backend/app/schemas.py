@@ -92,3 +92,52 @@ class CostBreakdown(BaseModel):
     carbonSavedKg: float
     capacityUtilization: float
     agvOperationSeconds: int
+
+
+# ── 仿真下沉 ──────────────────────────────────────────────
+
+
+class RouteSegmentIn(BaseModel):
+    lineName: str = ""
+    boardingStation: str = ""
+    alightingStation: str = ""
+    stationCount: int = Field(default=0, ge=0, le=80)
+    durationMin: int = Field(default=0, ge=0, le=600)
+    direction: str = ""
+
+
+class RouteIn(BaseModel):
+    originStationName: str = ""
+    destinationStationName: str = ""
+    totalDurationMin: int = Field(default=0, ge=0, le=1440)
+    totalStationCount: int = Field(default=0, ge=0, le=200)
+    transferStations: list[str] = Field(default_factory=list)
+    segments: list[RouteSegmentIn] = Field(default_factory=list)
+
+
+class OrderIn(BaseModel):
+    startStationName: str = ""
+    endStationName: str = ""
+    startLineName: str = ""
+    endLineName: str = ""
+    cargoWeightKg: float = Field(default=0, ge=0, le=100000)
+    cargoCount: int = Field(default=1, ge=1, le=10000)
+    startTime: str = Field(default="10:00", pattern=r"^\d{1,2}:\d{2}$")
+
+
+class SimulateRequest(BaseModel):
+    order: OrderIn
+    route: RouteIn
+
+
+class SimulationRunOut(BaseModel):
+    id: int
+    createdAt: str
+    origin: str
+    destination: str
+    stationCount: int
+    durationMin: int
+    transferCount: int
+    revenue: float
+    totalCost: float
+    profit: float

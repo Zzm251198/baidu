@@ -52,7 +52,55 @@ backend/
 | DELETE | `/api/waybills/{waybillNo}` | 删除（成功 204） |
 | GET | `/api/fleet` | 车队快照 `{total, active, idle, lowBattery, charging, battery[]}` |
 | GET | `/api/alerts` | 告警列表 |
+| POST | `/api/simulate` | **调度仿真**：输入订单 + 路径，返回列车/AGV 编排、指标、风险 |
+| GET | `/api/simulations` | 最近的仿真运行记录（审计用） |
 | POST | `/api/cost/estimate` | 成本/时效测算（供后续接算法复用） |
+
+## 仿真下沉到后端
+
+路径查询依赖百度地铁库（只在浏览器里能跑），所以分工是：
+
+```
+浏览器                                  后端
+──────                                  ──────
+百度 Direction 查路 + 解析  ──route──▶   POST /api/simulate
+                                          ├─ 列车编排（车次号/时刻）
+                                          ├─ AGV 编排（池内取用即占用）
+                                          ├─ 作业行（订单表数据）
+                                          ├─ 经营指标（收入/成本/利润）
+                                          └─ 风险评估
+                                       ◀── 结果 + runId
+```
+
+请求体：
+
+```json
+{
+  "order": {
+    "startStationName": "牛湖", "endStationName": "罗湖",
+    "startLineName": "地铁4号线(龙华线)", "endLineName": "地铁1号线(罗宝线)",
+    "cargoWeightKg": 1200, "cargoCount": 20, "startTime": "10:00"
+  },
+  "route": {
+    "originStationName": "牛湖", "destinationStationName": "罗湖",
+    "totalDurationMin": 72, "totalStationCount": 27,
+    "transferStations": ["会展中心"],
+    "segments": [
+      { "lineName": "...", "boardingStation": "牛湖", "alightingStation": "会展中心",
+        "stationCount": 20, "durationMin": 50, "direction": "福田口岸" }
+    ]
+  }
+}
+```
+
+返回结构与前端 `simulationEngine.simulateOrder` 完全一致
+（`success / routeSummary / trainPlan / agvPlan / operationRows / metrics / riskAssessment`），
+另外多一个 `runId`。前端拿到后直接复用现有看板渲染，无需转换。
+
+**可复现 / 可审计**：每次调用写一条 `simulation_runs`，
+`GET /api/simulations` 可查历史（起终点、站数、耗时、收入、成本、利润）。
+
+**配置单一来源**：引擎读 `public/data/*.json`，与前端共用同一份配置，不在 Python 里另写一遍。
 
 `/api/cost/estimate` 与前端 `simulationEngine.computeMetrics` 共用一套费率，
 同样输入（27 站、72 分钟、1 次换乘、1200kg、3 个 AGV 节点）两边都是

@@ -10,6 +10,7 @@ import { OrderTimeline, type TimelineEvent } from './components/OrderTimeline';
 import { parseBaiduTransitRoute } from './src/simulation/baiduRouteParser.js';
 import { LINE_DEFINITIONS, planLocalRoute } from './src/simulation/localRouteEngine.js';
 import { loadSimulationConfigs, simulateOrder } from './src/simulation/simulationEngine.js';
+import { simulateRemote } from './src/simulation/remoteSimulation';
 import {
   CATEGORIES,
   CATEGORY_COLORS,
@@ -134,7 +135,7 @@ const App: React.FC = () => {
   }, [subwayStationsByLine]);
 
   // 统一数据入口：默认本地模拟，VITE_DATA_SOURCE=http 时走后端接口
-  const { bundle, loading: dataLoading, error: dataError } = useDataBundle(mapLineInfos);
+  const { bundle, loading: dataLoading, error: dataError, sourceKind } = useDataBundle(mapLineInfos);
 
   // 真正用于聚合的线网：数据源给了就用它的（含各线设计运力所需的全站列表），
   // 否则用地图推导结果。注意不能反过来喂给 useDataBundle，否则会形成加载循环。
@@ -291,7 +292,7 @@ const App: React.FC = () => {
     setRouteRequestKey((value) => value + 1);
   };
 
-  const handleBaiduRouteResult = useCallback((payload: any) => {
+  const handleBaiduRouteResult = useCallback(async (payload: any) => {
     const cargoValue = Number(simParams.cargoValue);
 
     if (!simParams.startStationName || !simParams.endStationName || !Number.isFinite(cargoValue) || cargoValue <= 0) {
@@ -305,7 +306,7 @@ const App: React.FC = () => {
     });
 
     // 兜底链路：百度未返回可用方案（超时/失败/无结果）时，切换本地线网引擎规划路径。
-    // 本地引擎输出与百度解析器同构，simulateOrder 之后的流程完全不变。
+    // 本地引擎输出与百度解析器同构，后面的编排流程完全不变。
     let effectiveRoute = parsedRoute;
     let routeSourceNote = '';
     if (!parsedRoute.segments || parsedRoute.segments.length === 0) {
@@ -316,7 +317,7 @@ const App: React.FC = () => {
       }
     }
 
-    const output = simulateOrder({
+    const orderInput = {
       startLineName,
       startStationName: simParams.startStationName,
       endLineName,
@@ -324,7 +325,24 @@ const App: React.FC = () => {
       cargoWeightKg: simParams.cargoMode === 'weight' ? cargoValue : cargoValue * 20,
       cargoCount: simParams.cargoMode === 'count' ? cargoValue : Math.max(1, Math.ceil(cargoValue / 60)),
       startTime: '10:00'
-    }, effectiveRoute);
+    };
+
+    // 数据源是 http 时，编排与测算交给后端（可复现、可审计）；
+    // 后端不可用则回退本地引擎，保证演示不中断。
+    let output: any;
+    let simSourceNote = '｜前端计算';
+    if (sourceKind === 'http') {
+      try {
+        output = await simulateRemote(orderInput, effectiveRoute);
+        simSourceNote = output?.runId ? `｜服务端计算 #${output.runId}` : '｜服务端计算';
+      } catch (error) {
+        console.warn('服务端仿真失败，回退本地引擎：', error);
+        output = simulateOrder(orderInput, effectiveRoute);
+        simSourceNote = '｜前端计算（服务端不可用）';
+      }
+    } else {
+      output = simulateOrder(orderInput, effectiveRoute);
+    }
 
     if (!output.success || !output.metrics) {
       setIsSimulating(false);
@@ -342,14 +360,14 @@ const App: React.FC = () => {
       stationCount: metrics.totalStationCount,
       transferCount: metrics.transferCount,
       transferStations: routeSummary.transferStations || [],
-      routeDescription: `${routeSummary.originStationName} → ${routeSummary.destinationStationName}｜${metrics.totalDurationMin}分钟｜${metrics.totalStationCount}站${routeSourceNote}`,
+      routeDescription: `${routeSummary.originStationName} → ${routeSummary.destinationStationName}｜${metrics.totalDurationMin}分钟｜${metrics.totalStationCount}站${routeSourceNote}${simSourceNote}`,
       baseCost: metrics.revenue,
       transferCost: metrics.transferCount * 10,
       totalCost: metrics.totalCost,
       revenue: metrics.profit
     });
     setIsSimulating(false);
-  }, [endLineName, simParams, startLineName]);
+  }, [endLineName, simParams, sourceKind, startLineName]);
 
   const renderDataSelect = (
     label: string,

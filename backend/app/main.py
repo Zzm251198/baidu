@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 from contextlib import asynccontextmanager
+from datetime import datetime
 from typing import Annotated
 
 from fastapi import FastAPI, HTTPException, Query
@@ -26,6 +27,8 @@ from .schemas import (
     CostRequest,
     FleetOut,
     LineOut,
+    SimulateRequest,
+    SimulationRunOut,
     WaybillCreate,
     WaybillOut,
     WaybillUpdate,
@@ -223,3 +226,73 @@ def cost_estimate(payload: CostRequest) -> CostBreakdown:
         agv_node_count=payload.agvNodeCount,
     )
     return CostBreakdown(**result)
+
+
+@app.post(
+    "/api/simulate",
+    summary="执行一次调度仿真",
+    description=(
+        "输入订单参数与路径方案（路径由前端百度地铁库查得），"
+        "返回列车编排 / AGV 编排 / 作业行 / 经营指标 / 风险评估。"
+        "输出结构与前端 src/simulation/simulationEngine.js 完全一致，"
+        "每次调用落库 simulation_runs 便于审计。"
+    ),
+)
+def run_simulation(payload: SimulateRequest) -> dict:
+    request_payload = payload.model_dump()
+    result = simulation.simulate(request_payload["order"], request_payload["route"])
+
+    if not result["success"]:
+        return {**result, "runId": None}
+
+    metrics = result["metrics"]
+    summary = result["routeSummary"]
+    with get_conn() as conn:
+        cursor = conn.execute(
+            """INSERT INTO simulation_runs
+               (created_at, origin, destination, station_count, duration_min, transfer_count,
+                revenue, total_cost, profit, request_json, result_json)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                datetime.now().isoformat(timespec="seconds"),
+                summary["originStationName"],
+                summary["destinationStationName"],
+                int(metrics["totalStationCount"]),
+                int(metrics["totalDurationMin"]),
+                int(metrics["transferCount"]),
+                float(metrics["revenue"]),
+                float(metrics["totalCost"]),
+                float(metrics["profit"]),
+                json.dumps(request_payload, ensure_ascii=False),
+                json.dumps(result, ensure_ascii=False),
+            ),
+        )
+        run_id = cursor.lastrowid
+
+    return {**result, "runId": run_id}
+
+
+@app.get("/api/simulations", response_model=list[SimulationRunOut])
+def list_simulations(limit: Annotated[int, Query(ge=1, le=200)] = 20) -> list[SimulationRunOut]:
+    with get_conn() as conn:
+        rows = conn.execute(
+            """SELECT id, created_at, origin, destination, station_count, duration_min,
+                      transfer_count, revenue, total_cost, profit
+               FROM simulation_runs ORDER BY id DESC LIMIT ?""",
+            (limit,),
+        ).fetchall()
+    return [
+        SimulationRunOut(
+            id=row["id"],
+            createdAt=row["created_at"],
+            origin=row["origin"],
+            destination=row["destination"],
+            stationCount=row["station_count"],
+            durationMin=row["duration_min"],
+            transferCount=row["transfer_count"],
+            revenue=row["revenue"],
+            totalCost=row["total_cost"],
+            profit=row["profit"],
+        )
+        for row in rows
+    ]

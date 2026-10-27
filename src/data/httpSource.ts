@@ -6,11 +6,12 @@
 //   GET {BASE}/alerts    -> AlertItem[]
 //
 // 开启方式：.env.local 里设 VITE_DATA_SOURCE=http（可选 VITE_API_BASE 覆盖前缀）。
+import { API_BASE } from './apiBase';
 import { ALERTS, AGV_FLEET } from './mockFleet';
 import { buildWaybills } from './mockWaybills';
 import type { AlertItem, DataBundle, FleetSnapshot, LineInfo, MissionDataSource, Waybill } from './types';
 
-const BASE = String(import.meta.env.VITE_API_BASE ?? '/api').replace(/\/$/, '');
+const BASE = API_BASE;
 
 async function getJson<T>(path: string): Promise<T> {
   const response = await fetch(`${BASE}${path}`, { headers: { Accept: 'application/json' } });

@@ -27,6 +27,8 @@ AK 申请：[百度地图开放平台控制台](https://lbsyun.baidu.com/apicons
 ## 后端（Python + SQLite）
 
 `backend/` 下是 FastAPI + SQLite 服务，实现运单/线网/车队/告警接口，并带运单增删改查。
+切到 `VITE_DATA_SOURCE=http` 后，**仿真也下沉到后端**：前端只负责查路（百度地铁库只能在浏览器跑），
+列车/AGV 编排、经营指标、风险评估都由 `POST /api/simulate` 计算，结果落库可审计。
 
 ```powershell
 cd backend

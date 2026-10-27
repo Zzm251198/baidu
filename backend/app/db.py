@@ -107,6 +107,22 @@ CREATE TABLE IF NOT EXISTS fleet (
     charging    INTEGER NOT NULL,
     battery     TEXT NOT NULL
 );
+
+-- 每次仿真落一条，便于复盘与审计（同输入必然同输出）
+CREATE TABLE IF NOT EXISTS simulation_runs (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    created_at    TEXT NOT NULL,
+    origin        TEXT NOT NULL,
+    destination   TEXT NOT NULL,
+    station_count INTEGER NOT NULL,
+    duration_min  INTEGER NOT NULL,
+    transfer_count INTEGER NOT NULL,
+    revenue       REAL NOT NULL,
+    total_cost    REAL NOT NULL,
+    profit        REAL NOT NULL,
+    request_json  TEXT NOT NULL,
+    result_json   TEXT NOT NULL
+);
 """
 
 ALERTS_SEED = [
