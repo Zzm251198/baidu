@@ -143,6 +143,12 @@ const App: React.FC = () => {
     () => (bundle?.lines && bundle.lines.length > 0 ? bundle.lines : mapLineInfos),
     [bundle?.lines, mapLineInfos]
   );
+
+  // 线路构成的说明必须跟着实际线网走：mock 模式含云巴/有轨/城际，后端模式只有地铁骨干线
+  const lineHint = useMemo(() => {
+    const specialCount = lineInfos.filter((line) => /云巴|有轨电车|城际/.test(line.name)).length;
+    return specialCount > 0 ? `含 ${specialCount} 条非常规制式（云巴/有轨/城际）` : '均为地铁骨干线';
+  }, [lineInfos]);
   const waybills = bundle?.waybills ?? EMPTY_WAYBILLS;
   const fleet = bundle?.fleet ?? AGV_FLEET;
   const alerts = bundle?.alerts ?? MOCK_ALERTS;
@@ -463,6 +469,7 @@ const App: React.FC = () => {
                   totalWeightTon={overallSummary.totalWeightTon}
                   waybillCount={overallSummary.waybillCount}
                   lineCount={lineInfos.length}
+                  lineHint={lineHint}
                   avgDurationMin={overallSummary.avgDurationMin}
                 />
               </div>

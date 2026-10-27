@@ -11,6 +11,8 @@ export interface StatsCardsProps {
   waybillCount: number;
   /** 纳入建模的线路数 */
   lineCount: number;
+  /** 线路构成说明（由上层按实际线网推导，不要写死） */
+  lineHint: string;
   /** 平均运输时效（分钟） */
   avgDurationMin: number;
 }
@@ -33,6 +35,7 @@ export const StatsCards: React.FC<StatsCardsProps> = ({
   totalWeightTon,
   waybillCount,
   lineCount,
+  lineHint,
   avgDurationMin
 }) => {
   // 所有数字都由上层从同一份数据集派生，不再有第二套口径
@@ -62,7 +65,7 @@ export const StatsCards: React.FC<StatsCardsProps> = ({
     {
       label: '纳入建模线路',
       value: `${lineCount} 条`,
-      hint: '含云巴 / 有轨电车 / 城际',
+      hint: lineHint,
       icon: 'fa-map-signs',
       color: 'text-blue-400',
       bg: 'bg-blue-500/5',
