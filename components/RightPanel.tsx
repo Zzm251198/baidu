@@ -2,6 +2,7 @@ import React from 'react';
 import { Bar, BarChart, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { AGV_FLEET, ALERTS, countAbnormalAlerts } from '../src/data/mockFleet';
 import type { StationThroughput } from '../src/data/aggregations';
+import type { AlertItem } from '../src/data/types';
 
 const rankColors = ['#06b6d4', '#22d3ee', '#38bdf8', '#60a5fa', '#818cf8', '#a78bfa'];
 
@@ -57,10 +58,12 @@ const BatteryTooltip = ({ active, payload }: any) => {
 export interface RightPanelProps {
   /** 热门站点排行，由数据页同一份运单数据集派生 */
   topStations?: StationThroughput[];
+  /** 告警列表，由数据源提供；不传则用内置样例 */
+  alerts?: AlertItem[];
 }
 
-export const RightPanel: React.FC<RightPanelProps> = ({ topStations = [] }) => {
-  const logs = ALERTS;
+export const RightPanel: React.FC<RightPanelProps> = ({ topStations = [], alerts }) => {
+  const logs = alerts && alerts.length > 0 ? alerts : ALERTS;
   const deviceData = AGV_FLEET.battery;
   const rankData = topStations;
   return (

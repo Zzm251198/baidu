@@ -3,29 +3,9 @@
 // 之前的问题是：StatsCards 说"活跃小车 1,286 辆"，RightPanel 说"在线设备总数 248 台"，
 // 同一屏两个口径。现在所有数字都从这里派生，任何页面只能引用，不能另写一份。
 
-export interface AlertItem {
-  id: number;
-  time: string;
-  type: 'error' | 'warning' | 'info' | 'success';
-  message: string;
-  /** 关联站点，便于后续点击定位 */
-  station?: string;
-}
+import type { AlertItem, FleetSnapshot } from './types';
 
-export interface FleetSnapshot {
-  /** 在线设备总数 */
-  total: number;
-  /** 执行任务中 */
-  active: number;
-  /** 待命 */
-  idle: number;
-  /** 低电量需充电 */
-  lowBattery: number;
-  /** 充电中 */
-  charging: number;
-  /** 电量分布（百分比，三者相加为 100） */
-  battery: Array<{ name: string; value: number; color: string; glow: string }>;
-}
+export type { AlertItem, FleetSnapshot };
 
 export const AGV_FLEET: FleetSnapshot = {
   total: 248,

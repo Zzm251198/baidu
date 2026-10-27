@@ -822,11 +822,109 @@ textarea {
 /* 注意：这里曾经是 aspect-ratio: 1/1。在半宽栅格列里，1:1 会把面板算成 ~900px 高，
    把「线路规划可视化」与「效益评估看板」整块推到 1080p 首屏之外。
    改成与视口挂钩的固定高度后，仿真结果才能和参数区同屏。 */
-.simulation-route-map-frame {
-  min-width: 0;
-  width: 100%;
+/* 缩略地图 + 分段行程并排：195px 高的地图看不清细节，右侧列表补全信息 */
+.simulation-route-body {
+  display: flex;
+  gap: 12px;
   height: clamp(190px, 21vh, 250px);
+  min-height: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.simulation-route-map-frame {
+  width: 56%;
+  min-width: 200px;
+  height: 100%;
   flex: none;
+}
+
+.simulation-route-segments {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-right: 2px;
+}
+
+.route-segment-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border: 1px solid rgba(34, 211, 238, 0.16);
+  border-radius: 8px;
+  background: rgba(2, 6, 23, 0.32);
+}
+
+.route-segment-index {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: #082f49;
+  background: linear-gradient(135deg, #22d3ee, #3b82f6);
+}
+
+.route-segment-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.route-segment-line {
+  font-size: 11px;
+  font-weight: 600;
+  color: #a5f3fc;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.route-segment-stations {
+  font-size: 10px;
+  color: #94a3b8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.route-segment-stations i {
+  color: #22d3ee;
+  margin: 0 2px;
+}
+
+.route-segment-meta {
+  flex: none;
+  min-width: 58px;
+  text-align: right;
+  font-size: 10px;
+  color: #64748b;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+
+.route-segment-meta b {
+  color: #e2e8f0;
+  font-size: 11px;
+}
+
+.route-segment-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 6px;
+  color: rgba(6, 182, 212, 0.5);
+  font-size: 11px;
 }
 
 .simulation-reserved-panel {
@@ -1549,9 +1647,18 @@ textarea {
     min-height: auto;
   }
 
+  .simulation-route-body {
+    height: auto;
+    flex-direction: column;
+  }
+
   .simulation-route-map-frame {
-    min-width: 0;
+    width: 100%;
     height: 300px;
+  }
+
+  .simulation-route-segments {
+    max-height: 180px;
   }
 
   .simulation-reserved-panel {

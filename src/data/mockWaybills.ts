@@ -3,28 +3,11 @@
 // 设计原则：
 // 1. 数据完全由「线网 + 固定种子」推导，同一份线网永远得到同一份数据 —— 演示可复现；
 // 2. 不写死任何线路/站点，线路与站点来自百度地铁库返回的真实深圳线网；
-// 3. 后续接真实后端时，只需把 buildWaybills() 换成接口返回，聚合层与组件无需改动。
+// 3. 领域模型统一放在 ./types，这里只负责生成，接后端时整块替换为接口实现。
 
-export interface LineInfo {
-  name: string;
-  stations: string[];
-}
+import type { DataFilters, LineInfo, Waybill } from './types';
 
-export interface Waybill {
-  id: string;
-  waybillNo: string;
-  lineName: string;
-  station: string;
-  month: string;
-  category: string;
-  /** 单票货量（吨）。轨道货运按整箱/整车走，量级是吨不是公斤 */
-  weightTon: number;
-  pieceCount: number;
-  distanceKm: number;
-  durationMin: number;
-  /** 发运小时 0-23，用于生成 24 小时流量曲线 */
-  hour: number;
-}
+export type { DataFilters, LineInfo, Waybill };
 
 export const MONTHS = ['2024-03', '2024-02', '2024-01', '2023-12'] as const;
 
@@ -109,14 +92,6 @@ export function buildWaybills(lines: LineInfo[]): Waybill[] {
 /** 线路设计运力（吨/月）：由站数推导，保证同一线网下稳定 */
 export function lineCapacityTon(line: LineInfo): number {
   return 800 + line.stations.length * 40;
-}
-
-export interface DataFilters {
-  line: string;
-  station: string;
-  month: string;
-  category: string;
-  waybillNo: string;
 }
 
 export const EMPTY_FILTERS: DataFilters = {

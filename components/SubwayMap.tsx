@@ -10,10 +10,6 @@ const SHENZHEN_CITY_NAME = '深圳';
 const ROUTE_RESULT_POLL_INTERVAL_MS = 300;
 const ROUTE_RESULT_POLL_MAX_ATTEMPTS = 30;
 const DEFAULT_ZOOM = 0.75;
-// 仿真页的线路图只是约 200px 高的缩略视图，用监控页的 0.75 只能看到一小块。
-// 这里给一个更小的初始缩放；注意 BMapSub 在路线模式下可能自行重置缩放，
-// 若发现未生效，需要改用其 fitBounds/居中接口（见 README「已知限制」）。
-const SIMULATION_ZOOM = 0.42;
 const MIN_ZOOM = 0.1;
 const MAX_ZOOM = 2.0;
 const WHEEL_STEP = 0.1;
@@ -350,9 +346,8 @@ const SubwayMapComponent: React.FC<SubwayMapProps> = ({
                 const cityCode = getShenzhenCityCode(BMapSub);
                 const subway = new BMapSub.Subway(containerId, cityCode);
                 subwayRef.current = subway;
-                const initialZoom = mode === 'simulation' ? SIMULATION_ZOOM : DEFAULT_ZOOM;
-                zoomRef.current = initialZoom;
-                subway.setZoom(initialZoom);
+                zoomRef.current = DEFAULT_ZOOM;
+                subway.setZoom(DEFAULT_ZOOM);
                 if (typeof subway.enableDragging === 'function') {
                     subway.enableDragging();
                 }
@@ -380,12 +375,6 @@ const SubwayMapComponent: React.FC<SubwayMapProps> = ({
 
                 subway.addEventListener('subwayloaded', () => {
                     if (cancelled) return;
-
-                    // 地图加载完会重置缩放，这里按模式再压一次，保证小窗里能看到全网
-                    if (mode === 'simulation') {
-                        zoomRef.current = SIMULATION_ZOOM;
-                        subway.setZoom(SIMULATION_ZOOM);
-                    }
 
                     const stations = collectStations(subway);
                     onMapLoaded?.(stations);

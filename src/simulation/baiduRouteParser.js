@@ -27,6 +27,23 @@ function asPositiveNumber(value, fallback = 0) {
   return Number.isFinite(numeric) && numeric > 0 ? numeric : fallback;
 }
 
+/** 深圳地铁平均站间运行时间，用于给异常时长的分段兜底 */
+const MINUTES_PER_STATION = 2.5;
+/** 低于"每站这么多分钟"视为解析到了错误的字段（如换乘步行时间） */
+const MIN_PLAUSIBLE_MIN_PER_STATION = 1.2;
+
+/**
+ * 分段时长纠偏。
+ * 百度返回里同一段可能带多个时间字段，偶尔会把"换乘步行 3 分钟"当成乘车时长，
+ * 于是出现"20 站 3 分钟"这种明显不合理的值。这里按站数做合理性校验。
+ */
+function saneDuration(minutes, stationCount) {
+  const fallback = Math.max(1, Math.round(stationCount * MINUTES_PER_STATION));
+  if (!minutes || minutes <= 0) return fallback;
+  if (stationCount > 0 && minutes < stationCount * MIN_PLAUSIBLE_MIN_PER_STATION) return fallback;
+  return minutes;
+}
+
 function durationToMinutes(value) {
   if (value == null) return 0;
   if (typeof value === 'number') {
@@ -142,7 +159,10 @@ function buildSegmentsFromBMapSub(rawInfo) {
       boardingStation,
       alightingStation,
       stationCount,
-      durationMin: durationToMinutes(line.duration || line.time || line.wtime || jsonLine.duration || jsonLine.time),
+      durationMin: saneDuration(
+        durationToMinutes(line.duration || line.time || line.wtime || jsonLine.duration || jsonLine.time),
+        stationCount
+      ),
       direction: normalizeStationName(line.nname || line.direction || jsonLine.end_name || jsonLine.direction || '')
     };
   });
@@ -165,7 +185,7 @@ function buildSegmentsFromJson(rawInfo) {
       boardingStation: stationFromStop(stop, ['getOn.name', 'geton.name', 'start.name', 'sname']) || normalizeStationName(line.start_name),
       alightingStation: stationFromStop(stop, ['getOff.name', 'getoff.name', 'end.name', 'ename']) || normalizeStationName(line.end_name),
       stationCount,
-      durationMin: durationToMinutes(line.duration || line.time || line.wtime),
+      durationMin: saneDuration(durationToMinutes(line.duration || line.time || line.wtime), stationCount),
       direction: normalizeStationName(line.end_name || line.direction || line.nname || '')
     };
   }).filter((segment) => segment.boardingStation || segment.alightingStation || segment.lineName !== '未知线路');

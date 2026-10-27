@@ -10,13 +10,16 @@ import { parseBaiduTransitRoute } from './src/simulation/baiduRouteParser.js';
 import { LINE_DEFINITIONS, planLocalRoute } from './src/simulation/localRouteEngine.js';
 import { loadSimulationConfigs, simulateOrder } from './src/simulation/simulationEngine.js';
 import {
-  buildWaybills,
   CATEGORIES,
   CATEGORY_COLORS,
   filterWaybills,
   MONTHS,
   type LineInfo
 } from './src/data/mockWaybills';
+import { ALERTS as MOCK_ALERTS, AGV_FLEET } from './src/data/mockFleet';
+import { dataSourceLabel } from './src/data/source';
+import { useDataBundle } from './src/hooks/useDataBundle';
+import type { Waybill } from './src/data/types';
 import {
   buildCategoryPie,
   buildEfficiencyScatter,
@@ -26,9 +29,11 @@ import {
   buildTopStations,
   summarize
 } from './src/data/aggregations';
-import { AGV_FLEET } from './src/data/mockFleet';
 
 type TabKey = 'monitor' | 'data' | 'simulation';
+
+/** 数据未就绪时的稳定空引用，避免每次渲染都新建数组触发下游 memo 重算 */
+const EMPTY_WAYBILLS: Waybill[] = [];
 
 interface SimResult {
   pathIds: string[];
@@ -127,8 +132,11 @@ const App: React.FC = () => {
     }));
   }, [subwayStationsByLine]);
 
-  // 演示运单数据集：由线网确定性生成，线网变化时自动重建
-  const waybills = useMemo(() => buildWaybills(lineInfos), [lineInfos]);
+  // 统一数据入口：默认本地模拟，VITE_DATA_SOURCE=http 时走后端接口
+  const { bundle, loading: dataLoading, error: dataError } = useDataBundle(lineInfos);
+  const waybills = bundle?.waybills ?? EMPTY_WAYBILLS;
+  const fleet = bundle?.fleet ?? AGV_FLEET;
+  const alerts = bundle?.alerts ?? MOCK_ALERTS;
 
   const lineOptions = useMemo(
     () => [
@@ -213,6 +221,19 @@ const App: React.FC = () => {
       setSelectedWaybillNo('all');
     }
   }, [selectedWaybillNo, waybillNoOptions]);
+
+  // 分段行程：缩略地图看不清细节，用它把每段的线路/上下车站/站数/时长摊开
+  const routeSegments = useMemo(() => {
+    const segments = simulationOutput?.routeSummary?.segments;
+    if (!Array.isArray(segments)) return [];
+    return segments.map((segment: any) => ({
+      lineName: String(segment?.lineName || '未知线路'),
+      boardingStation: String(segment?.boardingStation || '--'),
+      alightingStation: String(segment?.alightingStation || '--'),
+      stationCount: Number(segment?.stationCount) || 0,
+      durationMin: Number(segment?.durationMin) || 0
+    }));
+  }, [simulationOutput]);
 
   const plannedRouteData: RouteData | null = useMemo(() => {
     if (!simResult) return null;
@@ -386,8 +407,8 @@ const App: React.FC = () => {
             <div className="flex-grow min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-6">
               <div className="lg:col-span-2 h-full flex flex-col overflow-hidden">
                 <StatsCards
-                  activeAgv={AGV_FLEET.active}
-                  totalAgv={AGV_FLEET.total}
+                  activeAgv={fleet.active}
+                  totalAgv={fleet.total}
                   totalWeightTon={overallSummary.totalWeightTon}
                   waybillCount={overallSummary.waybillCount}
                   lineCount={lineInfos.length}
@@ -407,7 +428,7 @@ const App: React.FC = () => {
                 </section>
               </div>
               <div className="lg:col-span-2 h-full flex flex-col overflow-hidden">
-                <RightPanel topStations={topStations} />
+                <RightPanel topStations={topStations} alerts={alerts} />
               </div>
             </div>
           </div>
@@ -447,11 +468,21 @@ const App: React.FC = () => {
                     setSelectedCargoCategory('all');
                     setSelectedWaybillNo('all');
                   }}
-                  className="ml-auto px-3 py-1 rounded-full border border-amber-500/40 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 transition-colors"
+                  className="px-3 py-1 rounded-full border border-amber-500/40 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 transition-colors"
                 >
                   <i className="fa fa-undo mr-1"></i>重置筛选
                 </button>
               )}
+              {dataError && (
+                <span className="px-3 py-1 rounded-full border border-red-500/40 bg-red-500/10 text-red-300">
+                  <i className="fa fa-exclamation-triangle mr-1"></i>{dataError}
+                </span>
+              )}
+              <span className="ml-auto px-3 py-1 rounded-full border border-white/10 text-gray-400">
+                <i className="fa fa-database mr-1"></i>
+                数据源：{dataSourceLabel}
+                {dataLoading && <i className="fa fa-spinner fa-spin ml-2"></i>}
+              </span>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 h-[400px]">
@@ -661,24 +692,55 @@ const App: React.FC = () => {
                     {simResult ? simResult.routeDescription : '等待仿真...'}
                   </div>
                 </div>
-                <div className="simulation-route-map-frame relative rounded-lg overflow-hidden bg-gray-900/20 border border-cyan-500/10 backdrop-blur-sm">
-                  <div className="absolute inset-0 bg-gradient-to-br from-cyan-900/10 to-blue-900/10 pointer-events-none"></div>
-                  <SubwayMap
-                    mode="simulation"
-                    startStationName={simParams.startStationName}
-                    endStationName={simParams.endStationName}
-                    routeRequestKey={routeRequestKey}
-                    onMapLoaded={setMapStations}
-                    onRouteResult={handleBaiduRouteResult}
-                  />
-                  {!simResult && (
-                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center pointer-events-none z-10 backdrop-blur-sm">
-                      <div className="bg-gray-900/80 px-6 py-3 rounded-xl text-sm text-cyan-300 border border-cyan-500/20 backdrop-blur-sm shadow-lg">
-                        <i className="fa fa-map-marker mr-2 text-cyan-500"></i>
-                        请在左侧配置参数并开始仿真
+                <div className="simulation-route-body">
+                  <div className="simulation-route-map-frame relative rounded-lg overflow-hidden bg-gray-900/20 border border-cyan-500/10 backdrop-blur-sm">
+                    <div className="absolute inset-0 bg-gradient-to-br from-cyan-900/10 to-blue-900/10 pointer-events-none"></div>
+                    <SubwayMap
+                      mode="simulation"
+                      startStationName={simParams.startStationName}
+                      endStationName={simParams.endStationName}
+                      routeRequestKey={routeRequestKey}
+                      onMapLoaded={setMapStations}
+                      onRouteResult={handleBaiduRouteResult}
+                    />
+                    {!simResult && (
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center pointer-events-none z-10 backdrop-blur-sm">
+                        <div className="bg-gray-900/80 px-4 py-2 rounded-xl text-xs text-cyan-300 border border-cyan-500/20 backdrop-blur-sm shadow-lg">
+                          <i className="fa fa-map-marker mr-2 text-cyan-500"></i>
+                          请配置参数并开始仿真
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
+
+                  {/* 缩略地图在 200px 高度下看不清细节，这里用分段行程把信息补全 */}
+                  <div className="simulation-route-segments">
+                    {routeSegments.length > 0 ? (
+                      routeSegments.map((segment, index) => (
+                        <div key={`${segment.lineName}-${index}`} className="route-segment-item">
+                          <div className="route-segment-index">{index + 1}</div>
+                          <div className="route-segment-main">
+                            <div className="route-segment-line" title={segment.lineName}>
+                              {segment.lineName}
+                            </div>
+                            <div className="route-segment-stations">
+                              {segment.boardingStation} <i className="fa fa-long-arrow-right"></i>{' '}
+                              {segment.alightingStation}
+                            </div>
+                          </div>
+                          <div className="route-segment-meta">
+                            <span><b>{segment.stationCount}</b> 站</span>
+                            <span>{segment.durationMin} 分</span>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="route-segment-empty">
+                        <i className="fa fa-route"></i>
+                        <span>仿真后显示分段行程</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
