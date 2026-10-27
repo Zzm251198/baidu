@@ -29,31 +29,27 @@ export const httpSource: MissionDataSource = {
   kind: 'http',
   async load(fallbackLines: LineInfo[]): Promise<DataBundle> {
     // 任一接口失败都回退到本地数据：宁可展示"演示数据"也不让页面空掉，
-    // 控制台会留 warn 方便排查。
+    // 控制台留 warn，同时把 degraded 标出来让界面如实提示。
+    let degraded = false;
+    const fallback = <T,>(path: string, value: T) => (error: unknown) => {
+      warnFallback(path, error);
+      degraded = true;
+      return value;
+    };
+
     const [lines, waybills, fleet, alerts] = await Promise.all([
-      getJson<LineInfo[]>('/lines').catch((error) => {
-        warnFallback('/lines', error);
-        return fallbackLines;
-      }),
-      getJson<Waybill[]>('/waybills').catch((error) => {
-        warnFallback('/waybills', error);
-        return buildWaybills(fallbackLines);
-      }),
-      getJson<FleetSnapshot>('/fleet').catch((error) => {
-        warnFallback('/fleet', error);
-        return AGV_FLEET;
-      }),
-      getJson<AlertItem[]>('/alerts').catch((error) => {
-        warnFallback('/alerts', error);
-        return ALERTS;
-      })
+      getJson<LineInfo[]>('/lines').catch(fallback('/lines', fallbackLines)),
+      getJson<Waybill[]>('/waybills').catch(fallback('/waybills', buildWaybills(fallbackLines))),
+      getJson<FleetSnapshot>('/fleet').catch(fallback('/fleet', AGV_FLEET)),
+      getJson<AlertItem[]>('/alerts').catch(fallback('/alerts', ALERTS))
     ]);
 
     return {
       lines: lines && lines.length > 0 ? lines : fallbackLines,
       waybills: waybills ?? [],
       fleet: fleet ?? AGV_FLEET,
-      alerts: alerts ?? ALERTS
+      alerts: alerts ?? ALERTS,
+      degraded
     };
   }
 };

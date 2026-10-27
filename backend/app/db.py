@@ -11,7 +11,12 @@ from typing import Iterator
 
 DB_PATH = Path(__file__).resolve().parent.parent / "data" / "cargo.db"
 
-# 当前后端建模的骨干线网（与前端 localRouteEngine.js 保持一致）
+# 线网 / 车池都以前端的 public/data 为唯一来源，避免前后端各存一份
+DATA_DIR = Path(__file__).resolve().parents[2] / "public" / "data"
+LINE_NETWORK_PATH = DATA_DIR / "line_network.json"
+AGV_POOL_PATH = DATA_DIR / "agv_pool.json"
+
+# 兜底线网：line_network.json 缺失时用（与前端 localRouteEngine.js 保持一致）
 LINE_DEFINITIONS: list[dict] = [
     {
         "name": "1号线/罗宝线",
@@ -134,18 +139,59 @@ ALERTS_SEED = [
     (6, "10:28:45", "info", "深圳北站 - 关键医疗物资已装车", "深圳北"),
 ]
 
-FLEET_SEED = (
-    248,
-    186,
-    37,
-    25,
-    25,
-    [
-        {"name": "电量充足", "value": 65, "color": "#10B981", "glow": "rgba(16, 185, 129, 0.6)"},
-        {"name": "中等电量", "value": 25, "color": "#3B82F6", "glow": "rgba(59, 130, 246, 0.6)"},
-        {"name": "低电量", "value": 10, "color": "#EF4444", "glow": "rgba(239, 68, 68, 0.6)"},
-    ],
-)
+FLEET_BATTERY_COLORS = [
+    ("电量充足", "#10B981", "rgba(16, 185, 129, 0.6)"),
+    ("中等电量", "#3B82F6", "rgba(59, 130, 246, 0.6)"),
+    ("低电量", "#EF4444", "rgba(239, 68, 68, 0.6)"),
+]
+
+
+def load_line_definitions() -> list[dict]:
+    """优先读 public/data/line_network.json（由百度线网导出），缺失时用内置 6 条骨干线。"""
+    if LINE_NETWORK_PATH.exists():
+        try:
+            lines = json.loads(LINE_NETWORK_PATH.read_text(encoding="utf-8"))
+            cleaned = [
+                {"name": str(line.get("name", "")).strip(), "stations": [str(s).strip() for s in line.get("stations", []) if str(s).strip()]}
+                for line in lines
+                if str(line.get("name", "")).strip()
+            ]
+            if cleaned:
+                return cleaned
+        except (OSError, json.JSONDecodeError):
+            pass
+    return LINE_DEFINITIONS
+
+
+def build_fleet_seed() -> tuple:
+    """车队快照由 agv_pool.json 统计得出，不再单独维护一份数字。"""
+    if not AGV_POOL_PATH.exists():
+        return (0, 0, 0, 0, 0, [])
+
+    pool = json.loads(AGV_POOL_PATH.read_text(encoding="utf-8"))
+    agvs = pool.get("agvs", [])
+    threshold = pool.get("lowBatteryThreshold", 25)
+
+    total = len(agvs)
+    active = sum(1 for a in agvs if a.get("status") == "busy")
+    idle = sum(1 for a in agvs if a.get("status") == "idle")
+    charging = sum(1 for a in agvs if a.get("status") == "charging")
+    low_battery = sum(1 for a in agvs if a.get("battery", 100) <= threshold)
+
+    high = sum(1 for a in agvs if a.get("battery", 0) > 60)
+    medium = sum(1 for a in agvs if 30 <= a.get("battery", 0) <= 60)
+    if total > 0:
+        high_pct = round(high / total * 100)
+        medium_pct = round(medium / total * 100)
+        low_pct = max(0, 100 - high_pct - medium_pct)
+    else:
+        high_pct = medium_pct = low_pct = 0
+
+    battery = [
+        {"name": name, "value": value, "color": color, "glow": glow}
+        for (name, color, glow), value in zip(FLEET_BATTERY_COLORS, (high_pct, medium_pct, low_pct))
+    ]
+    return (total, active, idle, low_battery, charging, battery)
 
 
 def connect() -> sqlite3.Connection:
@@ -166,11 +212,12 @@ def get_conn() -> Iterator[sqlite3.Connection]:
         conn.close()
 
 
-def _build_waybills() -> list[tuple]:
+def _build_waybills(lines: list[dict] | None = None) -> list[tuple]:
     """确定性生成：同一份线网每次得到同一批数据。"""
     rows: list[tuple] = []
+    source_lines = lines if lines is not None else load_line_definitions()
 
-    for line_index, line in enumerate(LINE_DEFINITIONS):
+    for line_index, line in enumerate(source_lines):
         stations = line["stations"][:STATIONS_PER_LINE]
         for station_index, station in enumerate(stations):
             for month_index, month in enumerate(MONTHS):
@@ -215,22 +262,24 @@ def init_db(force: bool = False) -> None:
         if existing and not force:
             return
 
+        lines = load_line_definitions()
+
         conn.executemany(
             "INSERT OR REPLACE INTO lines(name, stations) VALUES (?, ?)",
-            [(line["name"], json.dumps(line["stations"], ensure_ascii=False)) for line in LINE_DEFINITIONS],
+            [(line["name"], json.dumps(line["stations"], ensure_ascii=False)) for line in lines],
         )
         conn.executemany(
             """INSERT OR REPLACE INTO waybills
                (id, waybill_no, line_name, station, month, category,
                 weight_ton, piece_count, distance_km, duration_min, hour)
                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-            _build_waybills(),
+            _build_waybills(lines),
         )
         conn.executemany(
             "INSERT OR REPLACE INTO alerts(id, time, type, message, station) VALUES (?, ?, ?, ?, ?)",
             ALERTS_SEED,
         )
-        total, active, idle, low_battery, charging, battery = FLEET_SEED
+        total, active, idle, low_battery, charging, battery = build_fleet_seed()
         conn.execute(
             "INSERT OR REPLACE INTO fleet(id, total, active, idle, low_battery, charging, battery) VALUES (1, ?, ?, ?, ?, ?, ?)",
             (total, active, idle, low_battery, charging, json.dumps(battery, ensure_ascii=False)),

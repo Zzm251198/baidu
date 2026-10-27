@@ -1,34 +1,1743 @@
 {
   "lowBatteryThreshold": 25,
   "fallbackCapacityKg": 900,
+  "fleetSize": 248,
   "agvs": [
     {
       "id": "AGV-BASE-01",
       "homeStation": "default",
       "status": "idle",
-      "battery": 92,
-      "capacityKg": 900
+      "battery": 87,
+      "capacityKg": 872
     },
     {
       "id": "AGV-BASE-02",
       "homeStation": "default",
       "status": "idle",
-      "battery": 84,
-      "capacityKg": 850
+      "battery": 83,
+      "capacityKg": 819
     },
     {
       "id": "AGV-BASE-03",
       "homeStation": "default",
       "status": "idle",
-      "battery": 76,
-      "capacityKg": 800
+      "battery": 62,
+      "capacityKg": 832
     },
     {
       "id": "AGV-HUB-11",
       "homeStation": "枢纽池",
       "status": "idle",
+      "battery": 86,
+      "capacityKg": 961
+    },
+    {
+      "id": "AGV-0005",
+      "homeStation": "机场",
+      "status": "idle",
+      "battery": 77,
+      "capacityKg": 933
+    },
+    {
+      "id": "AGV-0006",
+      "homeStation": "深圳北",
+      "status": "idle",
+      "battery": 98,
+      "capacityKg": 846
+    },
+    {
+      "id": "AGV-0007",
+      "homeStation": "罗湖",
+      "status": "idle",
+      "battery": 79,
+      "capacityKg": 915
+    },
+    {
+      "id": "AGV-0008",
+      "homeStation": "会展中心",
+      "status": "idle",
+      "battery": 68,
+      "capacityKg": 806
+    },
+    {
+      "id": "AGV-0009",
+      "homeStation": "车公庙",
+      "status": "idle",
+      "battery": 73,
+      "capacityKg": 815
+    },
+    {
+      "id": "AGV-0010",
+      "homeStation": "岗厦北",
+      "status": "idle",
+      "battery": 98,
+      "capacityKg": 827
+    },
+    {
+      "id": "AGV-0011",
+      "homeStation": "前海湾",
+      "status": "idle",
+      "battery": 78,
+      "capacityKg": 917
+    },
+    {
+      "id": "AGV-0012",
+      "homeStation": "福田",
+      "status": "idle",
+      "battery": 85,
+      "capacityKg": 832
+    },
+    {
+      "id": "AGV-0013",
+      "homeStation": "布吉",
+      "status": "idle",
+      "battery": 67,
+      "capacityKg": 918
+    },
+    {
+      "id": "AGV-0014",
+      "homeStation": "大运",
+      "status": "idle",
+      "battery": 79,
+      "capacityKg": 945
+    },
+    {
+      "id": "AGV-0015",
+      "homeStation": "机场",
+      "status": "idle",
+      "battery": 76,
+      "capacityKg": 880
+    },
+    {
+      "id": "AGV-0016",
+      "homeStation": "深圳北",
+      "status": "idle",
+      "battery": 74,
+      "capacityKg": 983
+    },
+    {
+      "id": "AGV-0017",
+      "homeStation": "罗湖",
+      "status": "idle",
+      "battery": 72,
+      "capacityKg": 990
+    },
+    {
+      "id": "AGV-0018",
+      "homeStation": "会展中心",
+      "status": "idle",
       "battery": 88,
+      "capacityKg": 988
+    },
+    {
+      "id": "AGV-0019",
+      "homeStation": "车公庙",
+      "status": "idle",
+      "battery": 98,
+      "capacityKg": 858
+    },
+    {
+      "id": "AGV-0020",
+      "homeStation": "岗厦北",
+      "status": "idle",
+      "battery": 85,
+      "capacityKg": 937
+    },
+    {
+      "id": "AGV-0021",
+      "homeStation": "前海湾",
+      "status": "idle",
+      "battery": 62,
+      "capacityKg": 905
+    },
+    {
+      "id": "AGV-0022",
+      "homeStation": "福田",
+      "status": "idle",
+      "battery": 88,
+      "capacityKg": 996
+    },
+    {
+      "id": "AGV-0023",
+      "homeStation": "布吉",
+      "status": "idle",
+      "battery": 94,
+      "capacityKg": 964
+    },
+    {
+      "id": "AGV-0024",
+      "homeStation": "大运",
+      "status": "idle",
+      "battery": 72,
+      "capacityKg": 814
+    },
+    {
+      "id": "AGV-0025",
+      "homeStation": "机场",
+      "status": "idle",
+      "battery": 74,
+      "capacityKg": 969
+    },
+    {
+      "id": "AGV-0026",
+      "homeStation": "深圳北",
+      "status": "idle",
+      "battery": 80,
+      "capacityKg": 970
+    },
+    {
+      "id": "AGV-0027",
+      "homeStation": "罗湖",
+      "status": "idle",
+      "battery": 70,
+      "capacityKg": 895
+    },
+    {
+      "id": "AGV-0028",
+      "homeStation": "会展中心",
+      "status": "idle",
+      "battery": 88,
+      "capacityKg": 921
+    },
+    {
+      "id": "AGV-0029",
+      "homeStation": "车公庙",
+      "status": "idle",
+      "battery": 95,
+      "capacityKg": 903
+    },
+    {
+      "id": "AGV-0030",
+      "homeStation": "岗厦北",
+      "status": "idle",
+      "battery": 85,
+      "capacityKg": 847
+    },
+    {
+      "id": "AGV-0031",
+      "homeStation": "前海湾",
+      "status": "idle",
+      "battery": 87,
+      "capacityKg": 819
+    },
+    {
+      "id": "AGV-0032",
+      "homeStation": "福田",
+      "status": "idle",
+      "battery": 81,
+      "capacityKg": 979
+    },
+    {
+      "id": "AGV-0033",
+      "homeStation": "布吉",
+      "status": "idle",
+      "battery": 76,
+      "capacityKg": 809
+    },
+    {
+      "id": "AGV-0034",
+      "homeStation": "大运",
+      "status": "idle",
+      "battery": 94,
+      "capacityKg": 959
+    },
+    {
+      "id": "AGV-0035",
+      "homeStation": "机场",
+      "status": "idle",
+      "battery": 86,
+      "capacityKg": 833
+    },
+    {
+      "id": "AGV-0036",
+      "homeStation": "深圳北",
+      "status": "idle",
+      "battery": 87,
+      "capacityKg": 905
+    },
+    {
+      "id": "AGV-0037",
+      "homeStation": "罗湖",
+      "status": "idle",
+      "battery": 68,
+      "capacityKg": 957
+    },
+    {
+      "id": "AGV-0038",
+      "homeStation": "会展中心",
+      "status": "busy",
+      "battery": 74,
+      "capacityKg": 801
+    },
+    {
+      "id": "AGV-0039",
+      "homeStation": "车公庙",
+      "status": "busy",
+      "battery": 95,
+      "capacityKg": 990
+    },
+    {
+      "id": "AGV-0040",
+      "homeStation": "岗厦北",
+      "status": "busy",
+      "battery": 84,
+      "capacityKg": 969
+    },
+    {
+      "id": "AGV-0041",
+      "homeStation": "前海湾",
+      "status": "busy",
+      "battery": 87,
+      "capacityKg": 994
+    },
+    {
+      "id": "AGV-0042",
+      "homeStation": "福田",
+      "status": "busy",
+      "battery": 89,
+      "capacityKg": 836
+    },
+    {
+      "id": "AGV-0043",
+      "homeStation": "布吉",
+      "status": "busy",
+      "battery": 84,
+      "capacityKg": 873
+    },
+    {
+      "id": "AGV-0044",
+      "homeStation": "大运",
+      "status": "busy",
+      "battery": 85,
+      "capacityKg": 873
+    },
+    {
+      "id": "AGV-0045",
+      "homeStation": "机场",
+      "status": "busy",
+      "battery": 69,
+      "capacityKg": 823
+    },
+    {
+      "id": "AGV-0046",
+      "homeStation": "深圳北",
+      "status": "busy",
+      "battery": 63,
+      "capacityKg": 849
+    },
+    {
+      "id": "AGV-0047",
+      "homeStation": "罗湖",
+      "status": "busy",
+      "battery": 77,
+      "capacityKg": 873
+    },
+    {
+      "id": "AGV-0048",
+      "homeStation": "会展中心",
+      "status": "busy",
+      "battery": 98,
+      "capacityKg": 806
+    },
+    {
+      "id": "AGV-0049",
+      "homeStation": "车公庙",
+      "status": "busy",
+      "battery": 86,
+      "capacityKg": 904
+    },
+    {
+      "id": "AGV-0050",
+      "homeStation": "岗厦北",
+      "status": "busy",
+      "battery": 92,
+      "capacityKg": 888
+    },
+    {
+      "id": "AGV-0051",
+      "homeStation": "前海湾",
+      "status": "busy",
+      "battery": 65,
+      "capacityKg": 939
+    },
+    {
+      "id": "AGV-0052",
+      "homeStation": "福田",
+      "status": "busy",
+      "battery": 88,
+      "capacityKg": 947
+    },
+    {
+      "id": "AGV-0053",
+      "homeStation": "布吉",
+      "status": "busy",
+      "battery": 69,
+      "capacityKg": 816
+    },
+    {
+      "id": "AGV-0054",
+      "homeStation": "大运",
+      "status": "busy",
+      "battery": 79,
+      "capacityKg": 893
+    },
+    {
+      "id": "AGV-0055",
+      "homeStation": "机场",
+      "status": "busy",
+      "battery": 94,
+      "capacityKg": 968
+    },
+    {
+      "id": "AGV-0056",
+      "homeStation": "深圳北",
+      "status": "busy",
+      "battery": 73,
+      "capacityKg": 975
+    },
+    {
+      "id": "AGV-0057",
+      "homeStation": "罗湖",
+      "status": "busy",
+      "battery": 92,
+      "capacityKg": 827
+    },
+    {
+      "id": "AGV-0058",
+      "homeStation": "会展中心",
+      "status": "busy",
+      "battery": 83,
+      "capacityKg": 932
+    },
+    {
+      "id": "AGV-0059",
+      "homeStation": "车公庙",
+      "status": "busy",
+      "battery": 79,
+      "capacityKg": 965
+    },
+    {
+      "id": "AGV-0060",
+      "homeStation": "岗厦北",
+      "status": "busy",
+      "battery": 85,
+      "capacityKg": 953
+    },
+    {
+      "id": "AGV-0061",
+      "homeStation": "前海湾",
+      "status": "busy",
+      "battery": 70,
+      "capacityKg": 829
+    },
+    {
+      "id": "AGV-0062",
+      "homeStation": "福田",
+      "status": "busy",
+      "battery": 85,
+      "capacityKg": 816
+    },
+    {
+      "id": "AGV-0063",
+      "homeStation": "布吉",
+      "status": "busy",
+      "battery": 72,
+      "capacityKg": 999
+    },
+    {
+      "id": "AGV-0064",
+      "homeStation": "大运",
+      "status": "busy",
+      "battery": 63,
+      "capacityKg": 927
+    },
+    {
+      "id": "AGV-0065",
+      "homeStation": "机场",
+      "status": "busy",
+      "battery": 66,
+      "capacityKg": 925
+    },
+    {
+      "id": "AGV-0066",
+      "homeStation": "深圳北",
+      "status": "busy",
+      "battery": 88,
+      "capacityKg": 952
+    },
+    {
+      "id": "AGV-0067",
+      "homeStation": "罗湖",
+      "status": "busy",
+      "battery": 87,
+      "capacityKg": 926
+    },
+    {
+      "id": "AGV-0068",
+      "homeStation": "会展中心",
+      "status": "busy",
+      "battery": 88,
+      "capacityKg": 906
+    },
+    {
+      "id": "AGV-0069",
+      "homeStation": "车公庙",
+      "status": "busy",
+      "battery": 94,
+      "capacityKg": 803
+    },
+    {
+      "id": "AGV-0070",
+      "homeStation": "岗厦北",
+      "status": "busy",
+      "battery": 67,
+      "capacityKg": 961
+    },
+    {
+      "id": "AGV-0071",
+      "homeStation": "前海湾",
+      "status": "busy",
+      "battery": 87,
+      "capacityKg": 861
+    },
+    {
+      "id": "AGV-0072",
+      "homeStation": "福田",
+      "status": "busy",
+      "battery": 83,
+      "capacityKg": 905
+    },
+    {
+      "id": "AGV-0073",
+      "homeStation": "布吉",
+      "status": "busy",
+      "battery": 73,
+      "capacityKg": 839
+    },
+    {
+      "id": "AGV-0074",
+      "homeStation": "大运",
+      "status": "busy",
+      "battery": 77,
+      "capacityKg": 899
+    },
+    {
+      "id": "AGV-0075",
+      "homeStation": "机场",
+      "status": "busy",
+      "battery": 77,
+      "capacityKg": 839
+    },
+    {
+      "id": "AGV-0076",
+      "homeStation": "深圳北",
+      "status": "busy",
+      "battery": 72,
+      "capacityKg": 997
+    },
+    {
+      "id": "AGV-0077",
+      "homeStation": "罗湖",
+      "status": "busy",
+      "battery": 86,
+      "capacityKg": 908
+    },
+    {
+      "id": "AGV-0078",
+      "homeStation": "会展中心",
+      "status": "busy",
+      "battery": 96,
+      "capacityKg": 944
+    },
+    {
+      "id": "AGV-0079",
+      "homeStation": "车公庙",
+      "status": "busy",
+      "battery": 92,
+      "capacityKg": 815
+    },
+    {
+      "id": "AGV-0080",
+      "homeStation": "岗厦北",
+      "status": "busy",
+      "battery": 89,
+      "capacityKg": 984
+    },
+    {
+      "id": "AGV-0081",
+      "homeStation": "前海湾",
+      "status": "busy",
+      "battery": 68,
+      "capacityKg": 826
+    },
+    {
+      "id": "AGV-0082",
+      "homeStation": "福田",
+      "status": "busy",
+      "battery": 72,
+      "capacityKg": 832
+    },
+    {
+      "id": "AGV-0083",
+      "homeStation": "布吉",
+      "status": "busy",
+      "battery": 86,
+      "capacityKg": 865
+    },
+    {
+      "id": "AGV-0084",
+      "homeStation": "大运",
+      "status": "busy",
+      "battery": 82,
+      "capacityKg": 954
+    },
+    {
+      "id": "AGV-0085",
+      "homeStation": "机场",
+      "status": "busy",
+      "battery": 82,
+      "capacityKg": 928
+    },
+    {
+      "id": "AGV-0086",
+      "homeStation": "深圳北",
+      "status": "busy",
+      "battery": 77,
+      "capacityKg": 871
+    },
+    {
+      "id": "AGV-0087",
+      "homeStation": "罗湖",
+      "status": "busy",
+      "battery": 65,
+      "capacityKg": 876
+    },
+    {
+      "id": "AGV-0088",
+      "homeStation": "会展中心",
+      "status": "busy",
+      "battery": 82,
+      "capacityKg": 934
+    },
+    {
+      "id": "AGV-0089",
+      "homeStation": "车公庙",
+      "status": "busy",
+      "battery": 79,
+      "capacityKg": 845
+    },
+    {
+      "id": "AGV-0090",
+      "homeStation": "岗厦北",
+      "status": "busy",
+      "battery": 87,
+      "capacityKg": 873
+    },
+    {
+      "id": "AGV-0091",
+      "homeStation": "前海湾",
+      "status": "busy",
+      "battery": 85,
+      "capacityKg": 800
+    },
+    {
+      "id": "AGV-0092",
+      "homeStation": "福田",
+      "status": "busy",
+      "battery": 62,
+      "capacityKg": 812
+    },
+    {
+      "id": "AGV-0093",
+      "homeStation": "布吉",
+      "status": "busy",
+      "battery": 64,
       "capacityKg": 950
+    },
+    {
+      "id": "AGV-0094",
+      "homeStation": "大运",
+      "status": "busy",
+      "battery": 70,
+      "capacityKg": 862
+    },
+    {
+      "id": "AGV-0095",
+      "homeStation": "机场",
+      "status": "busy",
+      "battery": 67,
+      "capacityKg": 942
+    },
+    {
+      "id": "AGV-0096",
+      "homeStation": "深圳北",
+      "status": "busy",
+      "battery": 72,
+      "capacityKg": 864
+    },
+    {
+      "id": "AGV-0097",
+      "homeStation": "罗湖",
+      "status": "busy",
+      "battery": 66,
+      "capacityKg": 854
+    },
+    {
+      "id": "AGV-0098",
+      "homeStation": "会展中心",
+      "status": "busy",
+      "battery": 73,
+      "capacityKg": 975
+    },
+    {
+      "id": "AGV-0099",
+      "homeStation": "车公庙",
+      "status": "busy",
+      "battery": 62,
+      "capacityKg": 856
+    },
+    {
+      "id": "AGV-0100",
+      "homeStation": "岗厦北",
+      "status": "busy",
+      "battery": 78,
+      "capacityKg": 853
+    },
+    {
+      "id": "AGV-0101",
+      "homeStation": "前海湾",
+      "status": "busy",
+      "battery": 93,
+      "capacityKg": 987
+    },
+    {
+      "id": "AGV-0102",
+      "homeStation": "福田",
+      "status": "busy",
+      "battery": 70,
+      "capacityKg": 897
+    },
+    {
+      "id": "AGV-0103",
+      "homeStation": "布吉",
+      "status": "busy",
+      "battery": 84,
+      "capacityKg": 928
+    },
+    {
+      "id": "AGV-0104",
+      "homeStation": "大运",
+      "status": "busy",
+      "battery": 92,
+      "capacityKg": 963
+    },
+    {
+      "id": "AGV-0105",
+      "homeStation": "机场",
+      "status": "busy",
+      "battery": 83,
+      "capacityKg": 995
+    },
+    {
+      "id": "AGV-0106",
+      "homeStation": "深圳北",
+      "status": "busy",
+      "battery": 67,
+      "capacityKg": 887
+    },
+    {
+      "id": "AGV-0107",
+      "homeStation": "罗湖",
+      "status": "busy",
+      "battery": 85,
+      "capacityKg": 841
+    },
+    {
+      "id": "AGV-0108",
+      "homeStation": "会展中心",
+      "status": "busy",
+      "battery": 75,
+      "capacityKg": 966
+    },
+    {
+      "id": "AGV-0109",
+      "homeStation": "车公庙",
+      "status": "busy",
+      "battery": 81,
+      "capacityKg": 890
+    },
+    {
+      "id": "AGV-0110",
+      "homeStation": "岗厦北",
+      "status": "busy",
+      "battery": 84,
+      "capacityKg": 919
+    },
+    {
+      "id": "AGV-0111",
+      "homeStation": "前海湾",
+      "status": "busy",
+      "battery": 61,
+      "capacityKg": 937
+    },
+    {
+      "id": "AGV-0112",
+      "homeStation": "福田",
+      "status": "busy",
+      "battery": 98,
+      "capacityKg": 865
+    },
+    {
+      "id": "AGV-0113",
+      "homeStation": "布吉",
+      "status": "busy",
+      "battery": 64,
+      "capacityKg": 857
+    },
+    {
+      "id": "AGV-0114",
+      "homeStation": "大运",
+      "status": "busy",
+      "battery": 86,
+      "capacityKg": 805
+    },
+    {
+      "id": "AGV-0115",
+      "homeStation": "机场",
+      "status": "busy",
+      "battery": 63,
+      "capacityKg": 847
+    },
+    {
+      "id": "AGV-0116",
+      "homeStation": "深圳北",
+      "status": "busy",
+      "battery": 79,
+      "capacityKg": 943
+    },
+    {
+      "id": "AGV-0117",
+      "homeStation": "罗湖",
+      "status": "busy",
+      "battery": 70,
+      "capacityKg": 811
+    },
+    {
+      "id": "AGV-0118",
+      "homeStation": "会展中心",
+      "status": "busy",
+      "battery": 76,
+      "capacityKg": 834
+    },
+    {
+      "id": "AGV-0119",
+      "homeStation": "车公庙",
+      "status": "busy",
+      "battery": 63,
+      "capacityKg": 839
+    },
+    {
+      "id": "AGV-0120",
+      "homeStation": "岗厦北",
+      "status": "busy",
+      "battery": 67,
+      "capacityKg": 808
+    },
+    {
+      "id": "AGV-0121",
+      "homeStation": "前海湾",
+      "status": "busy",
+      "battery": 87,
+      "capacityKg": 973
+    },
+    {
+      "id": "AGV-0122",
+      "homeStation": "福田",
+      "status": "busy",
+      "battery": 63,
+      "capacityKg": 891
+    },
+    {
+      "id": "AGV-0123",
+      "homeStation": "布吉",
+      "status": "busy",
+      "battery": 87,
+      "capacityKg": 823
+    },
+    {
+      "id": "AGV-0124",
+      "homeStation": "大运",
+      "status": "busy",
+      "battery": 82,
+      "capacityKg": 888
+    },
+    {
+      "id": "AGV-0125",
+      "homeStation": "机场",
+      "status": "busy",
+      "battery": 81,
+      "capacityKg": 844
+    },
+    {
+      "id": "AGV-0126",
+      "homeStation": "深圳北",
+      "status": "busy",
+      "battery": 97,
+      "capacityKg": 985
+    },
+    {
+      "id": "AGV-0127",
+      "homeStation": "罗湖",
+      "status": "busy",
+      "battery": 61,
+      "capacityKg": 935
+    },
+    {
+      "id": "AGV-0128",
+      "homeStation": "会展中心",
+      "status": "busy",
+      "battery": 79,
+      "capacityKg": 979
+    },
+    {
+      "id": "AGV-0129",
+      "homeStation": "车公庙",
+      "status": "busy",
+      "battery": 77,
+      "capacityKg": 945
+    },
+    {
+      "id": "AGV-0130",
+      "homeStation": "岗厦北",
+      "status": "busy",
+      "battery": 92,
+      "capacityKg": 854
+    },
+    {
+      "id": "AGV-0131",
+      "homeStation": "前海湾",
+      "status": "busy",
+      "battery": 81,
+      "capacityKg": 924
+    },
+    {
+      "id": "AGV-0132",
+      "homeStation": "福田",
+      "status": "busy",
+      "battery": 98,
+      "capacityKg": 845
+    },
+    {
+      "id": "AGV-0133",
+      "homeStation": "布吉",
+      "status": "busy",
+      "battery": 90,
+      "capacityKg": 834
+    },
+    {
+      "id": "AGV-0134",
+      "homeStation": "大运",
+      "status": "busy",
+      "battery": 96,
+      "capacityKg": 951
+    },
+    {
+      "id": "AGV-0135",
+      "homeStation": "机场",
+      "status": "busy",
+      "battery": 65,
+      "capacityKg": 901
+    },
+    {
+      "id": "AGV-0136",
+      "homeStation": "深圳北",
+      "status": "busy",
+      "battery": 67,
+      "capacityKg": 812
+    },
+    {
+      "id": "AGV-0137",
+      "homeStation": "罗湖",
+      "status": "busy",
+      "battery": 62,
+      "capacityKg": 911
+    },
+    {
+      "id": "AGV-0138",
+      "homeStation": "会展中心",
+      "status": "busy",
+      "battery": 78,
+      "capacityKg": 995
+    },
+    {
+      "id": "AGV-0139",
+      "homeStation": "车公庙",
+      "status": "busy",
+      "battery": 86,
+      "capacityKg": 804
+    },
+    {
+      "id": "AGV-0140",
+      "homeStation": "岗厦北",
+      "status": "busy",
+      "battery": 86,
+      "capacityKg": 802
+    },
+    {
+      "id": "AGV-0141",
+      "homeStation": "前海湾",
+      "status": "busy",
+      "battery": 62,
+      "capacityKg": 946
+    },
+    {
+      "id": "AGV-0142",
+      "homeStation": "福田",
+      "status": "busy",
+      "battery": 86,
+      "capacityKg": 805
+    },
+    {
+      "id": "AGV-0143",
+      "homeStation": "布吉",
+      "status": "busy",
+      "battery": 95,
+      "capacityKg": 880
+    },
+    {
+      "id": "AGV-0144",
+      "homeStation": "大运",
+      "status": "busy",
+      "battery": 78,
+      "capacityKg": 947
+    },
+    {
+      "id": "AGV-0145",
+      "homeStation": "机场",
+      "status": "busy",
+      "battery": 87,
+      "capacityKg": 821
+    },
+    {
+      "id": "AGV-0146",
+      "homeStation": "深圳北",
+      "status": "busy",
+      "battery": 85,
+      "capacityKg": 820
+    },
+    {
+      "id": "AGV-0147",
+      "homeStation": "罗湖",
+      "status": "busy",
+      "battery": 95,
+      "capacityKg": 890
+    },
+    {
+      "id": "AGV-0148",
+      "homeStation": "会展中心",
+      "status": "busy",
+      "battery": 85,
+      "capacityKg": 869
+    },
+    {
+      "id": "AGV-0149",
+      "homeStation": "车公庙",
+      "status": "busy",
+      "battery": 90,
+      "capacityKg": 843
+    },
+    {
+      "id": "AGV-0150",
+      "homeStation": "岗厦北",
+      "status": "busy",
+      "battery": 92,
+      "capacityKg": 819
+    },
+    {
+      "id": "AGV-0151",
+      "homeStation": "前海湾",
+      "status": "busy",
+      "battery": 86,
+      "capacityKg": 874
+    },
+    {
+      "id": "AGV-0152",
+      "homeStation": "福田",
+      "status": "busy",
+      "battery": 80,
+      "capacityKg": 954
+    },
+    {
+      "id": "AGV-0153",
+      "homeStation": "布吉",
+      "status": "busy",
+      "battery": 77,
+      "capacityKg": 966
+    },
+    {
+      "id": "AGV-0154",
+      "homeStation": "大运",
+      "status": "busy",
+      "battery": 61,
+      "capacityKg": 888
+    },
+    {
+      "id": "AGV-0155",
+      "homeStation": "机场",
+      "status": "busy",
+      "battery": 86,
+      "capacityKg": 988
+    },
+    {
+      "id": "AGV-0156",
+      "homeStation": "深圳北",
+      "status": "busy",
+      "battery": 79,
+      "capacityKg": 963
+    },
+    {
+      "id": "AGV-0157",
+      "homeStation": "罗湖",
+      "status": "busy",
+      "battery": 85,
+      "capacityKg": 877
+    },
+    {
+      "id": "AGV-0158",
+      "homeStation": "会展中心",
+      "status": "busy",
+      "battery": 73,
+      "capacityKg": 984
+    },
+    {
+      "id": "AGV-0159",
+      "homeStation": "车公庙",
+      "status": "busy",
+      "battery": 69,
+      "capacityKg": 819
+    },
+    {
+      "id": "AGV-0160",
+      "homeStation": "岗厦北",
+      "status": "busy",
+      "battery": 97,
+      "capacityKg": 821
+    },
+    {
+      "id": "AGV-0161",
+      "homeStation": "前海湾",
+      "status": "busy",
+      "battery": 73,
+      "capacityKg": 854
+    },
+    {
+      "id": "AGV-0162",
+      "homeStation": "福田",
+      "status": "busy",
+      "battery": 45,
+      "capacityKg": 952
+    },
+    {
+      "id": "AGV-0163",
+      "homeStation": "布吉",
+      "status": "busy",
+      "battery": 37,
+      "capacityKg": 988
+    },
+    {
+      "id": "AGV-0164",
+      "homeStation": "大运",
+      "status": "busy",
+      "battery": 36,
+      "capacityKg": 991
+    },
+    {
+      "id": "AGV-0165",
+      "homeStation": "机场",
+      "status": "busy",
+      "battery": 42,
+      "capacityKg": 929
+    },
+    {
+      "id": "AGV-0166",
+      "homeStation": "深圳北",
+      "status": "busy",
+      "battery": 43,
+      "capacityKg": 995
+    },
+    {
+      "id": "AGV-0167",
+      "homeStation": "罗湖",
+      "status": "busy",
+      "battery": 47,
+      "capacityKg": 948
+    },
+    {
+      "id": "AGV-0168",
+      "homeStation": "会展中心",
+      "status": "busy",
+      "battery": 55,
+      "capacityKg": 866
+    },
+    {
+      "id": "AGV-0169",
+      "homeStation": "车公庙",
+      "status": "busy",
+      "battery": 42,
+      "capacityKg": 995
+    },
+    {
+      "id": "AGV-0170",
+      "homeStation": "岗厦北",
+      "status": "busy",
+      "battery": 32,
+      "capacityKg": 920
+    },
+    {
+      "id": "AGV-0171",
+      "homeStation": "前海湾",
+      "status": "busy",
+      "battery": 39,
+      "capacityKg": 818
+    },
+    {
+      "id": "AGV-0172",
+      "homeStation": "福田",
+      "status": "busy",
+      "battery": 51,
+      "capacityKg": 870
+    },
+    {
+      "id": "AGV-0173",
+      "homeStation": "布吉",
+      "status": "busy",
+      "battery": 46,
+      "capacityKg": 870
+    },
+    {
+      "id": "AGV-0174",
+      "homeStation": "大运",
+      "status": "busy",
+      "battery": 52,
+      "capacityKg": 909
+    },
+    {
+      "id": "AGV-0175",
+      "homeStation": "机场",
+      "status": "busy",
+      "battery": 43,
+      "capacityKg": 938
+    },
+    {
+      "id": "AGV-0176",
+      "homeStation": "深圳北",
+      "status": "busy",
+      "battery": 59,
+      "capacityKg": 802
+    },
+    {
+      "id": "AGV-0177",
+      "homeStation": "罗湖",
+      "status": "busy",
+      "battery": 46,
+      "capacityKg": 805
+    },
+    {
+      "id": "AGV-0178",
+      "homeStation": "会展中心",
+      "status": "busy",
+      "battery": 45,
+      "capacityKg": 964
+    },
+    {
+      "id": "AGV-0179",
+      "homeStation": "车公庙",
+      "status": "busy",
+      "battery": 58,
+      "capacityKg": 818
+    },
+    {
+      "id": "AGV-0180",
+      "homeStation": "岗厦北",
+      "status": "busy",
+      "battery": 48,
+      "capacityKg": 824
+    },
+    {
+      "id": "AGV-0181",
+      "homeStation": "前海湾",
+      "status": "busy",
+      "battery": 32,
+      "capacityKg": 961
+    },
+    {
+      "id": "AGV-0182",
+      "homeStation": "福田",
+      "status": "busy",
+      "battery": 37,
+      "capacityKg": 932
+    },
+    {
+      "id": "AGV-0183",
+      "homeStation": "布吉",
+      "status": "busy",
+      "battery": 59,
+      "capacityKg": 933
+    },
+    {
+      "id": "AGV-0184",
+      "homeStation": "大运",
+      "status": "busy",
+      "battery": 48,
+      "capacityKg": 975
+    },
+    {
+      "id": "AGV-0185",
+      "homeStation": "机场",
+      "status": "busy",
+      "battery": 50,
+      "capacityKg": 846
+    },
+    {
+      "id": "AGV-0186",
+      "homeStation": "深圳北",
+      "status": "busy",
+      "battery": 45,
+      "capacityKg": 940
+    },
+    {
+      "id": "AGV-0187",
+      "homeStation": "罗湖",
+      "status": "busy",
+      "battery": 41,
+      "capacityKg": 895
+    },
+    {
+      "id": "AGV-0188",
+      "homeStation": "会展中心",
+      "status": "busy",
+      "battery": 37,
+      "capacityKg": 991
+    },
+    {
+      "id": "AGV-0189",
+      "homeStation": "车公庙",
+      "status": "busy",
+      "battery": 57,
+      "capacityKg": 824
+    },
+    {
+      "id": "AGV-0190",
+      "homeStation": "岗厦北",
+      "status": "busy",
+      "battery": 42,
+      "capacityKg": 830
+    },
+    {
+      "id": "AGV-0191",
+      "homeStation": "前海湾",
+      "status": "busy",
+      "battery": 52,
+      "capacityKg": 831
+    },
+    {
+      "id": "AGV-0192",
+      "homeStation": "福田",
+      "status": "busy",
+      "battery": 50,
+      "capacityKg": 879
+    },
+    {
+      "id": "AGV-0193",
+      "homeStation": "布吉",
+      "status": "busy",
+      "battery": 48,
+      "capacityKg": 995
+    },
+    {
+      "id": "AGV-0194",
+      "homeStation": "大运",
+      "status": "busy",
+      "battery": 45,
+      "capacityKg": 923
+    },
+    {
+      "id": "AGV-0195",
+      "homeStation": "机场",
+      "status": "busy",
+      "battery": 40,
+      "capacityKg": 913
+    },
+    {
+      "id": "AGV-0196",
+      "homeStation": "深圳北",
+      "status": "busy",
+      "battery": 41,
+      "capacityKg": 881
+    },
+    {
+      "id": "AGV-0197",
+      "homeStation": "罗湖",
+      "status": "busy",
+      "battery": 36,
+      "capacityKg": 924
+    },
+    {
+      "id": "AGV-0198",
+      "homeStation": "会展中心",
+      "status": "busy",
+      "battery": 35,
+      "capacityKg": 884
+    },
+    {
+      "id": "AGV-0199",
+      "homeStation": "车公庙",
+      "status": "busy",
+      "battery": 50,
+      "capacityKg": 821
+    },
+    {
+      "id": "AGV-0200",
+      "homeStation": "岗厦北",
+      "status": "busy",
+      "battery": 35,
+      "capacityKg": 863
+    },
+    {
+      "id": "AGV-0201",
+      "homeStation": "前海湾",
+      "status": "busy",
+      "battery": 35,
+      "capacityKg": 984
+    },
+    {
+      "id": "AGV-0202",
+      "homeStation": "福田",
+      "status": "busy",
+      "battery": 40,
+      "capacityKg": 933
+    },
+    {
+      "id": "AGV-0203",
+      "homeStation": "布吉",
+      "status": "busy",
+      "battery": 50,
+      "capacityKg": 873
+    },
+    {
+      "id": "AGV-0204",
+      "homeStation": "大运",
+      "status": "busy",
+      "battery": 48,
+      "capacityKg": 867
+    },
+    {
+      "id": "AGV-0205",
+      "homeStation": "机场",
+      "status": "busy",
+      "battery": 46,
+      "capacityKg": 975
+    },
+    {
+      "id": "AGV-0206",
+      "homeStation": "深圳北",
+      "status": "busy",
+      "battery": 58,
+      "capacityKg": 926
+    },
+    {
+      "id": "AGV-0207",
+      "homeStation": "罗湖",
+      "status": "busy",
+      "battery": 44,
+      "capacityKg": 896
+    },
+    {
+      "id": "AGV-0208",
+      "homeStation": "会展中心",
+      "status": "busy",
+      "battery": 58,
+      "capacityKg": 800
+    },
+    {
+      "id": "AGV-0209",
+      "homeStation": "车公庙",
+      "status": "busy",
+      "battery": 56,
+      "capacityKg": 911
+    },
+    {
+      "id": "AGV-0210",
+      "homeStation": "岗厦北",
+      "status": "busy",
+      "battery": 58,
+      "capacityKg": 807
+    },
+    {
+      "id": "AGV-0211",
+      "homeStation": "前海湾",
+      "status": "busy",
+      "battery": 58,
+      "capacityKg": 913
+    },
+    {
+      "id": "AGV-0212",
+      "homeStation": "福田",
+      "status": "busy",
+      "battery": 42,
+      "capacityKg": 835
+    },
+    {
+      "id": "AGV-0213",
+      "homeStation": "布吉",
+      "status": "busy",
+      "battery": 49,
+      "capacityKg": 924
+    },
+    {
+      "id": "AGV-0214",
+      "homeStation": "大运",
+      "status": "busy",
+      "battery": 51,
+      "capacityKg": 809
+    },
+    {
+      "id": "AGV-0215",
+      "homeStation": "机场",
+      "status": "busy",
+      "battery": 54,
+      "capacityKg": 998
+    },
+    {
+      "id": "AGV-0216",
+      "homeStation": "深圳北",
+      "status": "busy",
+      "battery": 34,
+      "capacityKg": 883
+    },
+    {
+      "id": "AGV-0217",
+      "homeStation": "罗湖",
+      "status": "busy",
+      "battery": 50,
+      "capacityKg": 848
+    },
+    {
+      "id": "AGV-0218",
+      "homeStation": "会展中心",
+      "status": "busy",
+      "battery": 60,
+      "capacityKg": 936
+    },
+    {
+      "id": "AGV-0219",
+      "homeStation": "车公庙",
+      "status": "busy",
+      "battery": 60,
+      "capacityKg": 949
+    },
+    {
+      "id": "AGV-0220",
+      "homeStation": "岗厦北",
+      "status": "busy",
+      "battery": 31,
+      "capacityKg": 899
+    },
+    {
+      "id": "AGV-0221",
+      "homeStation": "前海湾",
+      "status": "busy",
+      "battery": 57,
+      "capacityKg": 943
+    },
+    {
+      "id": "AGV-0222",
+      "homeStation": "福田",
+      "status": "busy",
+      "battery": 60,
+      "capacityKg": 827
+    },
+    {
+      "id": "AGV-0223",
+      "homeStation": "布吉",
+      "status": "busy",
+      "battery": 36,
+      "capacityKg": 890
+    },
+    {
+      "id": "AGV-0224",
+      "homeStation": "大运",
+      "status": "charging",
+      "battery": 13,
+      "capacityKg": 820
+    },
+    {
+      "id": "AGV-0225",
+      "homeStation": "机场",
+      "status": "charging",
+      "battery": 25,
+      "capacityKg": 857
+    },
+    {
+      "id": "AGV-0226",
+      "homeStation": "深圳北",
+      "status": "charging",
+      "battery": 13,
+      "capacityKg": 978
+    },
+    {
+      "id": "AGV-0227",
+      "homeStation": "罗湖",
+      "status": "charging",
+      "battery": 13,
+      "capacityKg": 911
+    },
+    {
+      "id": "AGV-0228",
+      "homeStation": "会展中心",
+      "status": "charging",
+      "battery": 9,
+      "capacityKg": 832
+    },
+    {
+      "id": "AGV-0229",
+      "homeStation": "车公庙",
+      "status": "charging",
+      "battery": 9,
+      "capacityKg": 956
+    },
+    {
+      "id": "AGV-0230",
+      "homeStation": "岗厦北",
+      "status": "charging",
+      "battery": 15,
+      "capacityKg": 873
+    },
+    {
+      "id": "AGV-0231",
+      "homeStation": "前海湾",
+      "status": "charging",
+      "battery": 25,
+      "capacityKg": 935
+    },
+    {
+      "id": "AGV-0232",
+      "homeStation": "福田",
+      "status": "charging",
+      "battery": 19,
+      "capacityKg": 951
+    },
+    {
+      "id": "AGV-0233",
+      "homeStation": "布吉",
+      "status": "charging",
+      "battery": 24,
+      "capacityKg": 830
+    },
+    {
+      "id": "AGV-0234",
+      "homeStation": "大运",
+      "status": "charging",
+      "battery": 24,
+      "capacityKg": 900
+    },
+    {
+      "id": "AGV-0235",
+      "homeStation": "机场",
+      "status": "charging",
+      "battery": 24,
+      "capacityKg": 984
+    },
+    {
+      "id": "AGV-0236",
+      "homeStation": "深圳北",
+      "status": "charging",
+      "battery": 24,
+      "capacityKg": 803
+    },
+    {
+      "id": "AGV-0237",
+      "homeStation": "罗湖",
+      "status": "charging",
+      "battery": 15,
+      "capacityKg": 860
+    },
+    {
+      "id": "AGV-0238",
+      "homeStation": "会展中心",
+      "status": "charging",
+      "battery": 12,
+      "capacityKg": 959
+    },
+    {
+      "id": "AGV-0239",
+      "homeStation": "车公庙",
+      "status": "charging",
+      "battery": 25,
+      "capacityKg": 940
+    },
+    {
+      "id": "AGV-0240",
+      "homeStation": "岗厦北",
+      "status": "charging",
+      "battery": 8,
+      "capacityKg": 965
+    },
+    {
+      "id": "AGV-0241",
+      "homeStation": "前海湾",
+      "status": "charging",
+      "battery": 13,
+      "capacityKg": 988
+    },
+    {
+      "id": "AGV-0242",
+      "homeStation": "福田",
+      "status": "charging",
+      "battery": 17,
+      "capacityKg": 899
+    },
+    {
+      "id": "AGV-0243",
+      "homeStation": "布吉",
+      "status": "charging",
+      "battery": 17,
+      "capacityKg": 985
+    },
+    {
+      "id": "AGV-0244",
+      "homeStation": "大运",
+      "status": "charging",
+      "battery": 24,
+      "capacityKg": 925
+    },
+    {
+      "id": "AGV-0245",
+      "homeStation": "机场",
+      "status": "charging",
+      "battery": 22,
+      "capacityKg": 874
+    },
+    {
+      "id": "AGV-0246",
+      "homeStation": "深圳北",
+      "status": "charging",
+      "battery": 19,
+      "capacityKg": 865
+    },
+    {
+      "id": "AGV-0247",
+      "homeStation": "罗湖",
+      "status": "charging",
+      "battery": 17,
+      "capacityKg": 844
+    },
+    {
+      "id": "AGV-0248",
+      "homeStation": "会展中心",
+      "status": "charging",
+      "battery": 22,
+      "capacityKg": 847
     }
   ]
 }

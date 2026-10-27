@@ -539,11 +539,21 @@ const App: React.FC = () => {
                   <i className="fa fa-exclamation-triangle mr-1"></i>{dataError}
                 </span>
               )}
-              <span className="ml-auto px-3 py-1 rounded-full border border-white/10 text-gray-400">
-                <i className="fa fa-database mr-1"></i>
-                数据源：{dataSourceLabel}
-                {dataLoading && <i className="fa fa-spinner fa-spin ml-2"></i>}
-              </span>
+              {bundle?.degraded ? (
+                <span
+                  className="ml-auto px-3 py-1 rounded-full border border-amber-500/40 bg-amber-500/10 text-amber-300"
+                  title="后端接口不可用，已回退到本地模拟数据"
+                >
+                  <i className="fa fa-exclamation-triangle mr-1"></i>
+                  数据源：本地模拟（后端不可用）
+                </span>
+              ) : (
+                <span className="ml-auto px-3 py-1 rounded-full border border-white/10 text-gray-400">
+                  <i className="fa fa-database mr-1"></i>
+                  数据源：{dataSourceLabel}
+                  {dataLoading && <i className="fa fa-spinner fa-spin ml-2"></i>}
+                </span>
+              )}
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 h-[400px]">

@@ -79,6 +79,8 @@ export interface DataBundle {
   waybills: Waybill[];
   fleet: FleetSnapshot;
   alerts: AlertItem[];
+  /** 接口部分不可用、已回退本地数据时为 true，用于在界面上如实提示 */
+  degraded?: boolean;
 }
 
 export interface MissionDataSource {
