@@ -230,7 +230,7 @@ body {
   position: relative;
   z-index: 1;
   display: grid;
-  grid-template-columns: 1.08fr 0.92fr;
+  grid-template-columns: 1fr 1fr;
   gap: 12px;
   margin-top: 14px;
 }
@@ -256,12 +256,15 @@ body {
   color: #cffafe;
   font-size: 12px;
   font-weight: 700;
+  line-height: 1.25;
 }
 
 .station-chart-title b {
   color: rgba(103, 232, 249, 0.68);
   font-size: 10px;
   font-weight: 600;
+  white-space: nowrap;
+  flex: none;
 }
 
 .station-trend-svg {
@@ -277,14 +280,14 @@ body {
 
 .station-inventory-content {
   display: grid;
-  grid-template-columns: 108px 1fr;
+  grid-template-columns: 84px 1fr;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .station-donut-svg {
-  width: 108px;
-  height: 108px;
+  width: 84px;
+  height: 84px;
 }
 
 .station-donut-svg circle {
@@ -338,9 +341,10 @@ body {
   display: grid;
   grid-template-columns: 8px 1fr auto;
   align-items: center;
-  gap: 7px;
+  gap: 6px;
   color: rgba(207, 250, 254, 0.72);
-  font-size: 11px;
+  font-size: 10px;
+  white-space: nowrap;
 }
 
 .station-inventory-legend i {
@@ -351,7 +355,7 @@ body {
 
 .station-inventory-legend strong {
   color: #ecfeff;
-  font-size: 12px;
+  font-size: 11px;
 }
 
 .legend-normal {

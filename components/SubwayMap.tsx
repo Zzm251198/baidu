@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
+import type { StationStat } from '../src/data/stationStats';
 
 // 百度地图 AK 从 .env.local 的 VITE_BMAP_SUBWAY_AK 读取（*.local 已被 .gitignore 排除，不入库）
 const BMAP_SUBWAY_AK = String(import.meta.env.VITE_BMAP_SUBWAY_AK ?? '');
@@ -30,17 +31,11 @@ export interface StationNode {
     lineName?: string;
 }
 
-interface StationLogisticsData {
-    throughputTonPerHour: number;
-    standbyAgv: number;
-    backlogIndex: number;
-    throughputTrend: number[];
-    inventory: {
-        normal: number;
-        coldChain: number;
-        urgent: number;
-    };
-}
+/**
+ * 弹窗数据：优先用运单聚合（source=waybill），
+ * 该站未纳入运单模型时退化为按站名生成的示例值（source=sample），并在标题里标明。
+ */
+type StationPanelData = StationStat & { source: 'waybill' | 'sample' };
 
 function createStationSeed(stationName: string): number {
     let hash = 2166136261;
@@ -73,27 +68,31 @@ function randomFloat(random: () => number, min: number, max: number, decimals = 
     return Math.round((random() * (max - min) + min) * multiplier) / multiplier;
 }
 
-function getStationMockData(stationName: string): StationLogisticsData {
+function buildSampleStationData(stationName: string): StationPanelData {
     const seed = createStationSeed(stationName.trim() || '深圳地铁站');
     const random = createSeededRandom(seed);
-    const baseThroughput = randomFloat(random, 10, 150);
-    const trendBase = Math.max(8, baseThroughput * randomFloat(random, 0.72, 0.94));
-    const trendVolatility = randomFloat(random, 3, 18);
-    const throughputTrend = Array.from({ length: 12 }, (_, index) => {
+    const baseVolume = randomFloat(random, 60, 260);
+    const trendBase = Math.max(3, baseVolume * randomFloat(random, 0.04, 0.09));
+    const trendVolatility = randomFloat(random, 1, 6);
+    const hourTrend = Array.from({ length: 12 }, (_, index) => {
         const wave = Math.sin((index / 11) * Math.PI * 1.45 + random() * 0.55);
-        const drift = index * randomFloat(random, 0.2, 1.8);
-        return Math.max(6, Math.round((trendBase + wave * trendVolatility + drift + randomFloat(random, -4, 5)) * 10) / 10);
+        return Math.max(0, Math.round((trendBase + wave * trendVolatility + randomFloat(random, -1.5, 2)) * 10) / 10);
     });
+    const normal = randomFloat(random, baseVolume * 0.45, baseVolume * 0.7);
+    const coldChain = randomFloat(random, baseVolume * 0.12, baseVolume * 0.28);
+    const urgent = Math.max(0, Math.round((baseVolume - normal - coldChain) * 10) / 10);
 
     return {
-        throughputTonPerHour: baseThroughput,
-        standbyAgv: randomInt(random, 3, 48),
-        backlogIndex: randomInt(random, 0, 100),
-        throughputTrend,
-        inventory: {
-            normal: randomInt(random, 40, 420),
-            coldChain: randomInt(random, 8, 130),
-            urgent: randomInt(random, 5, 95)
+        station: stationName,
+        source: 'sample',
+        volumeTon: Math.round(baseVolume * 10) / 10,
+        waybillCount: randomInt(random, 3, 24),
+        congestionIndex: randomInt(random, 25, 95),
+        hourTrend,
+        categoryMix: {
+            normal: Math.round(normal * 10) / 10,
+            coldChain: Math.round(coldChain * 10) / 10,
+            urgent
         }
     };
 }
@@ -104,6 +103,8 @@ interface SubwayMapProps {
     endStationName?: string;
     routeRequestKey?: number;
     onMapLoaded?: (stations: StationNode[]) => void;
+    /** 站点货运统计索引（由运单集聚合）；未命中的站点退化为示例值 */
+    stationIndex?: Map<string, StationStat>;
     onRouteResult?: (payload: {
         direction: any;
         json: any;
@@ -250,6 +251,7 @@ const SubwayMapComponent: React.FC<SubwayMapProps> = ({
     endStationName = '',
     routeRequestKey = 0,
     onMapLoaded,
+    stationIndex,
     onRouteResult
 }) => {
     const reactId = useId();
@@ -262,12 +264,14 @@ const SubwayMapComponent: React.FC<SubwayMapProps> = ({
     const directionRef = useRef<BMapSubAny>(null);
     const routeResultTimersRef = useRef<number[]>([]);
     const onRouteResultRef = useRef(onRouteResult);
+    // 用 ref 传递站点统计，避免索引变化导致地图重建
+    const stationIndexRef = useRef(stationIndex);
     const zoomRef = useRef(DEFAULT_ZOOM);
     const latestRouteRef = useRef({ startStationName, endStationName, routeRequestKey });
     const [error, setError] = useState('');
     const [selectedStation, setSelectedStation] = useState<{
         name: string;
-        data: StationLogisticsData;
+        data: StationPanelData;
     } | null>(null);
 
     useEffect(() => {
@@ -277,6 +281,10 @@ const SubwayMapComponent: React.FC<SubwayMapProps> = ({
     useEffect(() => {
         onRouteResultRef.current = onRouteResult;
     }, [onRouteResult]);
+
+    useEffect(() => {
+        stationIndexRef.current = stationIndex;
+    }, [stationIndex]);
 
     const clearRouteResultTimers = useCallback(() => {
         routeResultTimersRef.current.forEach((timerId) => window.clearTimeout(timerId));
@@ -386,9 +394,11 @@ const SubwayMapComponent: React.FC<SubwayMapProps> = ({
                             return;
                         }
 
+                        // 先查运单聚合（真实数据），未建模的站点再用示例值兜底
+                        const stat = stationIndexRef.current?.get(stationName);
                         setSelectedStation({
                             name: stationName,
-                            data: getStationMockData(stationName)
+                            data: stat ? { ...stat, source: 'waybill' } : buildSampleStationData(stationName)
                         });
                     };
 
@@ -449,15 +459,18 @@ const SubwayMapComponent: React.FC<SubwayMapProps> = ({
         notifyRouteResult(direction, startStationName, endStationName);
     }, [endStationName, mode, notifyRouteResult, routeRequestKey, startStationName]);
 
-    const trendPolyline = selectedStation ? buildTrendPolyline(selectedStation.data.throughputTrend) : '';
-    const inventoryTotal = selectedStation
-        ? selectedStation.data.inventory.normal + selectedStation.data.inventory.coldChain + selectedStation.data.inventory.urgent
+    const trendPolyline = selectedStation ? buildTrendPolyline(selectedStation.data.hourTrend) : '';
+    const categoryMix = selectedStation?.data.categoryMix;
+    const categoryTotal = categoryMix
+        ? Math.round((categoryMix.normal + categoryMix.coldChain + categoryMix.urgent) * 10) / 10
         : 0;
-    const normalPercent = selectedStation ? Math.round((selectedStation.data.inventory.normal / inventoryTotal) * 100) : 0;
-    const coldChainPercent = selectedStation ? Math.round((selectedStation.data.inventory.coldChain / inventoryTotal) * 100) : 0;
-    const urgentPercent = selectedStation ? Math.round((selectedStation.data.inventory.urgent / inventoryTotal) * 100) : 0;
+    const percentOf = (value: number) => (categoryTotal > 0 ? Math.round((value / categoryTotal) * 100) : 0);
+    const normalPercent = categoryMix ? percentOf(categoryMix.normal) : 0;
+    const coldChainPercent = categoryMix ? percentOf(categoryMix.coldChain) : 0;
+    const urgentPercent = categoryMix ? percentOf(categoryMix.urgent) : 0;
     const coldDashOffset = selectedStation ? 100 - coldChainPercent : 100;
     const urgentDashOffset = selectedStation ? 100 - urgentPercent : 100;
+    const peakHourVolume = selectedStation ? Math.max(...selectedStation.data.hourTrend) : 0;
 
     return (
         <div className="subway-map-shell relative h-full w-full overflow-hidden">
@@ -474,7 +487,9 @@ const SubwayMapComponent: React.FC<SubwayMapProps> = ({
 
                     <header className="station-logistics-header">
                         <div>
-                            <div className="station-logistics-kicker">地铁站点物流态势 · 示例数据</div>
+                            <div className="station-logistics-kicker">
+                                地铁站点货运态势 · {selectedStation.data.source === 'waybill' ? '运单数据' : '示例数据（该站未建模）'}
+                            </div>
                             <div className="station-logistics-title">{selectedStation.name}</div>
                         </div>
                         <button
@@ -489,29 +504,29 @@ const SubwayMapComponent: React.FC<SubwayMapProps> = ({
 
                     <div className="station-logistics-metrics">
                         <div className="station-metric-card">
-                            <span>实时吞吐量</span>
-                            <strong>{selectedStation.data.throughputTonPerHour}</strong>
-                            <em>吨/小时</em>
+                            <span>期间货量</span>
+                            <strong>{selectedStation.data.volumeTon}</strong>
+                            <em>吨</em>
                         </div>
                         <div className="station-metric-card station-metric-card-green">
-                            <span>待命AGV</span>
-                            <strong>{selectedStation.data.standbyAgv}</strong>
-                            <em>辆</em>
+                            <span>运单数</span>
+                            <strong>{selectedStation.data.waybillCount}</strong>
+                            <em>条</em>
                         </div>
                         <div className="station-metric-card station-metric-card-amber">
-                            <span>中转积压指数</span>
-                            <strong>{selectedStation.data.backlogIndex}%</strong>
-                            <em>压力阈值</em>
+                            <span>相对积压指数</span>
+                            <strong>{selectedStation.data.congestionIndex}%</strong>
+                            <em>全网 P90 基准</em>
                         </div>
                     </div>
 
                     <div className="station-logistics-charts">
                         <div className="station-chart-card station-trend-card">
                             <div className="station-chart-title">
-                                <span>近12小时吞吐量趋势</span>
-                                <b>{Math.max(...selectedStation.data.throughputTrend)} 峰值</b>
+                                <span>分时段货量分布</span>
+                                <b>{peakHourVolume} 峰值</b>
                             </div>
-                            <svg className="station-trend-svg" viewBox="0 0 210 90" role="img" aria-label="近12小时吞吐量趋势折线图">
+                            <svg className="station-trend-svg" viewBox="0 0 210 90" role="img" aria-label="分时段货量分布折线图">
                                 <defs>
                                     <linearGradient id={`trendGlow-${containerId}`} x1="0" x2="1" y1="0" y2="0">
                                         <stop offset="0%" stopColor="#22d3ee" />
@@ -541,11 +556,11 @@ const SubwayMapComponent: React.FC<SubwayMapProps> = ({
 
                         <div className="station-chart-card station-inventory-card">
                             <div className="station-chart-title">
-                                <span>库存结构占比</span>
-                                <b>{inventoryTotal} 件</b>
+                                <span>品类结构</span>
+                                <b>{categoryTotal} 吨</b>
                             </div>
                             <div className="station-inventory-content">
-                                <svg className="station-donut-svg" viewBox="0 0 120 120" role="img" aria-label="库存结构环形图">
+                                <svg className="station-donut-svg" viewBox="0 0 120 120" role="img" aria-label="品类结构环形图">
                                     <circle className="station-donut-track" cx="60" cy="60" r="42" />
                                     <circle
                                         className="station-donut-normal"
@@ -573,13 +588,13 @@ const SubwayMapComponent: React.FC<SubwayMapProps> = ({
                                         strokeDasharray={`${urgentPercent} ${100 - urgentPercent}`}
                                         strokeDashoffset={urgentDashOffset}
                                     />
-                                    <text x="60" y="57" textAnchor="middle" className="station-donut-number">{inventoryTotal}</text>
-                                    <text x="60" y="74" textAnchor="middle" className="station-donut-label">总量</text>
+                                    <text x="60" y="57" textAnchor="middle" className="station-donut-number">{categoryTotal}</text>
+                                    <text x="60" y="74" textAnchor="middle" className="station-donut-label">吨</text>
                                 </svg>
                                 <div className="station-inventory-legend">
-                                    <div><i className="legend-normal"></i><span>普通物流</span><strong>{selectedStation.data.inventory.normal}</strong></div>
-                                    <div><i className="legend-cold"></i><span>冷链</span><strong>{selectedStation.data.inventory.coldChain}</strong></div>
-                                    <div><i className="legend-urgent"></i><span>加急件</span><strong>{selectedStation.data.inventory.urgent}</strong></div>
+                                    <div><i className="legend-normal"></i><span>普通物流</span><strong>{categoryMix?.normal ?? 0}</strong></div>
+                                    <div><i className="legend-cold"></i><span>冷链</span><strong>{categoryMix?.coldChain ?? 0}</strong></div>
+                                    <div><i className="legend-urgent"></i><span>加急件</span><strong>{categoryMix?.urgent ?? 0}</strong></div>
                                 </div>
                             </div>
                         </div>

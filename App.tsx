@@ -31,6 +31,7 @@ import {
   buildTopStations,
   summarize
 } from './src/data/aggregations';
+import { buildStationIndex } from './src/data/stationStats';
 
 type TabKey = 'monitor' | 'data' | 'simulation';
 
@@ -223,6 +224,8 @@ const App: React.FC = () => {
   // 监控页没有筛选器，用全量数据；与数据页共享同一份数据集，数字口径一致
   const overallSummary = useMemo(() => summarize(waybills), [waybills]);
   const topStations = useMemo(() => buildTopStations(waybills), [waybills]);
+  // 站点弹窗用同一份运单集聚合，避免出现"地图弹窗和图表对不上"
+  const stationIndex = useMemo(() => buildStationIndex(waybills), [waybills]);
 
   // 换线路后，原先选中的车站/运单号可能已不在候选里 → 自动回落，避免"永远 0 条"
   useEffect(() => {
@@ -481,7 +484,7 @@ const App: React.FC = () => {
                     深圳轨道物流线网图
                   </div>
                   <div className="monitor-map-frame flex-1 min-h-0">
-                    <SubwayMap mode="monitor" onMapLoaded={setMapStations} />
+                    <SubwayMap mode="monitor" onMapLoaded={setMapStations} stationIndex={stationIndex} />
                   </div>
                 </section>
               </div>
