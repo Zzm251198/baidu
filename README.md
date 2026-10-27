@@ -22,6 +22,30 @@ npm run build               # 生产构建（输出 dist/）
 AK 申请：[百度地图开放平台控制台](https://lbsyun.baidu.com/apiconsole/key)。
 建议为 AK 配置 Referer 白名单，防止被盗刷配额。
 
+前端默认跑在**本地模拟数据**上，不启动后端也能完整演示。
+
+## 后端（Python + SQLite）
+
+`backend/` 下是 FastAPI + SQLite 服务，实现运单/线网/车队/告警接口，并带运单增删改查。
+
+```powershell
+cd backend
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\run.ps1                      # http://127.0.0.1:8000/docs
+```
+
+前端切到后端：
+
+```bash
+# .env.local
+VITE_DATA_SOURCE=http
+VITE_API_BASE=/api             # dev 由 vite.config.ts 代理到 127.0.0.1:8000
+```
+
+接口契约见 `backend/README.md` 与 `src/data/types.ts`。后端不可用时会自动回退到
+本地模拟数据（控制台留 warn），不会白屏。
+
 ## 分发到别的机器（单文件版）
 
 1. `npm run build` 生成 `dist/index.html`（约 700KB，JS/CSS 已全部内联成一个文件）

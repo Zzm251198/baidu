@@ -6,6 +6,7 @@ import { AGV } from './components/agv.tsx';
 import { RightPanel } from './components/RightPanel';
 import { ChartsPanel } from './components/ChartsPanel';
 import { SimulationInsightPanel, type RouteData } from './components/SimulationInsightPanel';
+import { OrderTimeline, type TimelineEvent } from './components/OrderTimeline';
 import { parseBaiduTransitRoute } from './src/simulation/baiduRouteParser.js';
 import { LINE_DEFINITIONS, planLocalRoute } from './src/simulation/localRouteEngine.js';
 import { loadSimulationConfigs, simulateOrder } from './src/simulation/simulationEngine.js';
@@ -118,8 +119,8 @@ const App: React.FC = () => {
     [endLineName, subwayStationsByLine]
   );
 
-  // 数据页线网：优先用百度返回的真实深圳线网；线网尚未加载完时回退本地兜底线网
-  const lineInfos = useMemo<LineInfo[]>(() => {
+  // 地图推导出的线网（作为数据源的兜底；保持引用稳定，避免触发数据源重复加载）
+  const mapLineInfos = useMemo<LineInfo[]>(() => {
     const fromMap = Object.entries(subwayStationsByLine)
       .map(([name, stations]) => ({ name, stations }))
       .filter((line) => line.stations.length > 0);
@@ -133,7 +134,14 @@ const App: React.FC = () => {
   }, [subwayStationsByLine]);
 
   // 统一数据入口：默认本地模拟，VITE_DATA_SOURCE=http 时走后端接口
-  const { bundle, loading: dataLoading, error: dataError } = useDataBundle(lineInfos);
+  const { bundle, loading: dataLoading, error: dataError } = useDataBundle(mapLineInfos);
+
+  // 真正用于聚合的线网：数据源给了就用它的（含各线设计运力所需的全站列表），
+  // 否则用地图推导结果。注意不能反过来喂给 useDataBundle，否则会形成加载循环。
+  const lineInfos = useMemo<LineInfo[]>(
+    () => (bundle?.lines && bundle.lines.length > 0 ? bundle.lines : mapLineInfos),
+    [bundle?.lines, mapLineInfos]
+  );
   const waybills = bundle?.waybills ?? EMPTY_WAYBILLS;
   const fleet = bundle?.fleet ?? AGV_FLEET;
   const alerts = bundle?.alerts ?? MOCK_ALERTS;
@@ -221,6 +229,31 @@ const App: React.FC = () => {
       setSelectedWaybillNo('all');
     }
   }, [selectedWaybillNo, waybillNoOptions]);
+
+  // 作业时间轴：把每段列车的发车/到站按时间排开
+  const timelineEvents = useMemo<TimelineEvent[]>(() => {
+    const plan = simulationOutput?.trainPlan;
+    if (!Array.isArray(plan) || plan.length === 0) return [];
+
+    const events: TimelineEvent[] = [];
+    plan.forEach((train: any, index: number) => {
+      const isLast = index === plan.length - 1;
+      events.push({
+        time: String(train?.departureTime || '--'),
+        station: String(train?.boardingStation || '--'),
+        label: index === 0 ? '起点发车' : '换乘发车',
+        kind: 'depart'
+      });
+      events.push({
+        time: String(train?.arrivalTime || '--'),
+        station: String(train?.alightingStation || '--'),
+        label: isLast ? '到达终点' : '到站换乘',
+        kind: isLast ? 'arrive' : 'handoff'
+      });
+    });
+
+    return events.sort((a, b) => a.time.localeCompare(b.time));
+  }, [simulationOutput]);
 
   // 分段行程：缩略地图看不清细节，用它把每段的线路/上下车站/站数/时长摊开
   const routeSegments = useMemo(() => {
@@ -673,9 +706,10 @@ const App: React.FC = () => {
                     <span className="tracking-wider">订单数据</span>
                     <div className="ml-4 h-1 flex-1 bg-gradient-to-r from-cyan-500/50 to-transparent rounded-full"></div>
                   </h3>
-                  <div className="flex-1 min-h-[400px] relative z-10 bg-transparent">
+                  <div className="flex-1 min-h-[180px] relative z-10 bg-transparent">
                     <AGV rows={simulationOutput?.operationRows} />
                   </div>
+                  <OrderTimeline events={timelineEvents} />
                 </div>
               </div>
             </div>

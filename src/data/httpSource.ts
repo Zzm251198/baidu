@@ -7,6 +7,7 @@
 //
 // 开启方式：.env.local 里设 VITE_DATA_SOURCE=http（可选 VITE_API_BASE 覆盖前缀）。
 import { ALERTS, AGV_FLEET } from './mockFleet';
+import { buildWaybills } from './mockWaybills';
 import type { AlertItem, DataBundle, FleetSnapshot, LineInfo, MissionDataSource, Waybill } from './types';
 
 const BASE = String(import.meta.env.VITE_API_BASE ?? '/api').replace(/\/$/, '');
@@ -19,14 +20,32 @@ async function getJson<T>(path: string): Promise<T> {
   return (await response.json()) as T;
 }
 
+function warnFallback(path: string, error: unknown): void {
+  console.warn(`[data] ${path} 不可用，已回退本地模拟数据：`, error);
+}
+
 export const httpSource: MissionDataSource = {
   kind: 'http',
   async load(fallbackLines: LineInfo[]): Promise<DataBundle> {
+    // 任一接口失败都回退到本地数据：宁可展示"演示数据"也不让页面空掉，
+    // 控制台会留 warn 方便排查。
     const [lines, waybills, fleet, alerts] = await Promise.all([
-      getJson<LineInfo[]>('/lines').catch(() => fallbackLines),
-      getJson<Waybill[]>('/waybills'),
-      getJson<FleetSnapshot>('/fleet').catch(() => AGV_FLEET),
-      getJson<AlertItem[]>('/alerts').catch(() => ALERTS)
+      getJson<LineInfo[]>('/lines').catch((error) => {
+        warnFallback('/lines', error);
+        return fallbackLines;
+      }),
+      getJson<Waybill[]>('/waybills').catch((error) => {
+        warnFallback('/waybills', error);
+        return buildWaybills(fallbackLines);
+      }),
+      getJson<FleetSnapshot>('/fleet').catch((error) => {
+        warnFallback('/fleet', error);
+        return AGV_FLEET;
+      }),
+      getJson<AlertItem[]>('/alerts').catch((error) => {
+        warnFallback('/alerts', error);
+        return ALERTS;
+      })
     ]);
 
     return {

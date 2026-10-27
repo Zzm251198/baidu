@@ -1670,3 +1670,130 @@ textarea {
     grid-template-columns: 1fr;
   }
 }
+
+/* ── 订单数据：作业时间轴 ───────────────────────────────── */
+.order-timeline {
+  flex: none;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(34, 211, 238, 0.14);
+  position: relative;
+  z-index: 10;
+}
+
+.order-timeline-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.order-timeline-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #67e8f9;
+  letter-spacing: 0.04em;
+}
+
+.order-timeline-hint {
+  font-size: 11px;
+  color: #64748b;
+}
+
+.order-timeline-track {
+  display: flex;
+  align-items: flex-start;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.order-timeline-node {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 104px;
+  padding: 0 6px;
+}
+
+.order-timeline-node::before {
+  content: "";
+  position: absolute;
+  top: 25px;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: rgba(34, 211, 238, 0.22);
+}
+
+.order-timeline-node:first-child::before {
+  left: 50%;
+  width: 50%;
+}
+
+.order-timeline-node:last-child::before {
+  width: 50%;
+}
+
+.order-timeline-time {
+  font-size: 11px;
+  font-weight: 700;
+  color: #67e8f9;
+  font-variant-numeric: tabular-nums;
+}
+
+.order-timeline-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  margin: 7px 0;
+  position: relative;
+  z-index: 1;
+  background: #22d3ee;
+  box-shadow: 0 0 8px rgba(34, 211, 238, 0.7);
+}
+
+.order-timeline-arrive .order-timeline-dot {
+  background: #60a5fa;
+  box-shadow: 0 0 8px rgba(96, 165, 250, 0.7);
+}
+
+.order-timeline-handoff .order-timeline-dot {
+  background: #fbbf24;
+  box-shadow: 0 0 8px rgba(251, 191, 36, 0.75);
+}
+
+.order-timeline-station {
+  font-size: 11px;
+  font-weight: 600;
+  color: #e2e8f0;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.order-timeline-label {
+  font-size: 10px;
+  color: #7c8ba1;
+  margin-top: 2px;
+  white-space: nowrap;
+}
+
+.order-timeline-arrive .order-timeline-label {
+  color: #7ea7f5;
+}
+
+.order-timeline-handoff .order-timeline-label {
+  color: #d6a13a;
+}
+
+.order-timeline-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 62px;
+  font-size: 11px;
+  color: rgba(6, 182, 212, 0.45);
+}
