@@ -123,7 +123,10 @@ const App: React.FC = () => {
 
   // 地图推导出的线网（作为数据源的兜底；保持引用稳定，避免触发数据源重复加载）
   const mapLineInfos = useMemo<LineInfo[]>(() => {
-    const fromMap = Object.entries(subwayStationsByLine)
+    // 显式指定 entries 的元素类型：不加 <string[]> 时，TS 5.8 在这处
+    // （useMemo<LineInfo[]> 的上下文里）会把 T 推断成 unknown，
+    // 导致 line.stations.length 报 TS2339。这是纯类型修复，运行时无变化。
+    const fromMap = Object.entries<string[]>(subwayStationsByLine)
       .map(([name, stations]) => ({ name, stations }))
       .filter((line) => line.stations.length > 0);
 
