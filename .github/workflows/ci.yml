@@ -1,0 +1,76 @@
+name: CI
+
+# 什么时候触发：每次 push、每个 PR、以及可以在网页上手动点一次
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+# 同一分支连续推送时，取消上一轮还在跑的，省时间也省额度
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend:
+    name: 前端 · typecheck / test / build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 准备 Node
+        uses: actions/setup-node@v4
+        with:
+          # 用 22 而不是 20：@vitejs/plugin-react@5 要求 Node ^20.19 或 >=22.12
+          node-version: '22'
+          cache: npm
+
+      - name: 安装依赖（严格按 lockfile）
+        run: npm ci
+
+      - name: 类型检查
+        run: npm run typecheck
+
+      - name: 单元测试（Vitest）
+        run: npm run test
+
+      - name: 生产打包
+        run: npm run build
+
+  backend:
+    name: 后端 · pytest
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 准备 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - name: 安装依赖
+        working-directory: backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt -r requirements-dev.txt
+
+      - name: 运行测试（接口行为 + 前后端口径对拍）
+        working-directory: backend
+        run: python -m pytest
+
+      # 测试会往临时库灌 20 线 / 620 单种子数据，这里顺手确认数据口径没漂
+      - name: 数据口径自检
+        working-directory: backend
+        run: |
+          python - <<'PY'
+          from app.db import _build_waybills, load_line_definitions
+
+          lines = load_line_definitions()
+          rows = _build_waybills(lines)
+          assert len(lines) == 20, f"线网应为 20 条，实际 {len(lines)}"
+          assert len(rows) == 620, f"运单应为 620 条，实际 {len(rows)}"
+          print(f"线网 {len(lines)} 条 / 运单 {len(rows)} 条 ✓")
+          PY

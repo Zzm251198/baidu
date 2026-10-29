@@ -17,5 +17,7 @@
 - 验证基线（回归对表）：186 辆 / 20 线 / 620 单 / 36 分钟 / 3 异常；牛湖→罗湖 72 分钟 / 27 站 / 1 换乘 / 收入 603.00 成本 125.10 利润 477.90；1920×929 一屏
 - 环境坑：本机 workspace-write 沙箱不可用（temp 缺失），npm/Python/Chrome 相关命令需 danger-full-access；PowerShell 不要用 `Get-Content | ConvertFrom-Json` 处理中文 UTF-8
 - 测试：`npm run test`（Vitest，122 例）/ `npm run typecheck`（tsc --noEmit）/ `npm run build`
+- 后端测试：`cd backend; .venv\Scripts\python.exe -m pytest`（25 例，含前后端口径对拍）；CI 见 `.github/workflows/ci.yml`
+- pip 坑：本机 pip 建立连接后不下载（等几分钟无任何文件写入），但同一 venv 下 `python urllib` 请求镜像 0.5 秒即回。绕法：先用 urllib 把 wheel 抓到本地目录，再 `pip install --no-index --find-links <目录>` 离线安装
 - 构建坑：若 `npm run build` 报 `[vite:esbuild-transpile] remove ...Temp\esbuild-xxx: Access is denied`，先 `$env:TEMP=$env:TMP=<工作区内可写目录>` 再构建（esbuild 删不掉系统临时文件）
 - 依赖坑：本机 npm 10.9.x 装 vitest 会崩在 `#loadPeerSet`；用 `npx -y npm@11 install` 绕过。切记 `--legacy-peer-deps` 会漏装 peer（`react-is` 被裁掉会直接导致 recharts 打包失败）
