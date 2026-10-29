@@ -152,3 +152,54 @@ test.describe('数据页筛选器：五个都真生效', () => {
     await expect(page.getByText('覆盖车站 1 个')).toBeVisible();
   });
 });
+
+/**
+ * 地图视觉增强层（网格 / 暗角 / 标注）。
+ *
+ * 背景：百度地铁图 SDK 只渲染 SVG 示意图，没有任何地理底图，
+ * 深色主题下容易被误认为"底图没加载"。我们叠了一层纯 CSS 的观感增强层。
+ *
+ * 这组测试守的唯一红线是：视觉层绝不能挡住鼠标事件。
+ * 一旦有人给它加了 pointer-events: auto，站点就点不动了——而这种回归
+ * 单测和肉眼都发现不了。
+ */
+test.describe('地图视觉增强层：只画不挡', () => {
+  test.use({ viewport: VIEWPORT });
+
+  test('网格 / 暗角 / 标注都在，且全部 pointer-events: none', async ({ page }) => {
+    await waitForDashboard(page);
+
+    await expect(page.getByText('示意图 · 非地理投影')).toBeVisible();
+
+    const layers = await page.evaluate(() => {
+      const pick = (selector: string) => {
+        const el = document.querySelector(selector) as HTMLElement | null;
+        if (!el) return null;
+        const rect = el.getBoundingClientRect();
+        return {
+          pointerEvents: getComputedStyle(el).pointerEvents,
+          width: Math.round(rect.width),
+          height: Math.round(rect.height)
+        };
+      };
+      return {
+        grid: pick('.subway-map-grid'),
+        vignette: pick('.subway-map-vignette'),
+        caption: pick('.subway-map-caption')
+      };
+    });
+
+    expect(layers.grid, '网格层必须存在').not.toBeNull();
+    expect(layers.vignette, '暗角层必须存在').not.toBeNull();
+
+    for (const [name, layer] of Object.entries(layers)) {
+      expect(layer, `${name} 层缺失`).not.toBeNull();
+      expect(layer!.pointerEvents, `${name} 层会挡住点击`).toBe('none');
+    }
+
+    // 网格与暗角要铺满地图区域（不是缩成一个小方块）
+    expect(layers.grid!.width).toBeGreaterThan(300);
+    expect(layers.grid!.height).toBeGreaterThan(300);
+    expect(layers.vignette!.width).toBeGreaterThan(300);
+  });
+});

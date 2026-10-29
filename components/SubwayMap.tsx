@@ -480,6 +480,16 @@ const SubwayMapComponent: React.FC<SubwayMapProps> = ({
                 className="subway-map-canvas subway-map-filter h-full w-full"
                 style={{ cursor: 'grab' }}
             />
+            {/*
+              视觉增强层（纯 CSS，不参与交互）：
+              百度地铁图 SDK 只输出一张 SVG 示意图、没有地理底图，
+              在深色主题下容易显得"空"。这里叠一层低透明度网格 + 边缘暗角，
+              让画面有纵深和"专业仪表盘"的质感。
+              全部 pointer-events: none，不影响站点点击与地图拖拽。
+            */}
+            <div className="subway-map-grid" aria-hidden="true" />
+            <div className="subway-map-vignette" aria-hidden="true" />
+            <div className="subway-map-caption">示意图 · 非地理投影</div>
             {selectedStation && (
                 <section className="station-logistics-panel absolute left-4 top-4 max-w-[calc(100%-32px)] text-cyan-50">
                     <div className="station-logistics-corner station-logistics-corner-left"></div>
