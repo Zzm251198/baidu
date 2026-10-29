@@ -267,3 +267,20 @@ describe('异常与边界', () => {
     expect(second.agvPlan.map((a: any) => a.agvId)).toEqual(first.agvPlan.map((a: any) => a.agvId));
   });
 });
+
+describe('作业明细：上/下车站点跟随列车段（与后端 simulation.py 同口径）', () => {
+  it('牛湖→罗湖 3 行明细：第 1 行跟随 4 号线段，第 2/3 行跟随 1 号线段', () => {
+    const result = simulateOrder(ORDER, makeRoute());
+    const rows = result.operationRows;
+    expect(rows).toHaveLength(3);
+    for (const row of rows) {
+      // 修复前：中转节点两列都填 AGV 所在站，出现"上车=下车"的废话信息
+      expect(row.boardingStop).not.toBe(row.AlightingStop);
+    }
+    expect(rows[0].boardingStop).toBe('牛湖');
+    expect(rows[0].AlightingStop).toBe('会展中心');
+    expect(rows[1].boardingStop).toBe('会展中心');
+    expect(rows[1].AlightingStop).toBe('罗湖');
+    expect(rows[2].AlightingStop).toBe('罗湖');
+  });
+});

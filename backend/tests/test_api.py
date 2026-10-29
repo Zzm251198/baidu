@@ -198,6 +198,24 @@ def test_simulations_pagination_validation(client):
     assert client.get("/api/simulations", params={"limit": 999}).status_code == 422
 
 
+def test_operation_rows_stations_follow_train_segments(client, sample_order, sample_route):
+    """作业明细的上/下车站点 = 该行服务的列车段实际站点，不允许"上车=下车"。
+
+    （修复前：中转节点的两列都填 AGV 所在站，页面上看到"上车=下车"的废话信息）
+    """
+    result = client.post("/api/simulate", json={"order": sample_order, "route": sample_route}).json()
+    rows = result["operationRows"]
+
+    assert len(rows) == 3
+    for row in rows:
+        assert row["boardingStop"] != row["AlightingStop"], "同一行的上/下车站点不允许相同"
+    assert rows[0]["boardingStop"] == "牛湖"
+    assert rows[0]["AlightingStop"] == "会展中心"  # 第 1 行跟随 4 号线段
+    assert rows[1]["boardingStop"] == "会展中心"
+    assert rows[1]["AlightingStop"] == "罗湖"      # 第 2 行跟随 1 号线段
+    assert rows[2]["AlightingStop"] == "罗湖"      # 终端出站行跟随末段列车
+
+
 # ───────────── 增删改（放最后，避免污染计数） ─────────────
 
 

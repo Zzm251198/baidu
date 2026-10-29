@@ -296,8 +296,10 @@ def _build_operation_rows(route: dict, train_plan: list[dict], agv_plan: list[di
     for index, plan in enumerate(agv_plan):
         related = train_plan[min(index, last)] if train_plan else {}
         nxt = train_plan[min(index + 1, last)] if train_plan else related
-        boarding_stop = route["originStationName"] if index == 0 else plan["station"]
-        alighting_stop = route["destinationStationName"] if index == len(agv_plan) - 1 else plan["station"]
+        # 上/下车站点 = 该节点服务的列车段实际站点（与前端 simulationEngine.js 同口径；
+        # 此前中转节点两列都填 AGV 所在站，出现"上车=下车"的废话信息）
+        boarding_stop = related.get("boardingStation") or route["originStationName"]
+        alighting_stop = related.get("alightingStation") or route["destinationStationName"]
 
         if index == 0:
             flight_segment = "始发接驳"

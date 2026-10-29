@@ -80,7 +80,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({ topStations = [], alerts
           </span>
         </h3>
 
-        <div className="flex-1 overflow-y-auto pr-1 custom-scrollbar space-y-2 relative z-10">
+        <div className="flex-1 overflow-y-auto pr-1 custom-scrollbar space-y-2 relative z-10 min-h-0">
           {logs.map((log) => (
             <div key={log.id} className="flex items-start space-x-3 text-xs border border-gray-800/20 bg-black/10 rounded-lg p-3 hover:border-emerald-500/30 hover:bg-black/30 transition-all duration-300 group">
               <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${getStatusColor(log.type)} bg-black/20 border border-white/10`}>
@@ -132,11 +132,16 @@ export const RightPanel: React.FC<RightPanelProps> = ({ topStations = [], alerts
           <span className="ml-2 text-xs bg-green-500/10 text-green-400 px-2 py-0.5 rounded-full border border-green-500/20">示例数据</span>
         </h3>
 
-        <div className="flex items-center justify-center h-full min-h-0 gap-5 relative z-10">
-          <div className="h-full w-[110px] relative flex-shrink-0 flex items-center justify-center">
+        {/* flex-wrap：右栏窄（如 1366 屏的 202px）时饼图与图例自动换成上下排布，
+            不再互相挤压；整体超高时容器内滚动。1366×768 实测曾把图例挤成
+            38px 宽且上下溢出面板 130px——就是"重叠"的来源 */}
+        <div className="flex flex-wrap items-center justify-center h-full min-h-0 gap-4 relative z-10 overflow-y-auto custom-scrollbar">
+          {/* clamp 宽度 + aspect-square + 百分比半径：窄面板（1366 屏右栏 ~200px）时
+              饼图自动缩到 72px 仍保持正圆；宽面板（1920）维持 110px 原大小 */}
+          <div className="w-[clamp(72px,40%,110px)] aspect-square relative flex-shrink-0">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie data={deviceData} cx="50%" cy="50%" innerRadius={28} outerRadius={45} paddingAngle={4} dataKey="value" stroke="rgba(0,0,0,0.1)" strokeWidth={1}>
+                <Pie data={deviceData} cx="50%" cy="50%" innerRadius="50%" outerRadius="82%" paddingAngle={4} dataKey="value" stroke="rgba(0,0,0,0.1)" strokeWidth={1}>
                   {deviceData.map((entry) => (
                     <Cell key={entry.name} fill={entry.color} filter={`drop-shadow(0 0 5px ${entry.glow})`} />
                   ))}
@@ -146,7 +151,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({ topStations = [], alerts
             </ResponsiveContainer>
           </div>
 
-          <div className="flex-1 min-w-0 overflow-y-auto custom-scrollbar pr-1 space-y-2.5">
+          <div className="flex-1 min-w-[120px] pr-1 space-y-2.5">
             {deviceData.map((item) => (
               <div key={item.name} className="flex items-center justify-between rounded-lg bg-black/10 border border-gray-800/20 hover:border-white/10 hover:bg-black/30 transition-all duration-300 px-2 py-1.5">
                 <div className="flex items-center text-gray-200 whitespace-nowrap min-w-[80px]">

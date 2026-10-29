@@ -273,8 +273,10 @@ function buildOperationRows(routeSummary, trainPlan, agvPlan, input) {
   return agvPlan.map((plan, index) => {
     const relatedTrain = trainPlan[Math.min(index, Math.max(0, trainPlan.length - 1))] || trainPlan[0] || {};
     const nextTrain = trainPlan[Math.min(index + 1, Math.max(0, trainPlan.length - 1))] || relatedTrain;
-    const boardingStop = index === 0 ? routeSummary.originStationName : plan.station;
-    const alightingStop = index === agvPlan.length - 1 ? routeSummary.destinationStationName : plan.station;
+    // 上/下车站点 = 该节点服务的列车段实际站点（此前中转节点两列都填 AGV 所在站，
+    // 出现"上车=下车"的废话信息；以列车段为准，信息才有增量）
+    const boardingStop = relatedTrain.boardingStation || routeSummary.originStationName;
+    const alightingStop = relatedTrain.alightingStation || routeSummary.destinationStationName;
 
     return {
       orderId: `ORD-${String(hashString(`${orderSeed}-${index}`) % 100000).padStart(5, '0')}`,
