@@ -1888,3 +1888,31 @@ textarea {
   font-size: 11px;
   color: rgba(6, 182, 212, 0.45);
 }
+
+/* ─────────── 交互增强：toast 通知 / 图表卡片悬停 / 页签切换动画 ─────────── */
+
+/* 页签切换：App.tsx 一直在用 animate-fade-in，但此前没人定义它（静默无效），
+   这里补上真正的进场动画；0.35s 只动 opacity/transform，不触发布局重排 */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
+}
+.animate-fade-in { animation: fadeInUp 0.35s ease-out; }
+
+/* toast：右上角滑入（配合 components/Toast.tsx） */
+@keyframes toastIn {
+  from { opacity: 0; transform: translateX(18px); }
+  to   { opacity: 1; transform: none; }
+}
+.toast-enter { animation: toastIn 0.3s cubic-bezier(0.22, 1, 0.36, 1); }
+
+/* 数据页图表卡片：悬停时边框提亮 + 轻微上浮 + 投影，
+   transform 不改变布局，1920×929 一屏的 E2E 守护不受影响 */
+.chart-card {
+  transition: border-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+}
+.chart-card:hover {
+  border-color: rgba(34, 211, 238, 0.45);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px -12px rgba(6, 182, 212, 0.25);
+}

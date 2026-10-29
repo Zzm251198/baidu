@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { SubwayMap, StationNode } from './components/SubwayMap';
 import { StatsCards } from './components/StatsCards';
 import { AutoScrollChart } from './components/AutoScrollChart';
@@ -7,6 +8,7 @@ import { RightPanel } from './components/RightPanel';
 import { ChartsPanel } from './components/ChartsPanel';
 import { SimulationInsightPanel, type RouteData } from './components/SimulationInsightPanel';
 import { OrderTimeline, type TimelineEvent } from './components/OrderTimeline';
+import { ToastStack, useToasts } from './components/Toast';
 import { parseBaiduTransitRoute } from './src/simulation/baiduRouteParser.js';
 import { LINE_DEFINITIONS, planLocalRoute } from './src/simulation/localRouteEngine.js';
 import { loadSimulationConfigs, simulateOrder } from './src/simulation/simulationEngine.js';
@@ -18,7 +20,7 @@ import {
   MONTHS,
   type LineInfo
 } from './src/data/mockWaybills';
-import { ALERTS as MOCK_ALERTS, AGV_FLEET } from './src/data/mockFleet';
+import { ALERTS as MOCK_ALERTS, AGV_FLEET, countAbnormalAlerts } from './src/data/mockFleet';
 import { dataSourceLabel } from './src/data/source';
 import { useDataBundle } from './src/hooks/useDataBundle';
 import type { Waybill } from './src/data/types';
@@ -72,6 +74,9 @@ const App: React.FC = () => {
   const [selectedTransportTime, setSelectedTransportTime] = useState('all');
   const [selectedCargoCategory, setSelectedCargoCategory] = useState('all');
   const [selectedWaybillNo, setSelectedWaybillNo] = useState('all');
+  // 页角通知（替代原生 alert）与告警下拉面板的开关
+  const { toasts, push: showToast, dismiss: dismissToast } = useToasts();
+  const [alertsOpen, setAlertsOpen] = useState(false);
 
   useEffect(() => {
     const updateTime = () => {
@@ -156,6 +161,9 @@ const App: React.FC = () => {
   const waybills = bundle?.waybills ?? EMPTY_WAYBILLS;
   const fleet = bundle?.fleet ?? AGV_FLEET;
   const alerts = bundle?.alerts ?? MOCK_ALERTS;
+
+  // 铃铛徽标：error + warning 的真实条数（此前是写死的 3）
+  const abnormalCount = useMemo(() => countAbnormalAlerts(alerts), [alerts]);
 
   const lineOptions = useMemo(
     () => [
@@ -294,7 +302,7 @@ const App: React.FC = () => {
     const cargoValue = Number(simParams.cargoValue);
 
     if (!simParams.startStationName || !simParams.endStationName || !Number.isFinite(cargoValue) || cargoValue <= 0) {
-      alert('请完善仿真参数输入');
+      showToast('请完善仿真参数：起点、终点与货运数值均需填写', 'warning');
       return;
     }
 
@@ -358,7 +366,7 @@ const App: React.FC = () => {
 
     if (!output.success || !output.metrics) {
       setIsSimulating(false);
-      alert('路线查询无结果：百度路径与本地线网引擎（1/2/3/5/11/14 号线）均未能规划该起终点，请更换站点后重试。');
+      showToast('路线查询无结果：百度路径与本地线网引擎（1/2/3/5/11/14 号线）均未能规划该起终点，请更换站点后重试', 'error');
       return;
     }
 
@@ -438,14 +446,72 @@ const App: React.FC = () => {
               <div className="text-xs text-gray-400">系统时间</div>
               <div className="text-sm font-mono text-secondary font-bold">{currentTime}</div>
             </div>
-            <div className="relative cursor-pointer group">
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] rounded-full h-4 w-4 flex items-center justify-center animate-pulse">3</span>
-              <div className="p-2 rounded-full hover:bg-white/10 transition-colors">
+            <div className="relative">
+              <button
+                type="button"
+                aria-label={`告警中心，${abnormalCount} 个异常`}
+                onClick={() => setAlertsOpen((open) => !open)}
+                className="relative p-2 rounded-full hover:bg-white/10 transition-colors group"
+              >
                 <i className="fa fa-bell text-gray-300 group-hover:text-white text-lg"></i>
-              </div>
+                {abnormalCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] rounded-full h-4 w-4 flex items-center justify-center animate-pulse">
+                    {abnormalCount}
+                  </span>
+                )}
+              </button>
+
+              {alertsOpen && (
+                <>
+                  {/* 透明 backdrop：点击面板外任意处收起。
+                      必须 Portal 到 body——header 带 backdrop-blur（backdrop-filter），
+                      会让 fixed 后代的包含块变成 header 自己，inset-0 就只剩头顶一条带子，
+                      点击页面主体根本落不到遮罩上（E2E 抓出来过这个 bug） */}
+                  {createPortal(
+                    <div className="fixed inset-0 z-40" onClick={() => setAlertsOpen(false)}></div>,
+                    document.body
+                  )}
+                  <div className="absolute right-0 top-12 z-50 w-96 max-w-[calc(100vw-2rem)] rounded-xl border border-cyan-500/20 bg-gray-900/95 backdrop-blur-md shadow-2xl shadow-black/50 overflow-hidden animate-fade-in">
+                    <div className="flex items-center justify-between px-4 py-3 border-b border-gray-700/50">
+                      <span className="text-sm font-bold text-white">
+                        <i className="fa fa-bell-o text-red-500 mr-2"></i>告警中心
+                      </span>
+                      <span className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 px-2 py-0.5 rounded-full">
+                        {abnormalCount} 个异常 / 共 {alerts.length} 条
+                      </span>
+                    </div>
+                    <div className="max-h-80 overflow-y-auto custom-scrollbar p-2 space-y-1.5">
+                      {alerts.map((log) => (
+                        <div
+                          key={log.id}
+                          className="flex items-start gap-3 text-xs rounded-lg px-3 py-2 border border-gray-800/40 bg-black/20 hover:border-cyan-500/30 hover:bg-black/40 transition-colors"
+                        >
+                          <i
+                            className={`fa mt-0.5 ${
+                              log.type === 'error'
+                                ? 'fa-exclamation-circle text-red-400'
+                                : log.type === 'warning'
+                                  ? 'fa-exclamation-triangle text-amber-400'
+                                  : log.type === 'success'
+                                    ? 'fa-check-circle text-emerald-400'
+                                    : 'fa-info-circle text-cyan-400'
+                            }`}
+                          ></i>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-gray-200 leading-snug">{log.message}</div>
+                            <div className="text-gray-500 font-mono mt-0.5">{log.time}{log.station ? ` · ${log.station}` : ''}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
-            <div className="flex items-center space-x-2 cursor-pointer pl-2 border-l border-gray-700">
-              <img src="https://picsum.photos/id/1005/40/40" alt="Avatar" className="h-8 w-8 rounded-full object-cover border-2 border-gray-600" />
+            <div className="flex items-center space-x-2 cursor-default pl-2 border-l border-gray-700" title="调度员">
+              <div className="h-8 w-8 rounded-full flex items-center justify-center bg-gradient-to-br from-cyan-600 to-blue-700 border-2 border-gray-600 shadow-lg shadow-cyan-500/20">
+                <i className="fa fa-user text-sm text-white"></i>
+              </div>
             </div>
           </div>
         </div>
@@ -455,15 +521,27 @@ const App: React.FC = () => {
         {activeTab === 'monitor' && (
           <div className="animate-fade-in flex flex-col h-full w-full overflow-hidden">
             <div className="flex justify-between items-center mb-4 px-1">
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2" title={bundle?.degraded ? '后端接口不可用，已回退本地模拟数据' : '数据链路正常'}>
+                {/* 状态点与文案跟着降级状态走：正常绿色/降级琥珀，评委一眼能看出数据链路健康度 */}
                 <span className="relative flex h-3 w-3">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                  <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${bundle?.degraded ? 'bg-amber-400' : 'bg-green-400'} opacity-75`}></span>
+                  <span className={`relative inline-flex rounded-full h-3 w-3 ${bundle?.degraded ? 'bg-amber-500' : 'bg-green-500'}`}></span>
                 </span>
-                <span className="text-gray-300 font-bold text-sm">全网运行正常</span>
+                <span className={`font-bold text-sm ${bundle?.degraded ? 'text-amber-300' : 'text-gray-300'}`}>
+                  {bundle?.degraded ? '数据链路降级 · 本地模拟接管' : '全网运行正常'}
+                </span>
               </div>
               <div className="text-xs text-gray-500">
-                <span className="text-xs text-amber-400 border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 rounded-full">示例数据 · 非实时</span>
+                {bundle?.degraded ? (
+                  <span className="text-xs text-amber-400 border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 rounded-full">
+                    <i className="fa fa-exclamation-triangle mr-1"></i>后端不可用 · 演示数据
+                  </span>
+                ) : (
+                  <span className={`text-xs px-2 py-0.5 rounded-full border ${sourceKind === 'http' ? 'text-cyan-300 border-cyan-500/40 bg-cyan-500/10' : 'text-gray-400 border-gray-600/40 bg-gray-500/10'}`}>
+                    <i className={`fa ${sourceKind === 'http' ? 'fa-database' : 'fa-flask'} mr-1`}></i>
+                    数据源：{dataSourceLabel} · 非实时
+                  </span>
+                )}
               </div>
             </div>
 
@@ -561,12 +639,12 @@ const App: React.FC = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 h-[400px]">
               <div className="lg:col-span-2 h-full">
-                <div className="h-full w-full bg-transparent border border-cyan-500/20 rounded-xl p-4 relative overflow-hidden">
+                <div className="chart-card h-full w-full bg-transparent border border-cyan-500/20 rounded-xl p-4 relative overflow-hidden">
                   <ChartsPanel type="composed" title="各线路运力与实际负载分析" data={lineLoadData} />
                 </div>
               </div>
               <div className="lg:col-span-1 h-full">
-                <div className="h-full w-full bg-transparent border border-cyan-500/20 rounded-xl p-4 relative overflow-hidden">
+                <div className="chart-card h-full w-full bg-transparent border border-cyan-500/20 rounded-xl p-4 relative overflow-hidden">
                   <ChartsPanel type="pie" title="运输货物类型分布" data={categoryPieData} colors={CATEGORY_COLORS} />
                 </div>
               </div>
@@ -574,12 +652,12 @@ const App: React.FC = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-[380px]">
               <div className="h-full">
-                <div className="h-full w-full bg-transparent border border-cyan-500/20 rounded-xl p-4 relative overflow-hidden">
+                <div className="chart-card h-full w-full bg-transparent border border-cyan-500/20 rounded-xl p-4 relative overflow-hidden">
                   <ChartsPanel type="scatter" title="线路运输效能矩阵（距离/耗时/货量）" data={efficiencyData} />
                 </div>
               </div>
               <div className="h-full">
-                <div className="h-full w-full bg-transparent border border-cyan-500/20 rounded-xl p-4 relative overflow-hidden">
+                <div className="chart-card h-full w-full bg-transparent border border-cyan-500/20 rounded-xl p-4 relative overflow-hidden">
                   <ChartsPanel
                     type="area"
                     title="全网24小时货运流量趋势（按品类，吨）"
@@ -592,7 +670,7 @@ const App: React.FC = () => {
             </div>
 
             <div className="w-full bg-transparent">
-              <div className="bg-transparent rounded-xl p-6 border border-cyan-500/20 relative overflow-hidden">
+              <div className="bg-transparent rounded-xl p-6 border border-cyan-500/20 relative overflow-hidden chart-card">
                 <h3 className="font-bold text-cyan-300 mb-6 flex items-center relative z-10">
                   <i className="fa fa-trophy text-yellow-400 mr-3 text-lg"></i>
                   <span className="tracking-wider">综合效率排行榜</span>
@@ -832,6 +910,8 @@ const App: React.FC = () => {
           </div>
         )}
       </main>
+
+      <ToastStack toasts={toasts} onDismiss={dismissToast} />
     </div>
   );
 };
