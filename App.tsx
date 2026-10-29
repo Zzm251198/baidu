@@ -746,7 +746,10 @@ const App: React.FC = () => {
                   <div className="ml-4 h-0.5 flex-1 bg-gradient-to-r from-emerald-500/50 to-transparent rounded-full"></div>
                 </h3>
 
-                <div className="space-y-6 relative z-10 flex-grow flex flex-col">
+                {/* min-h-0 + 内部滚动：矮窗口（如笔记本半屏）下新增的算法策略区不会把
+                    「开始仿真」按钮挤出 overflow-hidden 的可视区——E2E 是 1920×929 全屏，
+                    测不到小窗口裁剪，这里必须自守 */}
+                <div className="space-y-6 relative z-10 flex-grow flex flex-col min-h-0 overflow-y-auto custom-scrollbar pr-1">
                   <div className="space-y-4 p-5 bg-gray-900/20 rounded-lg border border-emerald-500/10 backdrop-blur-sm">
                     <label className="text-xs font-bold text-emerald-400 flex items-center">
                       <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 mr-2 shadow-lg shadow-emerald-500/20"></span>

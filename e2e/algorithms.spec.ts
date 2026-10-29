@@ -68,4 +68,19 @@ test.describe('算法插点', () => {
     // 结果描述必须带「本地·时间优先」标注，证明走的是所选策略而不是百度/默认
     await expect(page.getByText(/本地·时间优先/)).toBeVisible();
   });
+
+  test('1366×768 小窗口：算法策略区与「开始仿真」按钮都必须可见可点', async ({ page }) => {
+    // 复盘：全屏 E2E（1920×929）测不出小窗口下参数面板 overflow-hidden 把
+    // 新增策略区连同按钮一起裁掉的回归——真实用户恰恰用小窗口看页面
+    await page.setViewportSize({ width: 1366, height: 768 });
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await page.getByRole('button', { name: '仿真模拟' }).click();
+
+    await expect(page.getByText('算法策略')).toBeVisible();
+    await expect(page.getByRole('button', { name: '开始仿真' })).toBeVisible();
+    // 下拉真实存在且可操作（第 5、6 个 select 即策略区）
+    const selects = page.locator('select');
+    await expect(selects).toHaveCount(6);
+    await selects.nth(5).selectOption({ label: '派车 · 大运力优先' });
+  });
 });
