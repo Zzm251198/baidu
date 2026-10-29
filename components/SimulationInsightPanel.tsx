@@ -98,6 +98,8 @@ export interface SimulationInsightPanelProps {
   routeData?: RouteData | null;
   metrics?: Partial<OperationMetrics> | null;
   simulationResult?: SimulationResult | null;
+  /** 后端导出地址；为 null 表示当前没有可导出的运行记录（如 mock 模式或服务端不可用） */
+  exportUrl?: string | null;
 }
 
 const EMPTY_VALUE = '--';
@@ -298,7 +300,8 @@ export const SimulationInsightPanel: React.FC<SimulationInsightPanelProps> = ({
   endNode,
   routeData,
   metrics: metricsOverride,
-  simulationResult
+  simulationResult,
+  exportUrl
 }) => {
   const model = useMemo(() => {
     const routeSummary: RouteSummary = {
@@ -447,9 +450,22 @@ export const SimulationInsightPanel: React.FC<SimulationInsightPanelProps> = ({
           <span>Operation Evaluation</span>
           <h3>运单执行与效益评估看板</h3>
         </div>
-        <div className={`ops-risk-pill ops-risk-${model.risk.level}`}>
-          <i></i>
-          {model.risk.label}
+        <div className="simulation-insight-actions">
+          <div className={`ops-risk-pill ops-risk-${model.risk.level}`}>
+            <i></i>
+            {model.risk.label}
+          </div>
+          {exportUrl ? (
+            // 直链 + download：浏览器自己处理二进制流，不需要 JS 读 blob
+            <a className="simulation-export-btn" href={exportUrl} download data-testid="export-excel">
+              <i className="fa fa-file-excel-o" aria-hidden="true"></i>
+              导出 Excel
+            </a>
+          ) : (
+            <span className="simulation-export-hint" title="导出依赖后端审计记录，请以 VITE_DATA_SOURCE=http 运行">
+              导出需后端
+            </span>
+          )}
         </div>
       </header>
 

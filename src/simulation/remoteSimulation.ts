@@ -66,3 +66,19 @@ export async function simulateRemote(order: RemoteOrder, route: any): Promise<an
 
   return response.json();
 }
+
+/**
+ * 拼出某次仿真结果的 Excel 导出地址。
+ *
+ * runId 为空时返回 null —— 两种情况：mock 模式（纯前端计算，没有审计记录），
+ * 或后端不可用降级到了本地引擎。此时界面显示"导出需后端"，
+ * 而不是挂一个必然 404 的链接。
+ */
+export function buildExportUrl(runId: number | string | null | undefined): string | null {
+  if (runId === null || runId === undefined) return null;
+
+  const id = String(runId).trim();
+  if (!id) return null;
+
+  return `${API_BASE}/simulations/${encodeURIComponent(id)}/export.xlsx`;
+}

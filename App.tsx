@@ -10,7 +10,7 @@ import { OrderTimeline, type TimelineEvent } from './components/OrderTimeline';
 import { parseBaiduTransitRoute } from './src/simulation/baiduRouteParser.js';
 import { LINE_DEFINITIONS, planLocalRoute } from './src/simulation/localRouteEngine.js';
 import { loadSimulationConfigs, simulateOrder } from './src/simulation/simulationEngine.js';
-import { simulateRemote } from './src/simulation/remoteSimulation';
+import { buildExportUrl, simulateRemote } from './src/simulation/remoteSimulation';
 import {
   CATEGORIES,
   CATEGORY_COLORS,
@@ -825,6 +825,7 @@ const App: React.FC = () => {
                   endNode={simParams.endStationName || '未选择终点'}
                   routeData={plannedRouteData}
                   simulationResult={simulationOutput}
+                  exportUrl={buildExportUrl(simulationOutput?.runId)}
                 />
               </div>
             </div>

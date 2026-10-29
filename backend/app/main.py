@@ -17,7 +17,7 @@ from contextlib import asynccontextmanager
 from datetime import datetime
 from typing import Annotated
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Response
 from fastapi.middleware.cors import CORSMiddleware
 
 from .db import get_conn, init_db
@@ -33,7 +33,7 @@ from .schemas import (
     WaybillOut,
     WaybillUpdate,
 )
-from .services import simulation
+from .services import export_excel, simulation
 
 
 @asynccontextmanager
@@ -296,3 +296,32 @@ def list_simulations(limit: Annotated[int, Query(ge=1, le=200)] = 20) -> list[Si
         )
         for row in rows
     ]
+
+
+@app.get(
+    "/api/simulations/{run_id}/export.xlsx",
+    summary="导出某次仿真结果为 Excel",
+    description=(
+        "读取 simulation_runs 里存下的结果（不重新计算），生成 5 个 sheet 的 xlsx："
+        "运行摘要 / 列车编排 / AGV 编排 / 作业明细 / 风险评估。"
+        "在内存中生成，不落盘。"
+    ),
+)
+def export_simulation(run_id: int) -> Response:
+    with get_conn() as conn:
+        row = conn.execute("SELECT * FROM simulation_runs WHERE id = ?", (run_id,)).fetchone()
+
+    if row is None:
+        raise HTTPException(status_code=404, detail="仿真记录不存在")
+
+    content = export_excel.build_workbook(dict(row))
+
+    return Response(
+        content=content,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={
+            # 纯 ASCII 文件名：中文文件名需要 RFC 5987 的 filename*= 编码，很多下载器不认
+            "Content-Disposition": f'attachment; filename="simulation-{run_id}.xlsx"',
+            "Content-Length": str(len(content)),
+        },
+    )

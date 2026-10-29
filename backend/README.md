@@ -77,6 +77,7 @@ backend/
 | POST | `/api/simulate` | **调度仿真**：输入订单 + 路径，返回列车/AGV 编排、指标、风险 |
 | GET | `/api/simulations` | 最近的仿真运行记录（审计用） |
 | POST | `/api/cost/estimate` | 成本/时效测算（供后续接算法复用） |
+| GET | `/api/simulations/{runId}/export.xlsx` | 导出某次仿真结果为 Excel（5 个 sheet，内存生成不落盘） |
 
 ## 仿真下沉到后端
 
