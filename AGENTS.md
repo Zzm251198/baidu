@@ -13,7 +13,8 @@
 
 **项目上下文速查**
 - 深圳轨道物流 AGV 仿真系统：React 19 + Vite 6 + 百度地铁库 + Python/FastAPI/SQLite
-- 分支 `refactor/p0-remediation`；前端 3000、后端 8000（`VITE_DATA_SOURCE=mock|http`）
+- 分支 `main`（原 `refactor/p0-remediation` 已快进合并，远程同名分支保留作参考）；前端 3000、后端 8000（`VITE_DATA_SOURCE=mock|http`）
+- 远程仓库：`Zzm251198/baidu`（public），push 后自动跑 `.github/workflows/ci.yml`，两个 job 均绿
 - 验证基线（回归对表）：186 辆 / 20 线 / 620 单 / 36 分钟 / 3 异常；牛湖→罗湖 72 分钟 / 27 站 / 1 换乘 / 收入 603.00 成本 125.10 利润 477.90；1920×929 一屏
 - 环境坑：本机 workspace-write 沙箱不可用（temp 缺失），npm/Python/Chrome 相关命令需 danger-full-access；PowerShell 不要用 `Get-Content | ConvertFrom-Json` 处理中文 UTF-8
 - 测试：`npm run test`（Vitest，122 例）/ `npm run typecheck`（tsc --noEmit）/ `npm run build`
