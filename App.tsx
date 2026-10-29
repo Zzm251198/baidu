@@ -9,8 +9,9 @@ import { ChartsPanel } from './components/ChartsPanel';
 import { SimulationInsightPanel, type RouteData } from './components/SimulationInsightPanel';
 import { OrderTimeline, type TimelineEvent } from './components/OrderTimeline';
 import { ToastStack, useToasts } from './components/Toast';
+import { AlgorithmCompare } from './components/AlgorithmCompare';
 import { parseBaiduTransitRoute } from './src/simulation/baiduRouteParser.js';
-import { LINE_DEFINITIONS, planLocalRoute } from './src/simulation/localRouteEngine.js';
+import { LINE_DEFINITIONS, ROUTE_STRATEGIES, planLocalRoute } from './src/simulation/localRouteEngine.js';
 import { loadSimulationConfigs, simulateOrder } from './src/simulation/simulationEngine.js';
 import { buildExportUrl, simulateRemote } from './src/simulation/remoteSimulation';
 import {
@@ -77,6 +78,11 @@ const App: React.FC = () => {
   // 页角通知（替代原生 alert）与告警下拉面板的开关
   const { toasts, push: showToast, dismiss: dismissToast } = useToasts();
   const [alertsOpen, setAlertsOpen] = useState(false);
+  // 算法插点：路径策略（插点 A）与调度算法（插点 B）
+  const [routeStrategy, setRouteStrategy] = useState<'smart' | 'balanced' | 'fewer' | 'faster'>('smart');
+  const [schedulingAlgorithm, setSchedulingAlgorithm] = useState<'baseline' | 'capacity-first'>('baseline');
+  // 非 baseline 算法跑完后，同步跑一次基线用于对比卡（null = 无对比）
+  const [baselineOutput, setBaselineOutput] = useState<any | null>(null);
 
   useEffect(() => {
     const updateTime = () => {
@@ -309,8 +315,93 @@ const App: React.FC = () => {
     setIsSimulating(true);
     setSimResult(null);
     setSimulationOutput(null);
-    setRouteRequestKey((value) => value + 1);
+    setBaselineOutput(null);
+
+    if (routeStrategy === 'smart') {
+      // 智能推荐：交给 SubwayMap 查百度路径，结果回调 handleBaiduRouteResult
+      setRouteRequestKey((value) => value + 1);
+      return;
+    }
+
+    // 本地策略（插点 A）：跳过百度，直接用本地 Dijkstra 按所选策略规划
+    const localRoute = planLocalRoute(simParams.startStationName, simParams.endStationName, routeStrategy);
+    if (!localRoute) {
+      setIsSimulating(false);
+      showToast(`本地引擎未能规划 ${simParams.startStationName} → ${simParams.endStationName}（仅覆盖 1/2/3/5/11/14 号线骨干网），请更换站点或切回智能推荐`, 'error');
+      return;
+    }
+    void runSimulationPipeline(localRoute, `｜本地·${ROUTE_STRATEGIES[routeStrategy].label}`);
   };
+
+  /**
+   * 仿真主管线（百度与本地策略共用）：路径已定 → 组订单 → 后端/本地编排 → 落结果。
+   * 抽出来是因为插点 A 接入后有两条入口：百度回调与本地策略直达。
+   */
+  const runSimulationPipeline = useCallback(async (effectiveRoute: any, routeSourceNote: string) => {
+    const cargoValue = Number(simParams.cargoValue);
+
+    if (!simParams.startStationName || !simParams.endStationName || !Number.isFinite(cargoValue) || cargoValue <= 0) {
+      return;
+    }
+
+    const orderInput = {
+      startLineName,
+      startStationName: simParams.startStationName,
+      endLineName,
+      endStationName: simParams.endStationName,
+      cargoWeightKg: simParams.cargoMode === 'weight' ? cargoValue : cargoValue * 20,
+      cargoCount: simParams.cargoMode === 'count' ? cargoValue : Math.max(1, Math.ceil(cargoValue / 60)),
+      startTime: '10:00'
+    };
+
+    // 数据源是 http 时，编排与测算交给后端（可复现、可审计）；
+    // 后端不可用则回退本地引擎，保证演示不中断。
+    let output: any;
+    let simSourceNote = '｜前端计算';
+    let baseline: any = null;
+    if (sourceKind === 'http') {
+      try {
+        output = await simulateRemote(orderInput, effectiveRoute, schedulingAlgorithm);
+        const algorithmNote = schedulingAlgorithm === 'baseline' ? '' : `｜${schedulingAlgorithm === 'capacity-first' ? '大运力优先' : schedulingAlgorithm}`;
+        simSourceNote = output?.runId ? `｜服务端计算 #${output.runId}${algorithmNote}` : `｜服务端计算${algorithmNote}`;
+        // 算法对比：非基线算法时同步跑一次基线（同样落库审计），对比卡展示差异
+        if (schedulingAlgorithm !== 'baseline' && output?.success) {
+          baseline = await simulateRemote(orderInput, effectiveRoute, 'baseline').catch(() => null);
+        }
+      } catch (error) {
+        console.warn('服务端仿真失败，回退本地引擎：', error);
+        output = simulateOrder(orderInput, effectiveRoute);
+        simSourceNote = '｜前端计算（服务端不可用）';
+      }
+    } else {
+      output = simulateOrder(orderInput, effectiveRoute);
+    }
+
+    if (!output.success || !output.metrics) {
+      setIsSimulating(false);
+      showToast('路线查询无结果：百度路径与本地线网引擎（1/2/3/5/11/14 号线）均未能规划该起终点，请更换站点后重试', 'error');
+      return;
+    }
+
+    const routeSummary = output.routeSummary;
+    const metrics = output.metrics;
+
+    setBaselineOutput(baseline);
+    setSimulationOutput(output);
+    setSimResult({
+      pathIds: [],
+      timeCost: metrics.totalDurationMin,
+      stationCount: metrics.totalStationCount,
+      transferCount: metrics.transferCount,
+      transferStations: routeSummary.transferStations || [],
+      routeDescription: `${routeSummary.originStationName} → ${routeSummary.destinationStationName}｜${metrics.totalDurationMin}分钟｜${metrics.totalStationCount}站${routeSourceNote}${simSourceNote}`,
+      baseCost: metrics.revenue,
+      transferCost: metrics.transferCount * 10,
+      totalCost: metrics.totalCost,
+      revenue: metrics.profit
+    });
+    setIsSimulating(false);
+  }, [endLineName, simParams, schedulingAlgorithm, sourceKind, startLineName]);
 
   const handleBaiduRouteResult = useCallback(async (payload: any) => {
     const cargoValue = Number(simParams.cargoValue);
@@ -337,57 +428,8 @@ const App: React.FC = () => {
       }
     }
 
-    const orderInput = {
-      startLineName,
-      startStationName: simParams.startStationName,
-      endLineName,
-      endStationName: simParams.endStationName,
-      cargoWeightKg: simParams.cargoMode === 'weight' ? cargoValue : cargoValue * 20,
-      cargoCount: simParams.cargoMode === 'count' ? cargoValue : Math.max(1, Math.ceil(cargoValue / 60)),
-      startTime: '10:00'
-    };
-
-    // 数据源是 http 时，编排与测算交给后端（可复现、可审计）；
-    // 后端不可用则回退本地引擎，保证演示不中断。
-    let output: any;
-    let simSourceNote = '｜前端计算';
-    if (sourceKind === 'http') {
-      try {
-        output = await simulateRemote(orderInput, effectiveRoute);
-        simSourceNote = output?.runId ? `｜服务端计算 #${output.runId}` : '｜服务端计算';
-      } catch (error) {
-        console.warn('服务端仿真失败，回退本地引擎：', error);
-        output = simulateOrder(orderInput, effectiveRoute);
-        simSourceNote = '｜前端计算（服务端不可用）';
-      }
-    } else {
-      output = simulateOrder(orderInput, effectiveRoute);
-    }
-
-    if (!output.success || !output.metrics) {
-      setIsSimulating(false);
-      showToast('路线查询无结果：百度路径与本地线网引擎（1/2/3/5/11/14 号线）均未能规划该起终点，请更换站点后重试', 'error');
-      return;
-    }
-
-    const routeSummary = output.routeSummary;
-    const metrics = output.metrics;
-
-    setSimulationOutput(output);
-    setSimResult({
-      pathIds: [],
-      timeCost: metrics.totalDurationMin,
-      stationCount: metrics.totalStationCount,
-      transferCount: metrics.transferCount,
-      transferStations: routeSummary.transferStations || [],
-      routeDescription: `${routeSummary.originStationName} → ${routeSummary.destinationStationName}｜${metrics.totalDurationMin}分钟｜${metrics.totalStationCount}站${routeSourceNote}${simSourceNote}`,
-      baseCost: metrics.revenue,
-      transferCost: metrics.transferCount * 10,
-      totalCost: metrics.totalCost,
-      revenue: metrics.profit
-    });
-    setIsSimulating(false);
-  }, [endLineName, simParams, sourceKind, startLineName]);
+    await runSimulationPipeline(effectiveRoute, routeSourceNote);
+  }, [runSimulationPipeline, simParams.endStationName, simParams.startStationName]);
 
   const renderDataSelect = (
     label: string,
@@ -396,19 +438,19 @@ const App: React.FC = () => {
     options: { value: string; label: string }[]
   ) => (
     <div className="relative bg-transparent">
-      <label className="block text-xs text-cyan-400 mb-2 tracking-wider">{label}</label>
+      <label className="block text-xs text-emerald-400 mb-2 tracking-wider">{label}</label>
       <select
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="w-full bg-gray-900/40 border border-cyan-500/30 rounded-lg px-4 py-2.5 text-cyan-200 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/80 appearance-none cursor-pointer backdrop-blur-sm"
+        className="w-full bg-gray-900/40 border border-emerald-500/30 rounded-lg px-4 py-2.5 text-emerald-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/80 appearance-none cursor-pointer backdrop-blur-sm"
       >
         {options.map((option) => (
-          <option key={option.value} value={option.value} className="bg-gray-800 text-cyan-200 border-none">
+          <option key={option.value} value={option.value} className="bg-gray-800 text-emerald-200 border-none">
             {option.label}
           </option>
         ))}
       </select>
-      <div className="absolute right-3 top-10 pointer-events-none text-cyan-400">
+      <div className="absolute right-3 top-10 pointer-events-none text-emerald-400">
         <i className="fa fa-chevron-down text-xs"></i>
       </div>
     </div>
@@ -425,6 +467,11 @@ const App: React.FC = () => {
             <h1 className="text-xl font-bold tracking-wide truncate">
               <span className="text-secondary ml-2 hidden sm:inline">城市轨道交通货运智能监测与调度仿真系统</span>
             </h1>
+            {/* 站务风格线路牌：仿地铁线路胶囊，绿色专线标识 */}
+            <span className="metro-line-badge hidden lg:flex items-center gap-1.5 ml-1">
+              <span className="w-2 h-2 rounded-full bg-white/90"></span>
+              货运专线
+            </span>
           </div>
 
           <div className="flex-1 flex justify-center">
@@ -443,8 +490,8 @@ const App: React.FC = () => {
 
           <div className="flex items-center justify-end space-x-4 w-1/4">
             <div className="hidden md:flex flex-col items-end mr-2">
-              <div className="text-xs text-gray-400">系统时间</div>
-              <div className="text-sm font-mono text-secondary font-bold">{currentTime}</div>
+              <div className="text-[10px] text-gray-500 tracking-widest">站务时钟</div>
+              <div className="led-clock text-sm font-mono font-bold">{currentTime}</div>
             </div>
             <div className="relative">
               <button
@@ -471,7 +518,7 @@ const App: React.FC = () => {
                     <div className="fixed inset-0 z-40" onClick={() => setAlertsOpen(false)}></div>,
                     document.body
                   )}
-                  <div className="absolute right-0 top-12 z-50 w-96 max-w-[calc(100vw-2rem)] rounded-xl border border-cyan-500/20 bg-gray-900/95 backdrop-blur-md shadow-2xl shadow-black/50 overflow-hidden animate-fade-in">
+                  <div className="absolute right-0 top-12 z-50 w-96 max-w-[calc(100vw-2rem)] rounded-xl border border-emerald-500/20 bg-gray-900/95 backdrop-blur-md shadow-2xl shadow-black/50 overflow-hidden animate-fade-in">
                     <div className="flex items-center justify-between px-4 py-3 border-b border-gray-700/50">
                       <span className="text-sm font-bold text-white">
                         <i className="fa fa-bell-o text-red-500 mr-2"></i>告警中心
@@ -484,7 +531,7 @@ const App: React.FC = () => {
                       {alerts.map((log) => (
                         <div
                           key={log.id}
-                          className="flex items-start gap-3 text-xs rounded-lg px-3 py-2 border border-gray-800/40 bg-black/20 hover:border-cyan-500/30 hover:bg-black/40 transition-colors"
+                          className="flex items-start gap-3 text-xs rounded-lg px-3 py-2 border border-gray-800/40 bg-black/20 hover:border-emerald-500/30 hover:bg-black/40 transition-colors"
                         >
                           <i
                             className={`fa mt-0.5 ${
@@ -494,7 +541,7 @@ const App: React.FC = () => {
                                   ? 'fa-exclamation-triangle text-amber-400'
                                   : log.type === 'success'
                                     ? 'fa-check-circle text-emerald-400'
-                                    : 'fa-info-circle text-cyan-400'
+                                    : 'fa-info-circle text-emerald-400'
                             }`}
                           ></i>
                           <div className="flex-1 min-w-0">
@@ -509,7 +556,7 @@ const App: React.FC = () => {
               )}
             </div>
             <div className="flex items-center space-x-2 cursor-default pl-2 border-l border-gray-700" title="调度员">
-              <div className="h-8 w-8 rounded-full flex items-center justify-center bg-gradient-to-br from-cyan-600 to-blue-700 border-2 border-gray-600 shadow-lg shadow-cyan-500/20">
+              <div className="h-8 w-8 rounded-full flex items-center justify-center bg-gradient-to-br from-emerald-600 to-teal-700 border-2 border-gray-600 shadow-lg shadow-emerald-500/20">
                 <i className="fa fa-user text-sm text-white"></i>
               </div>
             </div>
@@ -537,7 +584,7 @@ const App: React.FC = () => {
                     <i className="fa fa-exclamation-triangle mr-1"></i>后端不可用 · 演示数据
                   </span>
                 ) : (
-                  <span className={`text-xs px-2 py-0.5 rounded-full border ${sourceKind === 'http' ? 'text-cyan-300 border-cyan-500/40 bg-cyan-500/10' : 'text-gray-400 border-gray-600/40 bg-gray-500/10'}`}>
+                  <span className={`text-xs px-2 py-0.5 rounded-full border ${sourceKind === 'http' ? 'text-emerald-300 border-emerald-500/40 bg-emerald-500/10' : 'text-gray-400 border-gray-600/40 bg-gray-500/10'}`}>
                     <i className={`fa ${sourceKind === 'http' ? 'fa-database' : 'fa-flask'} mr-1`}></i>
                     数据源：{dataSourceLabel} · 非实时
                   </span>
@@ -588,7 +635,7 @@ const App: React.FC = () => {
 
             {/* 筛选结果回执：让"筛选真的生效"这件事一眼可见 */}
             <div className="flex flex-wrap items-center gap-4 -mt-4 text-xs">
-              <span className="text-cyan-300 bg-cyan-500/10 border border-cyan-500/25 rounded-full px-3 py-1">
+              <span className="text-emerald-300 bg-emerald-500/10 border border-emerald-500/25 rounded-full px-3 py-1">
                 命中 <b className="text-white">{dataSummary.waybillCount}</b> 条运单
               </span>
               <span className="text-gray-400">
@@ -639,12 +686,12 @@ const App: React.FC = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 h-[400px]">
               <div className="lg:col-span-2 h-full">
-                <div className="chart-card h-full w-full bg-transparent border border-cyan-500/20 rounded-xl p-4 relative overflow-hidden">
+                <div className="chart-card h-full w-full bg-transparent border border-emerald-500/20 rounded-xl p-4 relative overflow-hidden">
                   <ChartsPanel type="composed" title="各线路运力与实际负载分析" data={lineLoadData} />
                 </div>
               </div>
               <div className="lg:col-span-1 h-full">
-                <div className="chart-card h-full w-full bg-transparent border border-cyan-500/20 rounded-xl p-4 relative overflow-hidden">
+                <div className="chart-card h-full w-full bg-transparent border border-emerald-500/20 rounded-xl p-4 relative overflow-hidden">
                   <ChartsPanel type="pie" title="运输货物类型分布" data={categoryPieData} colors={CATEGORY_COLORS} />
                 </div>
               </div>
@@ -652,12 +699,12 @@ const App: React.FC = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-[380px]">
               <div className="h-full">
-                <div className="chart-card h-full w-full bg-transparent border border-cyan-500/20 rounded-xl p-4 relative overflow-hidden">
+                <div className="chart-card h-full w-full bg-transparent border border-emerald-500/20 rounded-xl p-4 relative overflow-hidden">
                   <ChartsPanel type="scatter" title="线路运输效能矩阵（距离/耗时/货量）" data={efficiencyData} />
                 </div>
               </div>
               <div className="h-full">
-                <div className="chart-card h-full w-full bg-transparent border border-cyan-500/20 rounded-xl p-4 relative overflow-hidden">
+                <div className="chart-card h-full w-full bg-transparent border border-emerald-500/20 rounded-xl p-4 relative overflow-hidden">
                   <ChartsPanel
                     type="area"
                     title="全网24小时货运流量趋势（按品类，吨）"
@@ -670,11 +717,11 @@ const App: React.FC = () => {
             </div>
 
             <div className="w-full bg-transparent">
-              <div className="bg-transparent rounded-xl p-6 border border-cyan-500/20 relative overflow-hidden chart-card">
-                <h3 className="font-bold text-cyan-300 mb-6 flex items-center relative z-10">
+              <div className="bg-transparent rounded-xl p-6 border border-emerald-500/20 relative overflow-hidden chart-card">
+                <h3 className="font-bold text-emerald-300 mb-6 flex items-center relative z-10">
                   <i className="fa fa-trophy text-yellow-400 mr-3 text-lg"></i>
                   <span className="tracking-wider">综合效率排行榜</span>
-                  <div className="ml-4 h-1 flex-1 bg-gradient-to-r from-cyan-500/50 to-transparent rounded-full"></div>
+                  <div className="ml-4 h-1 flex-1 bg-gradient-to-r from-emerald-500/50 to-transparent rounded-full"></div>
                 </h3>
                 <div className="h-[220px] relative z-10 bg-transparent">
                   <AutoScrollChart rows={lineRanking} />
@@ -686,25 +733,28 @@ const App: React.FC = () => {
 
         {activeTab === 'simulation' && (
           <div className="animate-fade-in simulation-layout flex flex-col h-full min-h-0 p-4 lg:p-6 gap-6 overflow-y-auto custom-scrollbar bg-transparent">
+            {/* 算法对比卡：选了非基线派车算法且基线对照成功时出现 */}
+            {baselineOutput && <AlgorithmCompare current={simulationOutput} baseline={baselineOutput} />}
+
             <div className="simulation-main-grid grid grid-cols-1 lg:grid-cols-12 gap-6 bg-transparent">
-              <div className="lg:col-span-4 bg-transparent rounded-xl p-6 border border-cyan-500/20 shadow-lg shadow-cyan-500/5 h-full min-h-[440px] flex flex-col relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-16 h-16 border-t border-l border-cyan-400/30 rounded-tl-xl pointer-events-none"></div>
-                <div className="absolute bottom-0 right-0 w-16 h-16 border-b border-r border-cyan-400/30 rounded-br-xl pointer-events-none"></div>
-                <h3 className="text-cyan-300 font-bold mb-6 flex items-center flex-shrink-0 relative z-10">
-                  <span className="w-1.5 h-6 bg-cyan-500 rounded mr-3"></span>
+              <div className="lg:col-span-4 bg-transparent rounded-xl p-6 border border-emerald-500/20 shadow-lg shadow-emerald-500/5 h-full min-h-[440px] flex flex-col relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-16 h-16 border-t border-l border-emerald-400/30 rounded-tl-xl pointer-events-none"></div>
+                <div className="absolute bottom-0 right-0 w-16 h-16 border-b border-r border-emerald-400/30 rounded-br-xl pointer-events-none"></div>
+                <h3 className="text-emerald-300 font-bold mb-6 flex items-center flex-shrink-0 relative z-10">
+                  <span className="w-1.5 h-6 bg-emerald-500 rounded mr-3"></span>
                   仿真参数配置
-                  <div className="ml-4 h-0.5 flex-1 bg-gradient-to-r from-cyan-500/50 to-transparent rounded-full"></div>
+                  <div className="ml-4 h-0.5 flex-1 bg-gradient-to-r from-emerald-500/50 to-transparent rounded-full"></div>
                 </h3>
 
                 <div className="space-y-6 relative z-10 flex-grow flex flex-col">
-                  <div className="space-y-4 p-5 bg-gray-900/20 rounded-lg border border-cyan-500/10 backdrop-blur-sm">
-                    <label className="text-xs font-bold text-cyan-400 flex items-center">
+                  <div className="space-y-4 p-5 bg-gray-900/20 rounded-lg border border-emerald-500/10 backdrop-blur-sm">
+                    <label className="text-xs font-bold text-emerald-400 flex items-center">
                       <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 mr-2 shadow-lg shadow-emerald-500/20"></span>
                       起点选择
                     </label>
                     <div className="grid grid-cols-2 gap-4">
                       <select
-                        className="bg-gray-900/60 border border-cyan-500/30 rounded-lg px-4 py-2.5 text-sm text-cyan-200 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 appearance-none cursor-pointer backdrop-blur-sm"
+                        className="bg-gray-900/60 border border-emerald-500/30 rounded-lg px-4 py-2.5 text-sm text-emerald-200 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-500/50 appearance-none cursor-pointer backdrop-blur-sm"
                         value={startLineName}
                         onChange={(event) => {
                           setStartLineName(event.target.value);
@@ -713,31 +763,31 @@ const App: React.FC = () => {
                       >
                         <option value="">选择线路</option>
                         {subwayLineNames.map((name) => (
-                          <option key={name} value={name} className="bg-gray-800 text-cyan-200">{name}</option>
+                          <option key={name} value={name} className="bg-gray-800 text-emerald-200">{name}</option>
                         ))}
                       </select>
                       <select
-                        className="bg-gray-900/60 border border-cyan-500/30 rounded-lg px-4 py-2.5 text-sm text-cyan-200 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 appearance-none cursor-pointer backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="bg-gray-900/60 border border-emerald-500/30 rounded-lg px-4 py-2.5 text-sm text-emerald-200 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-500/50 appearance-none cursor-pointer backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed"
                         value={simParams.startStationName}
                         onChange={(event) => setSimParams({ ...simParams, startStationName: event.target.value })}
                         disabled={!startLineName}
                       >
                         <option value="">选择站点</option>
                         {startStations.map((stationName) => (
-                          <option key={stationName} value={stationName} className="bg-gray-800 text-cyan-200">{stationName}</option>
+                          <option key={stationName} value={stationName} className="bg-gray-800 text-emerald-200">{stationName}</option>
                         ))}
                       </select>
                     </div>
                   </div>
 
-                  <div className="space-y-4 p-5 bg-gray-900/20 rounded-lg border border-cyan-500/10 backdrop-blur-sm">
-                    <label className="text-xs font-bold text-cyan-400 flex items-center">
+                  <div className="space-y-4 p-5 bg-gray-900/20 rounded-lg border border-emerald-500/10 backdrop-blur-sm">
+                    <label className="text-xs font-bold text-emerald-400 flex items-center">
                       <span className="w-2.5 h-2.5 rounded-full bg-rose-500 mr-2 shadow-lg shadow-rose-500/20"></span>
                       终点选择
                     </label>
                     <div className="grid grid-cols-2 gap-4">
                       <select
-                        className="bg-gray-900/60 border border-cyan-500/30 rounded-lg px-4 py-2.5 text-sm text-cyan-200 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 appearance-none cursor-pointer backdrop-blur-sm"
+                        className="bg-gray-900/60 border border-emerald-500/30 rounded-lg px-4 py-2.5 text-sm text-emerald-200 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-500/50 appearance-none cursor-pointer backdrop-blur-sm"
                         value={endLineName}
                         onChange={(event) => {
                           setEndLineName(event.target.value);
@@ -746,31 +796,31 @@ const App: React.FC = () => {
                       >
                         <option value="">选择线路</option>
                         {subwayLineNames.map((name) => (
-                          <option key={name} value={name} className="bg-gray-800 text-cyan-200">{name}</option>
+                          <option key={name} value={name} className="bg-gray-800 text-emerald-200">{name}</option>
                         ))}
                       </select>
                       <select
-                        className="bg-gray-900/60 border border-cyan-500/30 rounded-lg px-4 py-2.5 text-sm text-cyan-200 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 appearance-none cursor-pointer backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="bg-gray-900/60 border border-emerald-500/30 rounded-lg px-4 py-2.5 text-sm text-emerald-200 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-500/50 appearance-none cursor-pointer backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed"
                         value={simParams.endStationName}
                         onChange={(event) => setSimParams({ ...simParams, endStationName: event.target.value })}
                         disabled={!endLineName}
                       >
                         <option value="">选择站点</option>
                         {endStations.map((stationName) => (
-                          <option key={stationName} value={stationName} className="bg-gray-800 text-cyan-200">{stationName}</option>
+                          <option key={stationName} value={stationName} className="bg-gray-800 text-emerald-200">{stationName}</option>
                         ))}
                       </select>
                     </div>
                   </div>
 
-                  <div className="space-y-4 pt-6 border-t border-cyan-500/10">
-                    <label className="text-xs text-cyan-400">货运参数</label>
+                  <div className="space-y-4 pt-6 border-t border-emerald-500/10">
+                    <label className="text-xs text-emerald-400">货运参数</label>
                     <div className="flex items-center space-x-6">
                       <label className="flex items-center cursor-pointer">
                         <input
                           type="radio"
                           name="cargoMode"
-                          className="form-radio text-cyan-500 focus:ring-cyan-500 bg-gray-900/60 border-cyan-500/30 h-4 w-4"
+                          className="form-radio text-emerald-500 focus:ring-emerald-500 bg-gray-900/60 border-emerald-500/30 h-4 w-4"
                           checked={simParams.cargoMode === 'weight'}
                           onChange={() => setSimParams({ ...simParams, cargoMode: 'weight' })}
                         />
@@ -780,7 +830,7 @@ const App: React.FC = () => {
                         <input
                           type="radio"
                           name="cargoMode"
-                          className="form-radio text-cyan-500 focus:ring-cyan-500 bg-gray-900/60 border-cyan-500/30 h-4 w-4"
+                          className="form-radio text-emerald-500 focus:ring-emerald-500 bg-gray-900/60 border-emerald-500/30 h-4 w-4"
                           checked={simParams.cargoMode === 'count'}
                           onChange={() => setSimParams({ ...simParams, cargoMode: 'count' })}
                         />
@@ -790,10 +840,40 @@ const App: React.FC = () => {
                     <input
                       type="number"
                       placeholder="请输入数值"
-                      className="w-full bg-gray-900/60 border border-cyan-500/30 rounded-lg px-4 py-2.5 text-sm text-white focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 backdrop-blur-sm"
+                      className="w-full bg-gray-900/60 border border-emerald-500/30 rounded-lg px-4 py-2.5 text-sm text-white focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-500/50 backdrop-blur-sm"
                       value={simParams.cargoValue}
                       onChange={(event) => setSimParams({ ...simParams, cargoValue: event.target.value })}
                     />
+                  </div>
+
+                  <div className="space-y-4 pt-4 border-t border-emerald-500/10">
+                    <label className="text-xs text-emerald-400">算法策略</label>
+                    <div className="grid grid-cols-2 gap-4">
+                      <select
+                        title="路径规划策略：智能推荐优先用百度实时路径；本地策略离线可用，换乘惩罚不同导致取舍不同"
+                        className="bg-gray-900/60 border border-emerald-500/30 rounded-lg px-3 py-2.5 text-xs text-emerald-200 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-500/50 appearance-none cursor-pointer backdrop-blur-sm"
+                        value={routeStrategy}
+                        onChange={(event) => setRouteStrategy(event.target.value as typeof routeStrategy)}
+                      >
+                        <option value="smart">路径 · 智能推荐</option>
+                        <option value="balanced">路径 · 综合最优</option>
+                        <option value="fewer">路径 · 少换乘优先</option>
+                        <option value="faster">路径 · 时间优先</option>
+                      </select>
+                      <select
+                        title="AGV 派车调度算法：大运力优先时，对比卡会同步跑一次基线作对照"
+                        className="bg-gray-900/60 border border-emerald-500/30 rounded-lg px-3 py-2.5 text-xs text-emerald-200 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-500/50 appearance-none cursor-pointer backdrop-blur-sm"
+                        value={schedulingAlgorithm}
+                        onChange={(event) => setSchedulingAlgorithm(event.target.value as typeof schedulingAlgorithm)}
+                      >
+                        <option value="baseline">派车 · 就近匹配（基线）</option>
+                        <option value="capacity-first">派车 · 大运力优先</option>
+                      </select>
+                    </div>
+                    <p className="text-[10px] text-gray-500 leading-relaxed">
+                      少换乘适合重载直达（减少装卸交接），时间优先愿意换乘换总时长；
+                      派车算法不改变运费，改变的是运力冗余与电量稳健性。
+                    </p>
                   </div>
 
                   <div className="mt-auto pt-4">
@@ -803,7 +883,7 @@ const App: React.FC = () => {
                       className={`w-full py-3.5 rounded-lg text-sm font-bold text-white shadow-lg transition-all duration-300 ${
                         isSimulating
                           ? 'bg-gray-700/60 cursor-not-allowed border border-gray-600'
-                          : 'bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 hover:shadow-cyan-500/30 border border-cyan-500/30'
+                          : 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 hover:shadow-emerald-500/30 border border-emerald-500/30'
                       }`}
                     >
                       {isSimulating ? (
@@ -817,13 +897,13 @@ const App: React.FC = () => {
               </div>
 
               <div className="lg:col-span-8 w-full bg-transparent">
-                <div className="bg-transparent rounded-xl p-6 border border-cyan-500/20 relative overflow-hidden h-full min-h-[440px] flex flex-col">
-                  <div className="absolute top-0 left-0 w-20 h-20 border-t border-l border-cyan-400/30 rounded-tl-xl pointer-events-none"></div>
-                  <div className="absolute bottom-0 right-0 w-20 h-20 border-b border-r border-cyan-400/30 rounded-br-xl pointer-events-none"></div>
-                  <h3 className="font-bold text-cyan-300 mb-6 flex items-center relative z-10 flex-shrink-0">
+                <div className="bg-transparent rounded-xl p-6 border border-emerald-500/20 relative overflow-hidden h-full min-h-[440px] flex flex-col">
+                  <div className="absolute top-0 left-0 w-20 h-20 border-t border-l border-emerald-400/30 rounded-tl-xl pointer-events-none"></div>
+                  <div className="absolute bottom-0 right-0 w-20 h-20 border-b border-r border-emerald-400/30 rounded-br-xl pointer-events-none"></div>
+                  <h3 className="font-bold text-emerald-300 mb-6 flex items-center relative z-10 flex-shrink-0">
                     <i className="fa fa-list-alt text-yellow-400 mr-3 text-lg"></i>
                     <span className="tracking-wider">订单数据</span>
-                    <div className="ml-4 h-1 flex-1 bg-gradient-to-r from-cyan-500/50 to-transparent rounded-full"></div>
+                    <div className="ml-4 h-1 flex-1 bg-gradient-to-r from-emerald-500/50 to-transparent rounded-full"></div>
                   </h3>
                   <div className="flex-1 min-h-[180px] relative z-10 bg-transparent">
                     <AGV rows={simulationOutput?.operationRows} />
@@ -834,20 +914,20 @@ const App: React.FC = () => {
             </div>
 
             <div className="simulation-bottom-grid flex-shrink-0 grid grid-cols-1 lg:grid-cols-2 gap-6 bg-transparent">
-              <div className="simulation-route-panel bg-transparent rounded-xl p-6 border border-cyan-500/20 shadow-lg shadow-cyan-500/5 flex flex-col relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-20 h-20 border-t border-l border-cyan-400/30 rounded-tl-xl pointer-events-none"></div>
+              <div className="simulation-route-panel bg-transparent rounded-xl p-6 border border-emerald-500/20 shadow-lg shadow-emerald-500/5 flex flex-col relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-20 h-20 border-t border-l border-emerald-400/30 rounded-tl-xl pointer-events-none"></div>
                 <div className="flex justify-between items-center mb-6 flex-shrink-0 relative z-10 flex-wrap gap-4">
-                  <h3 className="font-bold text-cyan-300 flex items-center">
+                  <h3 className="font-bold text-emerald-300 flex items-center">
                     <span className="w-1.5 h-6 bg-blue-500 rounded mr-3"></span>
                     仿真线路规划可视化
                   </h3>
-                  <div className="text-xs text-cyan-400 bg-gray-900/40 px-3 py-1 rounded-lg border border-cyan-500/10 backdrop-blur-sm">
+                  <div className="text-xs text-emerald-400 bg-gray-900/40 px-3 py-1 rounded-lg border border-emerald-500/10 backdrop-blur-sm">
                     {simResult ? simResult.routeDescription : '等待仿真...'}
                   </div>
                 </div>
                 <div className="simulation-route-body">
-                  <div className="simulation-route-map-frame relative rounded-lg overflow-hidden bg-gray-900/20 border border-cyan-500/10 backdrop-blur-sm">
-                    <div className="absolute inset-0 bg-gradient-to-br from-cyan-900/10 to-blue-900/10 pointer-events-none"></div>
+                  <div className="simulation-route-map-frame relative rounded-lg overflow-hidden bg-gray-900/20 border border-emerald-500/10 backdrop-blur-sm">
+                    <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/10 to-blue-900/10 pointer-events-none"></div>
                     <SubwayMap
                       mode="simulation"
                       startStationName={simParams.startStationName}
@@ -858,8 +938,8 @@ const App: React.FC = () => {
                     />
                     {!simResult && (
                       <div className="absolute inset-0 bg-black/40 flex items-center justify-center pointer-events-none z-10 backdrop-blur-sm">
-                        <div className="bg-gray-900/80 px-4 py-2 rounded-xl text-xs text-cyan-300 border border-cyan-500/20 backdrop-blur-sm shadow-lg">
-                          <i className="fa fa-map-marker mr-2 text-cyan-500"></i>
+                        <div className="bg-gray-900/80 px-4 py-2 rounded-xl text-xs text-emerald-300 border border-emerald-500/20 backdrop-blur-sm shadow-lg">
+                          <i className="fa fa-map-marker mr-2 text-emerald-500"></i>
                           请配置参数并开始仿真
                         </div>
                       </div>

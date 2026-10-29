@@ -58,13 +58,13 @@ export const AGV: React.FC<{ rows?: AgvOperationRow[] }> = ({ rows }) => {
         if (type.includes('始发')) return 'text-emerald-400 glow-green';
         if (type.includes('终端')) return 'text-blue-400 glow-blue';
         if (type.includes('中转')) return 'text-amber-400 glow-yellow';
-        return 'text-cyan-300';
+        return 'text-emerald-300';
     };
 
     return (
         <div className="w-full h-full flex flex-col overflow-hidden bg-transparent relative">
-            <div className="grid grid-cols-9 text-xs text-cyan-300 border-b border-cyan-500/30 pb-3 mb-3 px-3 uppercase tracking-wider font-semibold relative z-10">
-                <div className="absolute -bottom-1 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-cyan-400 to-transparent"></div>
+            <div className="grid grid-cols-9 text-xs text-emerald-300 border-b border-emerald-500/30 pb-3 mb-3 px-3 uppercase tracking-wider font-semibold relative z-10">
+                <div className="absolute -bottom-1 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-emerald-400 to-transparent"></div>
                 <span className="col-span-1 text-center">订单编号</span>
                 <span className="col-span-1 text-center">订单类型</span>
                 <span className="col-span-1 text-center">AGV编号</span>
@@ -76,17 +76,17 @@ export const AGV: React.FC<{ rows?: AgvOperationRow[] }> = ({ rows }) => {
                 <span className="col-span-1 text-center">下车时间</span>
             </div>
 
-            <div className="flex-1 relative overflow-hidden group bg-gray-900/10 rounded-lg border border-cyan-500/10">
+            <div className="flex-1 relative overflow-hidden group bg-gray-900/10 rounded-lg border border-emerald-500/10">
                 <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(6,182,212,0.1)_1px,transparent_1px),linear-gradient(to_bottom,rgba(6,182,212,0.1)_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none"></div>
 
                 <div className={`absolute top-0 left-0 w-full z-10 ${shouldScroll ? 'animate-marquee hover:pause-animation' : ''}`}>
                     {renderedRows.map((item, index) => (
                         <div
                             key={`${item.orderId}-${index}`}
-                            className="grid grid-cols-9 items-center text-sm py-2.5 px-3 border-b border-cyan-900/10 hover:bg-cyan-900/20 hover:border-cyan-500/30 transition-all duration-300"
+                            className="grid grid-cols-9 items-center text-sm py-2.5 px-3 border-b border-emerald-900/10 hover:bg-emerald-900/20 hover:border-emerald-500/30 transition-all duration-300"
                         >
                             <div className="col-span-1 text-gray-200 font-medium truncate text-center" title={item.orderId}>
-                                <span className="inline-block w-1 h-1 bg-cyan-400 rounded-full mr-1"></span>
+                                <span className="inline-block w-1 h-1 bg-emerald-400 rounded-full mr-1"></span>
                                 {item.orderId}
                             </div>
                             <div className="col-span-1 truncate text-center" title={item.orderType}>
@@ -100,7 +100,7 @@ export const AGV: React.FC<{ rows?: AgvOperationRow[] }> = ({ rows }) => {
                             <div className="col-span-1 text-gray-200 truncate text-center" title={item.flightSegment}>
                                 {item.flightSegment}
                             </div>
-                            <div className="col-span-1 text-cyan-300 font-medium truncate text-center glow-blue" title={item.bindTrain}>
+                            <div className="col-span-1 text-emerald-300 font-medium truncate text-center glow-blue" title={item.bindTrain}>
                                 {item.bindTrain}
                             </div>
                             <div className="col-span-1 text-gray-200 truncate text-center" title={item.boardingStop}>
@@ -119,14 +119,14 @@ export const AGV: React.FC<{ rows?: AgvOperationRow[] }> = ({ rows }) => {
                     ))}
                 </div>
 
-                <div className="absolute inset-0 border border-cyan-500/20 rounded-lg pointer-events-none"></div>
-                <div className="absolute inset-1 border border-cyan-500/10 rounded-lg pointer-events-none"></div>
+                <div className="absolute inset-0 border border-emerald-500/20 rounded-lg pointer-events-none"></div>
+                <div className="absolute inset-1 border border-emerald-500/10 rounded-lg pointer-events-none"></div>
                 <div className="absolute top-0 left-0 w-full h-16 bg-gradient-to-b from-gray-900/80 to-transparent pointer-events-none z-20"></div>
                 <div className="absolute bottom-0 left-0 w-full h-16 bg-gradient-to-t from-gray-900/80 to-transparent pointer-events-none z-20"></div>
-                <div className="absolute top-0 left-0 w-8 h-8 border-t border-l border-cyan-400/40 rounded-tl-lg pointer-events-none"></div>
-                <div className="absolute top-0 right-0 w-8 h-8 border-t border-r border-cyan-400/40 rounded-tr-lg pointer-events-none"></div>
-                <div className="absolute bottom-0 left-0 w-8 h-8 border-b border-l border-cyan-400/40 rounded-bl-lg pointer-events-none"></div>
-                <div className="absolute bottom-0 right-0 w-8 h-8 border-b border-r border-cyan-400/40 rounded-br-lg pointer-events-none"></div>
+                <div className="absolute top-0 left-0 w-8 h-8 border-t border-l border-emerald-400/40 rounded-tl-lg pointer-events-none"></div>
+                <div className="absolute top-0 right-0 w-8 h-8 border-t border-r border-emerald-400/40 rounded-tr-lg pointer-events-none"></div>
+                <div className="absolute bottom-0 left-0 w-8 h-8 border-b border-l border-emerald-400/40 rounded-bl-lg pointer-events-none"></div>
+                <div className="absolute bottom-0 right-0 w-8 h-8 border-b border-r border-emerald-400/40 rounded-br-lg pointer-events-none"></div>
             </div>
 
             <style>{`

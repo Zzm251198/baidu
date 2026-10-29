@@ -21,7 +21,7 @@ export const OrderTimeline: React.FC<OrderTimelineProps> = ({ events }) => {
       <div className="order-timeline">
         <div className="order-timeline-head">
           <span className="order-timeline-title">
-            <i className="fa fa-clock-o mr-2 text-cyan-400"></i>作业时间轴
+            <i className="fa fa-clock-o mr-2 text-emerald-400"></i>作业时间轴
           </span>
         </div>
         <div className="order-timeline-empty">
@@ -36,7 +36,7 @@ export const OrderTimeline: React.FC<OrderTimelineProps> = ({ events }) => {
     <div className="order-timeline">
       <div className="order-timeline-head">
         <span className="order-timeline-title">
-          <i className="fa fa-clock-o mr-2 text-cyan-400"></i>作业时间轴
+          <i className="fa fa-clock-o mr-2 text-emerald-400"></i>作业时间轴
         </span>
         <span className="order-timeline-hint">共 {events.length} 个作业节点</span>
       </div>

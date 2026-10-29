@@ -21,7 +21,7 @@ const KIND_STYLE: Record<ToastKind, { border: string; icon: string; iconColor: s
   error: { border: 'border-red-500/40', icon: 'fa-exclamation-circle', iconColor: 'text-red-400', bar: 'from-red-500 to-rose-400' },
   warning: { border: 'border-amber-500/40', icon: 'fa-exclamation-triangle', iconColor: 'text-amber-400', bar: 'from-amber-500 to-yellow-400' },
   success: { border: 'border-emerald-500/40', icon: 'fa-check-circle', iconColor: 'text-emerald-400', bar: 'from-emerald-500 to-green-400' },
-  info: { border: 'border-cyan-500/40', icon: 'fa-info-circle', iconColor: 'text-cyan-400', bar: 'from-cyan-500 to-blue-400' }
+  info: { border: 'border-emerald-500/40', icon: 'fa-info-circle', iconColor: 'text-emerald-400', bar: 'from-emerald-500 to-blue-400' }
 };
 
 /** toast 状态钩子：push 进栈、4.2 秒自动出栈；同时最多 3 条，避免刷屏 */

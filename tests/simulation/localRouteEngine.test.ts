@@ -113,3 +113,40 @@ describe('无法规划时返回 null（绝不编造路径）', () => {
     expect(planLocalRoute(null as any, '岗厦北')).toBeNull();
   });
 });
+
+// ─────────────── 路径策略（插点 A）───────────────
+// 策略 = 同一个 Dijkstra 换不同的「换乘惩罚」。分歧案例：赤湾→布吉——
+// 直达 5 号线 29 站 0 换乘（≈72.5 分）vs 经 5→11→14 号线 18 站 2 换乘（≈55 分）。
+// 少换乘优先选直达（货运重柜怕装卸交接）；时间优先选换乘。各有道理，看业务选。
+describe('路径策略：同一个 Dijkstra，不同的换乘惩罚', () => {
+  it('默认 balanced 行为与不传策略完全一致', () => {
+    expect(planLocalRoute('赤湾', '布吉', 'balanced')).toEqual(planLocalRoute('赤湾', '布吉'));
+  });
+
+  it('少换乘优先：赤湾→布吉 走 5 号线直达，0 换乘 29 站', () => {
+    const route = planLocalRoute('赤湾', '布吉', 'fewer');
+    expect(route!.transferCount).toBe(0);
+    expect(route!.segments).toHaveLength(1);
+    expect(route!.segments[0].lineName).toBe('5号线/环中线');
+    expect(route!.totalStationCount).toBe(29);
+  });
+
+  it('时间优先：赤湾→布吉 走 2→11→14 号线（后海换乘），2 换乘 17 站，等效时间更短', () => {
+    const direct = planLocalRoute('赤湾', '布吉', 'fewer')!;
+    const faster = planLocalRoute('赤湾', '布吉', 'faster')!;
+
+    expect(faster.transferCount).toBe(2);
+    expect(faster.totalStationCount).toBe(17);
+    expect(faster.segments.map((s) => s.lineName)).toEqual([
+      '2号线/8号线', '11号线/机场线', '14号线/东部快线'
+    ]);
+    // 分歧的意义：多 2 次换乘，换来更短的总时长（53 分 < 直达 74 分）
+    expect(faster.totalDurationMin).toBeLessThan(direct.totalDurationMin);
+  });
+
+  it('未知策略回落 balanced，不抛错', () => {
+    expect(planLocalRoute('前海湾', '岗厦北', 'no-such-strategy')).toEqual(
+      planLocalRoute('前海湾', '岗厦北', 'balanced')
+    );
+  });
+});

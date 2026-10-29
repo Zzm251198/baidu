@@ -70,8 +70,20 @@ export const LINE_DEFINITIONS = [
 // ─────────────────────────── 参数（可按业务校准） ───────────────────────────
 
 const MINUTES_PER_STATION = 2.5;   // 深圳地铁平均站间运行时间（分钟）
-const TRANSFER_PENALTY_STATIONS = 3; // 换乘惩罚：换 1 次车 ≈ 多坐 3 站的代价（避免"少坐1站换3次车"）
+const TRANSFER_PENALTY_STATIONS = 3; // 换乘惩罚（默认策略）：换 1 次车 ≈ 多坐 3 站的代价
 const TRANSFER_MINUTES = 5;        // 每次换乘预留的走行+候车时间（分钟）
+
+// ─────────────── 路径策略（插点 A）───────────────
+// 同一个 Dijkstra，靠「换乘惩罚」改变取舍倾向——策略即参数，不是两套代码。
+// 真实分歧案例：赤湾→布吉
+//   直达 5 号线 29 站 0 换乘（≈72.5 分）
+//   经 5→11→14 号线 18 站 2 换乘（≈55 分）
+//   少换乘优先选直达；时间优先选换乘——货运重柜怕装卸交接，客运怕久坐，各有道理。
+export const ROUTE_STRATEGIES = {
+  balanced: { penalty: TRANSFER_PENALTY_STATIONS, label: '综合最优' },
+  fewer: { penalty: 8, label: '少换乘优先' },
+  faster: { penalty: 2, label: '时间优先' }
+};
 
 // ─────────────────────────── 工具函数 ───────────────────────────
 
@@ -105,11 +117,12 @@ const LINE_BY_ID = new Map(LINE_DEFINITIONS.map((line) => [line.id, line]));
 // 状态 = (站名, 当前乘坐的线路)。把"当前线路"纳入状态，
 // 才能在换线时施加换乘惩罚；起点尚未上车，currentLine 记为 null。
 
-function findShortestPath(startName, endName) {
+function findShortestPath(startName, endName, penalty = TRANSFER_PENALTY_STATIONS) {
   if (!ADJACENCY.has(startName) || !ADJACENCY.has(endName)) return null;
   if (startName === endName) return null;
 
-  // cost：以"等效站数"计价。key = `${station}|${lineId}`
+  // cost：以"等效站数"计价（站数 + 惩罚×换乘），惩罚由路径策略决定。
+  // key = `${station}|${lineId}`
   const bestCost = new Map();
   const cameFrom = new Map();
   const queue = [{ station: startName, lineId: null, cost: 0 }];
@@ -128,7 +141,7 @@ function findShortestPath(startName, endName) {
 
     for (const edge of ADJACENCY.get(current.station) || []) {
       const transferHappened = current.lineId !== null && current.lineId !== edge.lineId;
-      const nextCost = current.cost + 1 + (transferHappened ? TRANSFER_PENALTY_STATIONS : 0);
+      const nextCost = current.cost + 1 + (transferHappened ? penalty : 0);
       const nextKey = `${edge.to}|${edge.lineId}`;
 
       if (nextCost < (bestCost.get(nextKey) ?? Infinity)) {
@@ -201,13 +214,17 @@ function buildSegments(path) {
 
 /**
  * 规划起终点间的地铁路径。
+ * @param strategy 路径策略（插点 A）：'balanced' 综合最优（默认，行为与旧版一致）
+ *                 | 'fewer' 少换乘优先（货运直达，减少装卸交接）
+ *                 | 'faster' 时间优先（愿意换乘换总时长）。未知值回落 balanced。
  * @returns 与 parseBaiduTransitRoute 同构的 routeSummary；任一站不在数据集内或不可达时返回 null。
  */
-export function planLocalRoute(rawStartStationName, rawEndStationName) {
+export function planLocalRoute(rawStartStationName, rawEndStationName, strategy = 'balanced') {
   const start = normalizeStationName(rawStartStationName);
   const end = normalizeStationName(rawEndStationName);
+  const penalty = (ROUTE_STRATEGIES[strategy] ?? ROUTE_STRATEGIES.balanced).penalty;
 
-  const path = findShortestPath(start, end);
+  const path = findShortestPath(start, end, penalty);
   if (!path || path.length < 2) return null;
 
   const segments = buildSegments(path);

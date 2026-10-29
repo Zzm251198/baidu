@@ -72,7 +72,7 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({
   };
 
   const renderEmpty = () => (
-    <div className="h-full w-full flex flex-col items-center justify-center text-cyan-500/60 text-sm gap-2">
+    <div className="h-full w-full flex flex-col items-center justify-center text-emerald-500/60 text-sm gap-2">
       <i className="fa fa-filter text-2xl opacity-60"></i>
       <span>{emptyHint}</span>
     </div>
@@ -130,12 +130,12 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({
                 const point = payload[0].payload;
                 const speed = (point.x / (point.y / 60)).toFixed(1);
                 return (
-                  <div style={tooltipStyle} className="border border-cyan-500/30 shadow-lg">
+                  <div style={tooltipStyle} className="border border-emerald-500/30 shadow-lg">
                     <div className="font-bold text-white mb-1">{point.name}</div>
                     <div className="text-gray-300">距离: <span className="text-white">{point.x} km</span></div>
                     <div className="text-gray-300">耗时: <span className="text-white">{point.y} min</span></div>
-                    <div className="text-gray-300">货量: <span className="text-cyan-400">{point.z} 吨</span></div>
-                    <div className="mt-1 pt-1 border-t border-cyan-500/20">
+                    <div className="text-gray-300">货量: <span className="text-emerald-400">{point.z} 吨</span></div>
+                    <div className="mt-1 pt-1 border-t border-emerald-500/20">
                       <span className="text-xs text-gray-400">平均时速 </span>
                       <span className={`font-mono font-bold ${Number(speed) > 40 ? 'text-green-400' : 'text-yellow-400'}`}>{speed} km/h</span>
                     </div>
@@ -178,8 +178,8 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({
   return (
     <div className="h-full w-full flex flex-col bg-transparent">
       {title && (
-        <h3 className="text-cyan-300 font-bold mb-3 flex items-center flex-shrink-0">
-          <span className="w-1 h-4 bg-cyan-500 mr-2 rounded"></span>
+        <h3 className="text-emerald-300 font-bold mb-3 flex items-center flex-shrink-0">
+          <span className="w-1 h-4 bg-emerald-500 mr-2 rounded"></span>
           {title}
         </h3>
       )}

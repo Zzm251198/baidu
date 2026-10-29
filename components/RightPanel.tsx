@@ -11,7 +11,7 @@ const getStatusColor = (type: string) => {
     case 'error': return 'bg-red-500 shadow-red-500/50';
     case 'warning': return 'bg-yellow-500 shadow-yellow-500/50';
     case 'success': return 'bg-green-500 shadow-green-500/50';
-    default: return 'bg-cyan-500 shadow-cyan-500/50';
+    default: return 'bg-emerald-500 shadow-emerald-500/50';
   }
 };
 
@@ -37,7 +37,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null;
 
   return (
-    <div className="bg-black/60 backdrop-blur-md border border-cyan-500/30 rounded-lg p-3 shadow-[0_0_15px_rgba(6,182,212,0.3)]">
+    <div className="bg-black/60 backdrop-blur-md border border-emerald-500/30 rounded-lg p-3 shadow-[0_0_15px_rgba(6,182,212,0.3)]">
       <p className="text-xs text-gray-400">{label}</p>
       <p className="text-sm font-bold text-white">{`${payload[0].value} 吨`}</p>
     </div>
@@ -70,8 +70,8 @@ export const RightPanel: React.FC<RightPanelProps> = ({ topStations = [], alerts
     <div className="flex flex-col gap-4 h-full w-full bg-transparent relative">
       <div className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none"></div>
 
-      <section className="relative rounded-xl p-4 border border-white/5 bg-black/10 backdrop-blur-xl flex-[4] flex flex-col overflow-hidden shadow-lg shadow-cyan-500/2">
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-500 to-purple-500"></div>
+      <section className="relative rounded-xl p-4 border border-white/5 bg-black/10 backdrop-blur-xl flex-[4] flex flex-col overflow-hidden shadow-lg shadow-emerald-500/2">
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 to-purple-500"></div>
         <h3 className="font-bold text-lg text-white mb-3 flex items-center flex-shrink-0 relative z-10">
           <i className="fa fa-bell-o text-red-500 mr-2 animate-pulse"></i>
           异常监控（示例）
@@ -82,14 +82,14 @@ export const RightPanel: React.FC<RightPanelProps> = ({ topStations = [], alerts
 
         <div className="flex-1 overflow-y-auto pr-1 custom-scrollbar space-y-2 relative z-10">
           {logs.map((log) => (
-            <div key={log.id} className="flex items-start space-x-3 text-xs border border-gray-800/20 bg-black/10 rounded-lg p-3 hover:border-cyan-500/30 hover:bg-black/30 transition-all duration-300 group">
+            <div key={log.id} className="flex items-start space-x-3 text-xs border border-gray-800/20 bg-black/10 rounded-lg p-3 hover:border-emerald-500/30 hover:bg-black/30 transition-all duration-300 group">
               <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${getStatusColor(log.type)} bg-black/20 border border-white/10`}>
                 <i className={`fa ${getStatusIcon(log.type)} text-white text-xs`}></i>
               </div>
               <div className="flex-1">
                 <div className="flex justify-between items-center mb-1">
                   <div className="text-gray-400 font-mono tracking-wider">{log.time}</div>
-                  <span className="text-xs px-1.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                  <span className="text-xs px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                     {getStatusLabel(log.type)}
                   </span>
                 </div>
@@ -100,8 +100,8 @@ export const RightPanel: React.FC<RightPanelProps> = ({ topStations = [], alerts
         </div>
       </section>
 
-      <section className="relative rounded-xl p-4 border border-white/5 bg-black/10 backdrop-blur-xl flex-[3.5] flex flex-col overflow-hidden shadow-lg shadow-cyan-500/2">
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-cyan-400"></div>
+      <section className="relative rounded-xl p-4 border border-white/5 bg-black/10 backdrop-blur-xl flex-[3.5] flex flex-col overflow-hidden shadow-lg shadow-emerald-500/2">
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-emerald-400"></div>
         <h3 className="font-bold text-lg text-white mb-2 flex items-center flex-shrink-0 relative z-10">
           <i className="fa fa-trophy text-yellow-400 mr-2"></i>
           热门站点吞吐量
@@ -124,7 +124,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({ topStations = [], alerts
         </div>
       </section>
 
-      <section className="relative rounded-xl p-4 border border-white/5 bg-black/10 backdrop-blur-xl flex-[2.5] flex flex-col overflow-hidden shadow-lg shadow-cyan-500/2">
+      <section className="relative rounded-xl p-4 border border-white/5 bg-black/10 backdrop-blur-xl flex-[2.5] flex flex-col overflow-hidden shadow-lg shadow-emerald-500/2">
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-green-500 to-emerald-400"></div>
         <h3 className="font-bold text-lg text-white mb-4 flex items-center flex-shrink-0 relative z-10">
           <i className="fa fa-battery-three-quarters text-green-400 mr-2 animate-pulse-slow"></i>
@@ -159,7 +159,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({ topStations = [], alerts
 
             <div className="mt-2 pt-2 border-t border-gray-800/20 text-[10px] text-gray-400 bg-black/10 rounded-lg p-1.5">
               <div className="flex justify-between mb-0.5">
-                <span><i className="fa fa-server mr-1 text-cyan-500 text-[9px]"></i>在线设备总数:</span>
+                <span><i className="fa fa-server mr-1 text-emerald-500 text-[9px]"></i>在线设备总数:</span>
                 <span className="text-white font-medium text-xs">{AGV_FLEET.total} 台</span>
               </div>
               <div className="flex justify-between">

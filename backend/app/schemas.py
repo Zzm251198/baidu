@@ -128,6 +128,9 @@ class OrderIn(BaseModel):
 class SimulateRequest(BaseModel):
     order: OrderIn
     route: RouteIn
+    # 调度算法开关（算法插点）：baseline=就近匹配（默认），capacity-first=大运力优先。
+    # 未知值回落 baseline——开关写错不能让仿真挂掉。
+    algorithm: str = "baseline"
 
 
 class SimulationRunOut(BaseModel):

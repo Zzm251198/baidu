@@ -491,7 +491,7 @@ const SubwayMapComponent: React.FC<SubwayMapProps> = ({
             <div className="subway-map-vignette" aria-hidden="true" />
             <div className="subway-map-caption">示意图 · 非地理投影</div>
             {selectedStation && (
-                <section className="station-logistics-panel absolute left-4 top-4 max-w-[calc(100%-32px)] text-cyan-50">
+                <section className="station-logistics-panel absolute left-4 top-4 max-w-[calc(100%-32px)] text-emerald-50">
                     <div className="station-logistics-corner station-logistics-corner-left"></div>
                     <div className="station-logistics-corner station-logistics-corner-right"></div>
 

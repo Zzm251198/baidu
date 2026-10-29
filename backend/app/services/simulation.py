@@ -225,7 +225,9 @@ def _build_train_plan(route: dict, start_time: str) -> list[dict]:
     return plan
 
 
-def _build_agv_plan(route: dict, train_plan: list[dict], order: dict) -> list[dict]:
+def _build_agv_plan(route: dict, train_plan: list[dict], order: dict, create_allocator=None) -> list[dict]:
+    """编排 AGV 作业节点。create_allocator 可注入替换派车策略（算法插点），
+    不传则用基线的「就近匹配」策略——对外行为不变。"""
     schedule = load_config()["trainSchedule"]
     cargo_weight = _to_number(order.get("cargoWeightKg"), 0)
     stations = route["transferStations"]
@@ -265,7 +267,7 @@ def _build_agv_plan(route: dict, train_plan: list[dict], order: dict) -> list[di
         }
     )
 
-    take = _create_agv_allocator()
+    take = (create_allocator or _create_agv_allocator)()
     plan: list[dict] = []
     for index, node in enumerate(nodes):
         allocation = take(node["station"], node["role"], index + 1, cargo_weight)

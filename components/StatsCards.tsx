@@ -45,11 +45,11 @@ export const StatsCards: React.FC<StatsCardsProps> = ({
       value: `${activeAgv} 辆`,
       hint: `在线 ${totalAgv} 台中的 ${activeAgv} 台`,
       icon: 'fa-truck',
-      color: 'text-cyan-400',
-      bg: 'bg-cyan-500/5',
-      glow: 'shadow-cyan-500/30',
-      gradient: 'from-cyan-500/15 to-transparent',
-      ring: 'ring-cyan-500/20'
+      color: 'text-emerald-400',
+      bg: 'bg-emerald-500/5',
+      glow: 'shadow-emerald-500/30',
+      gradient: 'from-emerald-500/15 to-transparent',
+      ring: 'ring-emerald-500/20'
     },
     {
       label: '累计货运量',

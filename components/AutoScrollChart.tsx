@@ -4,7 +4,7 @@ import type { LineRanking } from '../src/data/aggregations';
 export const AutoScrollChart: React.FC<{ rows?: LineRanking[] }> = ({ rows = [] }) => {
   if (rows.length === 0) {
     return (
-      <div className="h-full w-full flex flex-col items-center justify-center text-cyan-500/60 text-sm gap-2">
+      <div className="h-full w-full flex flex-col items-center justify-center text-emerald-500/60 text-sm gap-2">
         <i className="fa fa-filter text-2xl opacity-60"></i>
         <span>当前筛选条件下没有线路数据</span>
       </div>
@@ -16,8 +16,8 @@ export const AutoScrollChart: React.FC<{ rows?: LineRanking[] }> = ({ rows = [] 
 
   return (
     <div className="w-full h-full flex flex-col overflow-hidden bg-transparent">
-      <div className="grid grid-cols-12 text-xs text-cyan-300 border-b border-cyan-500/30 pb-3 mb-3 px-3 uppercase tracking-wider font-semibold relative">
-        <div className="absolute -bottom-1 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-cyan-400 to-transparent"></div>
+      <div className="grid grid-cols-12 text-xs text-emerald-300 border-b border-emerald-500/30 pb-3 mb-3 px-3 uppercase tracking-wider font-semibold relative">
+        <div className="absolute -bottom-1 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-emerald-400 to-transparent"></div>
         <span className="col-span-1 text-center">排名</span>
         <span className="col-span-4">线路名称</span>
         <span className="col-span-2 text-center">负载等级</span>
@@ -28,12 +28,12 @@ export const AutoScrollChart: React.FC<{ rows?: LineRanking[] }> = ({ rows = [] 
       <div className="flex-1 relative overflow-hidden group bg-transparent">
         <div className="absolute top-0 left-0 w-full animate-marquee hover:pause-animation bg-transparent">
           {displayRows.map((item, index) => (
-            <div key={`${item.rank}-${index}`} className="grid grid-cols-12 items-center text-sm py-3 px-3 border-b border-cyan-900/20 hover:bg-cyan-900/10 transition-all duration-300 bg-transparent">
+            <div key={`${item.rank}-${index}`} className="grid grid-cols-12 items-center text-sm py-3 px-3 border-b border-emerald-900/20 hover:bg-emerald-900/10 transition-all duration-300 bg-transparent">
               <div className="col-span-1 text-center bg-transparent">
                 <span className={`inline-flex items-center justify-center w-7 h-7 rounded-lg font-bold text-xs ${
                   item.rank <= 3
-                    ? 'bg-gradient-to-br from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/30 border border-cyan-400/50'
-                    : 'bg-gray-900/60 text-cyan-300 border border-cyan-900/50'
+                    ? 'bg-gradient-to-br from-emerald-500 to-blue-600 text-white shadow-lg shadow-emerald-500/30 border border-emerald-400/50'
+                    : 'bg-gray-900/60 text-emerald-300 border border-emerald-900/50'
                 }`}>
                   {item.rank}
                 </span>
@@ -66,14 +66,14 @@ export const AutoScrollChart: React.FC<{ rows?: LineRanking[] }> = ({ rows = [] 
               </div>
 
               <div className="col-span-3 text-right text-white font-mono font-bold text-base bg-transparent">
-                <span className="text-cyan-300">{item.score}</span>
+                <span className="text-emerald-300">{item.score}</span>
               </div>
             </div>
           ))}
         </div>
 
-        <div className="absolute inset-0 border border-cyan-500/20 rounded-md pointer-events-none bg-transparent"></div>
-        <div className="absolute inset-1 border border-cyan-500/10 rounded-md pointer-events-none bg-transparent"></div>
+        <div className="absolute inset-0 border border-emerald-500/20 rounded-md pointer-events-none bg-transparent"></div>
+        <div className="absolute inset-1 border border-emerald-500/10 rounded-md pointer-events-none bg-transparent"></div>
       </div>
 
       <style>{`

@@ -37,6 +37,13 @@ from .schemas import (
     WaybillUpdate,
 )
 from .services import export_excel, simulation
+from .services import simulation_capacity
+
+# 调度算法注册表（插点 B）：新增算法在这里登记一行即可，路由/落库/导出全复用。
+ALGORITHMS = {
+    "baseline": simulation.simulate,
+    "capacity-first": simulation_capacity.simulate,
+}
 
 
 @asynccontextmanager
@@ -286,7 +293,9 @@ def cost_estimate(payload: CostRequest) -> CostBreakdown:
 )
 def run_simulation(payload: SimulateRequest) -> dict:
     request_payload = payload.model_dump()
-    result = simulation.simulate(request_payload["order"], request_payload["route"])
+    # 算法分流：未知算法回落 baseline（schemas 默认值兜底 + 这里再兜一层）
+    engine = ALGORITHMS.get(request_payload.get("algorithm") or "baseline", simulation.simulate)
+    result = engine(request_payload["order"], request_payload["route"])
 
     if not result["success"]:
         return {**result, "runId": None}

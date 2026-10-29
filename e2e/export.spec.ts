@@ -23,7 +23,8 @@ test.describe('仿真结果导出', () => {
     await page.getByRole('button', { name: '仿真模拟' }).click();
 
     const selects = page.locator('select');
-    await expect(selects).toHaveCount(4);
+    // 4 个起终点下拉 + 算法策略区新增的「路径策略」「调度算法」2 个
+    await expect(selects).toHaveCount(6);
 
     // 起点：11 号线 · 前海湾；终点：11 号线 · 岗厦北（直达，8 站）
     await selects.nth(0).selectOption({ label: '地铁11号线' });

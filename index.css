@@ -36,8 +36,8 @@ body {
   z-index: 1;
   pointer-events: none;
   background-image:
-    linear-gradient(90deg, rgba(34, 211, 238, 0.085) 1px, transparent 1px),
-    linear-gradient(0deg, rgba(34, 211, 238, 0.07) 1px, transparent 1px);
+    linear-gradient(90deg, rgba(52, 211, 153, 0.085) 1px, transparent 1px),
+    linear-gradient(0deg, rgba(52, 211, 153, 0.07) 1px, transparent 1px);
   background-size: 42px 42px;
   /* 中心清晰、边缘淡出，避免网格线喧宾夺主 */
   -webkit-mask-image: radial-gradient(circle at 50% 46%, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.5) 62%, transparent 90%);
@@ -50,7 +50,7 @@ body {
   z-index: 1;
   pointer-events: none;
   background:
-    radial-gradient(circle at 50% 42%, rgba(34, 211, 238, 0.08), transparent 58%),
+    radial-gradient(circle at 50% 42%, rgba(52, 211, 153, 0.08), transparent 58%),
     radial-gradient(circle at 50% 50%, transparent 62%, rgba(2, 6, 23, 0.42) 100%);
 }
 
@@ -60,7 +60,7 @@ body {
   bottom: 10px;
   z-index: 2;
   padding: 3px 9px;
-  border: 1px solid rgba(34, 211, 238, 0.18);
+  border: 1px solid rgba(52, 211, 153, 0.18);
   border-radius: 999px;
   color: rgba(165, 243, 252, 0.56);
   background: rgba(2, 6, 23, 0.55);
@@ -73,7 +73,7 @@ body {
 
 .monitor-map-panel {
   padding: 14px;
-  border: 1px solid rgba(34, 211, 238, 0.32);
+  border: 1px solid rgba(52, 211, 153, 0.32);
   border-radius: 12px;
   background:
     linear-gradient(135deg, rgba(8, 47, 73, 0.22), rgba(15, 23, 42, 0.64)),
@@ -81,37 +81,37 @@ body {
   box-shadow:
     0 0 0 1px rgba(59, 130, 246, 0.12) inset,
     0 18px 44px rgba(8, 145, 178, 0.12),
-    0 0 26px rgba(34, 211, 238, 0.08);
+    0 0 26px rgba(52, 211, 153, 0.08);
 }
 
 .monitor-map-title {
   height: 34px;
   gap: 10px;
-  color: #a5f3fc;
+  color: #a7f3d0;
   font-size: 14px;
   font-weight: 700;
   letter-spacing: 0;
-  text-shadow: 0 0 14px rgba(34, 211, 238, 0.35);
+  text-shadow: 0 0 14px rgba(52, 211, 153, 0.35);
 }
 
 .monitor-map-title-bar {
   width: 4px;
   height: 20px;
   border-radius: 999px;
-  background: linear-gradient(180deg, #22d3ee, #2563eb);
-  box-shadow: 0 0 12px rgba(34, 211, 238, 0.8);
+  background: linear-gradient(180deg, #34d399, #2563eb);
+  box-shadow: 0 0 12px rgba(52, 211, 153, 0.8);
 }
 
 .monitor-map-title-dot {
   width: 7px;
   height: 7px;
   border-radius: 999px;
-  background: #67e8f9;
+  background: #6ee7b7;
   box-shadow: 0 0 12px rgba(103, 232, 249, 0.9);
 }
 
 .monitor-map-frame {
-  border: 1px solid rgba(34, 211, 238, 0.16);
+  border: 1px solid rgba(52, 211, 153, 0.16);
   border-radius: 10px;
   overflow: hidden;
   background: #07111f;
@@ -121,7 +121,7 @@ body {
   z-index: 1000;
   width: min(480px, calc(100% - 32px));
   padding: 18px;
-  border: 1px solid rgba(34, 211, 238, 0.48);
+  border: 1px solid rgba(52, 211, 153, 0.48);
   border-radius: 14px;
   background:
     linear-gradient(135deg, rgba(20, 184, 166, 0.13), rgba(37, 99, 235, 0.08) 38%, rgba(10, 25, 47, 0.85)),
@@ -185,8 +185,8 @@ body {
   right: 46px;
   bottom: 0;
   height: 2px;
-  background: linear-gradient(90deg, #22d3ee, rgba(59, 130, 246, 0.64), transparent);
-  box-shadow: 0 0 16px rgba(34, 211, 238, 0.55);
+  background: linear-gradient(90deg, #34d399, rgba(59, 130, 246, 0.64), transparent);
+  box-shadow: 0 0 16px rgba(52, 211, 153, 0.55);
 }
 
 .station-logistics-kicker {
@@ -202,7 +202,7 @@ body {
   font-size: 24px;
   font-weight: 800;
   letter-spacing: 0;
-  text-shadow: 0 0 18px rgba(34, 211, 238, 0.58);
+  text-shadow: 0 0 18px rgba(52, 211, 153, 0.58);
 }
 
 .station-logistics-close {
@@ -212,7 +212,7 @@ body {
   place-items: center;
   width: 34px;
   height: 34px;
-  border: 1px solid rgba(34, 211, 238, 0.38);
+  border: 1px solid rgba(52, 211, 153, 0.38);
   border-radius: 8px;
   color: #cffafe;
   background: rgba(8, 47, 73, 0.55);
@@ -224,7 +224,7 @@ body {
   transform: translateY(-1px);
   border-color: rgba(125, 249, 255, 0.9);
   background: rgba(14, 116, 144, 0.62);
-  box-shadow: 0 0 16px rgba(34, 211, 238, 0.28);
+  box-shadow: 0 0 16px rgba(52, 211, 153, 0.28);
 }
 
 .station-logistics-metrics {
@@ -239,10 +239,10 @@ body {
 .station-metric-card {
   min-width: 0;
   padding: 12px;
-  border: 1px solid rgba(34, 211, 238, 0.18);
+  border: 1px solid rgba(52, 211, 153, 0.18);
   border-radius: 10px;
   background: linear-gradient(180deg, rgba(8, 145, 178, 0.18), rgba(15, 23, 42, 0.42));
-  box-shadow: inset 0 0 22px rgba(34, 211, 238, 0.05);
+  box-shadow: inset 0 0 22px rgba(52, 211, 153, 0.05);
 }
 
 .station-metric-card span,
@@ -256,10 +256,10 @@ body {
 .station-metric-card strong {
   display: block;
   margin-top: 4px;
-  color: #a5f3fc;
+  color: #a7f3d0;
   font-size: 25px;
   line-height: 1;
-  text-shadow: 0 0 12px rgba(34, 211, 238, 0.4);
+  text-shadow: 0 0 12px rgba(52, 211, 153, 0.4);
 }
 
 .station-metric-card-green strong {
@@ -349,9 +349,9 @@ body {
 }
 
 .station-donut-normal {
-  stroke: #22d3ee;
+  stroke: #34d399;
   stroke-width: 10;
-  filter: drop-shadow(0 0 5px rgba(34, 211, 238, 0.55));
+  filter: drop-shadow(0 0 5px rgba(52, 211, 153, 0.55));
 }
 
 .station-donut-cold {
@@ -405,8 +405,8 @@ body {
 }
 
 .legend-normal {
-  background: #22d3ee;
-  box-shadow: 0 0 8px rgba(34, 211, 238, 0.75);
+  background: #34d399;
+  box-shadow: 0 0 8px rgba(52, 211, 153, 0.75);
 }
 
 .legend-cold {
@@ -467,13 +467,13 @@ textarea {
   flex-wrap: wrap;
   gap: 8px;
   padding: 11px 13px;
-  border: 1px solid rgba(34, 211, 238, 0.22);
+  border: 1px solid rgba(52, 211, 153, 0.22);
   border-radius: 10px;
   background: rgba(2, 6, 23, 0.42);
   color: #dffbff;
   font-size: 14px;
   line-height: 1.48;
-  box-shadow: inset 0 0 18px rgba(34, 211, 238, 0.05);
+  box-shadow: inset 0 0 18px rgba(52, 211, 153, 0.05);
 }
 
 .ops-summary-strip span:not(:last-child)::after {
@@ -487,10 +487,10 @@ textarea {
   align-items: center;
   gap: 8px;
   padding: 7px 10px;
-  border: 1px solid rgba(34, 211, 238, 0.22);
+  border: 1px solid rgba(52, 211, 153, 0.22);
   border-radius: 999px;
   background: rgba(2, 6, 23, 0.5);
-  color: #a5f3fc;
+  color: #a7f3d0;
   font-size: 13px;
   font-weight: 800;
 }
@@ -580,11 +580,11 @@ textarea {
   justify-content: center;
   width: 34px;
   height: 34px;
-  border: 1px solid rgba(34, 211, 238, 0.42);
+  border: 1px solid rgba(52, 211, 153, 0.42);
   border-radius: 999px;
   color: #ecfeff;
   background: rgba(8, 47, 73, 0.82);
-  box-shadow: 0 0 14px rgba(34, 211, 238, 0.18);
+  box-shadow: 0 0 14px rgba(52, 211, 153, 0.18);
   font-size: 16px;
 }
 
@@ -608,7 +608,7 @@ textarea {
 .ops-chain-line {
   height: 1px;
   min-width: 18px;
-  background: linear-gradient(90deg, rgba(34, 211, 238, 0.15), rgba(34, 211, 238, 0.72), rgba(59, 130, 246, 0.16));
+  background: linear-gradient(90deg, rgba(52, 211, 153, 0.15), rgba(52, 211, 153, 0.72), rgba(59, 130, 246, 0.16));
 }
 
 .ops-card-grid {
@@ -624,10 +624,10 @@ textarea {
   min-width: 0;
   min-height: 132px;
   padding: 14px;
-  border: 1px solid rgba(34, 211, 238, 0.16);
+  border: 1px solid rgba(52, 211, 153, 0.16);
   border-radius: 10px;
   background:
-    linear-gradient(135deg, rgba(34, 211, 238, 0.08), rgba(37, 99, 235, 0.04)),
+    linear-gradient(135deg, rgba(52, 211, 153, 0.08), rgba(37, 99, 235, 0.04)),
     rgba(2, 6, 23, 0.46);
   box-shadow: inset 0 0 18px rgba(125, 249, 255, 0.04);
   overflow: hidden;
@@ -643,7 +643,7 @@ textarea {
 }
 
 .ops-card-head i {
-  color: #67e8f9;
+  color: #6ee7b7;
 }
 
 .ops-metric-card strong {
@@ -654,7 +654,7 @@ textarea {
   line-height: 1.05;
   font-weight: 900;
   letter-spacing: 0;
-  text-shadow: 0 0 14px rgba(34, 211, 238, 0.25);
+  text-shadow: 0 0 14px rgba(52, 211, 153, 0.25);
 }
 
 .ops-metric-card em {
@@ -692,7 +692,7 @@ textarea {
   position: relative;
   z-index: 1;
   padding: 12px 14px;
-  border: 1px solid rgba(34, 211, 238, 0.18);
+  border: 1px solid rgba(52, 211, 153, 0.18);
   border-radius: 10px;
   background: rgba(2, 6, 23, 0.52);
 }
@@ -700,7 +700,7 @@ textarea {
 .ops-dispatch-advice span {
   display: block;
   margin-bottom: 6px;
-  color: #67e8f9;
+  color: #6ee7b7;
   font-size: 14px;
   font-weight: 900;
   letter-spacing: 0;
@@ -730,10 +730,10 @@ textarea {
   gap: 10px;
   min-height: 156px;
   padding: 12px 14px;
-  border: 1px solid rgba(34, 211, 238, 0.2);
+  border: 1px solid rgba(52, 211, 153, 0.2);
   border-radius: 10px;
   background:
-    linear-gradient(135deg, rgba(34, 211, 238, 0.07), rgba(59, 130, 246, 0.035)),
+    linear-gradient(135deg, rgba(52, 211, 153, 0.07), rgba(59, 130, 246, 0.035)),
     rgba(2, 6, 23, 0.48);
   box-shadow: inset 0 0 20px rgba(125, 249, 255, 0.04);
 }
@@ -761,12 +761,12 @@ textarea {
   line-height: 1.2;
   font-weight: 900;
   letter-spacing: 0;
-  text-shadow: 0 0 14px rgba(34, 211, 238, 0.3);
+  text-shadow: 0 0 14px rgba(52, 211, 153, 0.3);
 }
 
 .ops-transfer-detail header em {
   flex: 0 0 auto;
-  color: #67e8f9;
+  color: #6ee7b7;
   font-size: 13px;
   font-style: normal;
   font-weight: 800;
@@ -791,7 +791,7 @@ textarea {
   color: rgba(226, 232, 240, 0.82);
   font-size: 13px;
   line-height: 1.35;
-  border-bottom: 1px solid rgba(34, 211, 238, 0.08);
+  border-bottom: 1px solid rgba(52, 211, 153, 0.08);
 }
 
 .ops-transfer-row > * {
@@ -804,11 +804,11 @@ textarea {
 .ops-transfer-row strong {
   color: #ecfeff;
   font-weight: 900;
-  text-shadow: 0 0 10px rgba(34, 211, 238, 0.24);
+  text-shadow: 0 0 10px rgba(52, 211, 153, 0.24);
 }
 
 .ops-transfer-row i {
-  color: #22d3ee;
+  color: #34d399;
   font-style: normal;
 }
 
@@ -816,7 +816,7 @@ textarea {
   position: sticky;
   top: 0;
   z-index: 2;
-  color: #a5f3fc;
+  color: #a7f3d0;
   font-size: 13px;
   font-weight: 900;
   background: rgba(8, 47, 73, 0.92);
@@ -868,7 +868,7 @@ textarea {
   align-items: center;
   min-height: 84px;
   padding: 14px;
-  border: 1px dashed rgba(34, 211, 238, 0.2);
+  border: 1px dashed rgba(52, 211, 153, 0.2);
   border-radius: 8px;
   color: rgba(207, 250, 254, 0.78);
   font-size: 14px;
@@ -945,7 +945,7 @@ textarea {
   align-items: center;
   gap: 10px;
   padding: 6px 8px;
-  border: 1px solid rgba(34, 211, 238, 0.16);
+  border: 1px solid rgba(52, 211, 153, 0.16);
   border-radius: 8px;
   background: rgba(2, 6, 23, 0.32);
 }
@@ -960,7 +960,7 @@ textarea {
   font-size: 10px;
   font-weight: 700;
   color: #082f49;
-  background: linear-gradient(135deg, #22d3ee, #3b82f6);
+  background: linear-gradient(135deg, #34d399, #3b82f6);
 }
 
 .route-segment-main {
@@ -971,7 +971,7 @@ textarea {
 .route-segment-line {
   font-size: 11px;
   font-weight: 600;
-  color: #a5f3fc;
+  color: #a7f3d0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -986,7 +986,7 @@ textarea {
 }
 
 .route-segment-stations i {
-  color: #22d3ee;
+  color: #34d399;
   margin: 0 2px;
 }
 
@@ -1014,21 +1014,21 @@ textarea {
   justify-content: center;
   height: 100%;
   gap: 6px;
-  color: rgba(6, 182, 212, 0.5);
+  color: rgba(16, 185, 129, 0.5);
   font-size: 11px;
 }
 
 .simulation-reserved-panel {
   min-width: 0;
   height: clamp(240px, 26vh, 300px);
-  border: 1px solid rgba(34, 211, 238, 0.22);
+  border: 1px solid rgba(52, 211, 153, 0.22);
   border-radius: 12px;
   overflow: hidden;
   background:
     linear-gradient(135deg, rgba(14, 116, 144, 0.1), rgba(37, 99, 235, 0.06)),
     rgba(10, 25, 47, 0.42);
   box-shadow:
-    inset 0 0 30px rgba(34, 211, 238, 0.05),
+    inset 0 0 30px rgba(52, 211, 153, 0.05),
     0 20px 48px rgba(2, 8, 23, 0.28);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -1100,7 +1100,7 @@ textarea {
   color: #ecfeff;
   font-weight: 800;
   letter-spacing: 0;
-  text-shadow: 0 0 16px rgba(34, 211, 238, 0.38);
+  text-shadow: 0 0 16px rgba(52, 211, 153, 0.38);
 }
 
 .simulation-insight-header h3 {
@@ -1116,9 +1116,9 @@ textarea {
   align-items: center;
   gap: 7px;
   padding: 6px 9px;
-  border: 1px solid rgba(34, 211, 238, 0.22);
+  border: 1px solid rgba(52, 211, 153, 0.22);
   border-radius: 8px;
-  color: #a5f3fc;
+  color: #a7f3d0;
   background: rgba(8, 47, 73, 0.38);
   font-size: 11px;
   white-space: nowrap;
@@ -1154,7 +1154,7 @@ textarea {
   color: #cffafe;
   font-size: 18px;
   font-weight: 900;
-  text-shadow: 0 0 16px rgba(34, 211, 238, 0.38);
+  text-shadow: 0 0 16px rgba(52, 211, 153, 0.38);
 }
 
 .waybill-empty-state p {
@@ -1166,12 +1166,12 @@ textarea {
 .waybill-empty-pulse {
   width: 42px;
   height: 42px;
-  border: 1px solid rgba(34, 211, 238, 0.58);
+  border: 1px solid rgba(52, 211, 153, 0.58);
   border-radius: 999px;
-  background: radial-gradient(circle, rgba(34, 211, 238, 0.24), rgba(8, 47, 73, 0.42));
+  background: radial-gradient(circle, rgba(52, 211, 153, 0.24), rgba(8, 47, 73, 0.42));
   box-shadow:
-    0 0 18px rgba(34, 211, 238, 0.28),
-    inset 0 0 14px rgba(34, 211, 238, 0.16);
+    0 0 18px rgba(52, 211, 153, 0.28),
+    inset 0 0 14px rgba(52, 211, 153, 0.16);
   animation: microStepPulse 1.65s ease-in-out infinite;
 }
 
@@ -1180,14 +1180,14 @@ textarea {
   position: relative;
   z-index: 1;
   min-height: 0;
-  border: 1px solid rgba(34, 211, 238, 0.18);
+  border: 1px solid rgba(52, 211, 153, 0.18);
   border-radius: 10px;
   background:
-    radial-gradient(circle at 18% 12%, rgba(34, 211, 238, 0.12), transparent 34%),
+    radial-gradient(circle at 18% 12%, rgba(52, 211, 153, 0.12), transparent 34%),
     rgba(2, 6, 23, 0.32);
   box-shadow:
-    inset 0 0 26px rgba(34, 211, 238, 0.04),
-    0 0 18px rgba(34, 211, 238, 0.05);
+    inset 0 0 26px rgba(52, 211, 153, 0.04),
+    0 0 18px rgba(52, 211, 153, 0.05);
 }
 
 .waybill-journey-panel {
@@ -1222,15 +1222,15 @@ textarea {
   place-items: center;
   width: 38px;
   height: 38px;
-  border: 1px solid rgba(34, 211, 238, 0.52);
+  border: 1px solid rgba(52, 211, 153, 0.52);
   border-radius: 999px;
   color: #ecfeff;
   background:
-    radial-gradient(circle, rgba(34, 211, 238, 0.22), rgba(8, 47, 73, 0.68)),
+    radial-gradient(circle, rgba(52, 211, 153, 0.22), rgba(8, 47, 73, 0.68)),
     rgba(2, 6, 23, 0.72);
   box-shadow:
-    0 0 14px rgba(34, 211, 238, 0.2),
-    inset 0 0 12px rgba(34, 211, 238, 0.14);
+    0 0 14px rgba(52, 211, 153, 0.2),
+    inset 0 0 12px rgba(52, 211, 153, 0.14);
   font-size: 13px;
   font-weight: 900;
 }
@@ -1291,8 +1291,8 @@ textarea {
 .micro-step-connector {
   height: 2px;
   border-radius: 999px;
-  background: linear-gradient(90deg, rgba(34, 211, 238, 0.22), rgba(103, 232, 249, 0.78), rgba(34, 197, 94, 0.28));
-  box-shadow: 0 0 12px rgba(34, 211, 238, 0.24);
+  background: linear-gradient(90deg, rgba(52, 211, 153, 0.22), rgba(103, 232, 249, 0.78), rgba(34, 197, 94, 0.28));
+  box-shadow: 0 0 12px rgba(52, 211, 153, 0.24);
 }
 
 .journey-map {
@@ -1318,15 +1318,15 @@ textarea {
   place-items: center;
   width: 38px;
   height: 38px;
-  border: 1px solid rgba(34, 211, 238, 0.58);
+  border: 1px solid rgba(52, 211, 153, 0.58);
   border-radius: 999px;
   color: #ecfeff;
   background:
-    radial-gradient(circle, rgba(34, 211, 238, 0.28), rgba(8, 47, 73, 0.72)),
+    radial-gradient(circle, rgba(52, 211, 153, 0.28), rgba(8, 47, 73, 0.72)),
     rgba(2, 6, 23, 0.72);
   box-shadow:
-    0 0 16px rgba(34, 211, 238, 0.24),
-    inset 0 0 12px rgba(34, 211, 238, 0.16);
+    0 0 16px rgba(52, 211, 153, 0.24),
+    inset 0 0 12px rgba(52, 211, 153, 0.16);
   font-size: 14px;
   font-weight: 900;
 }
@@ -1384,8 +1384,8 @@ textarea {
 .journey-segment-line {
   height: 2px;
   border-radius: 999px;
-  background: linear-gradient(90deg, rgba(34, 211, 238, 0.25), rgba(103, 232, 249, 0.92), rgba(34, 197, 94, 0.38));
-  box-shadow: 0 0 12px rgba(34, 211, 238, 0.3);
+  background: linear-gradient(90deg, rgba(52, 211, 153, 0.25), rgba(103, 232, 249, 0.92), rgba(34, 197, 94, 0.38));
+  box-shadow: 0 0 12px rgba(52, 211, 153, 0.3);
 }
 
 .journey-segment-meta {
@@ -1436,7 +1436,7 @@ textarea {
   width: 92px;
   height: 92px;
   border-radius: 999px;
-  background: rgba(34, 211, 238, 0.08);
+  background: rgba(52, 211, 153, 0.08);
   filter: blur(14px);
 }
 
@@ -1468,11 +1468,11 @@ textarea {
   z-index: 1;
   margin-top: 7px;
   overflow-wrap: anywhere;
-  color: #a5f3fc;
+  color: #a7f3d0;
   font-size: clamp(19px, 2.1vw, 29px);
   font-weight: 900;
   line-height: 1.05;
-  text-shadow: 0 0 14px rgba(34, 211, 238, 0.34);
+  text-shadow: 0 0 14px rgba(52, 211, 153, 0.34);
 }
 
 .waybill-kpi-card em {
@@ -1520,14 +1520,14 @@ textarea {
   position: relative;
   z-index: 1;
   min-height: 0;
-  border: 1px solid rgba(34, 211, 238, 0.18);
+  border: 1px solid rgba(52, 211, 153, 0.18);
   border-radius: 10px;
   background:
-    radial-gradient(circle at 18% 12%, rgba(34, 211, 238, 0.12), transparent 34%),
+    radial-gradient(circle at 18% 12%, rgba(52, 211, 153, 0.12), transparent 34%),
     rgba(2, 6, 23, 0.32);
   box-shadow:
-    inset 0 0 26px rgba(34, 211, 238, 0.04),
-    0 0 18px rgba(34, 211, 238, 0.05);
+    inset 0 0 26px rgba(52, 211, 153, 0.04),
+    0 0 18px rgba(52, 211, 153, 0.05);
 }
 
 .time-space-panel {
@@ -1713,11 +1713,11 @@ textarea {
 .simulation-tooltip {
   min-width: 132px;
   padding: 9px 10px;
-  border: 1px solid rgba(34, 211, 238, 0.28);
+  border: 1px solid rgba(52, 211, 153, 0.28);
   border-radius: 8px;
   color: #cffafe;
   background: rgba(2, 8, 23, 0.88);
-  box-shadow: 0 0 18px rgba(34, 211, 238, 0.14);
+  box-shadow: 0 0 18px rgba(52, 211, 153, 0.14);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   font-size: 11px;
@@ -1725,7 +1725,7 @@ textarea {
 
 .simulation-tooltip-title {
   margin-bottom: 4px;
-  color: #67e8f9;
+  color: #6ee7b7;
   font-weight: 800;
 }
 
@@ -1767,7 +1767,7 @@ textarea {
   flex: none;
   margin-top: 10px;
   padding-top: 10px;
-  border-top: 1px solid rgba(34, 211, 238, 0.14);
+  border-top: 1px solid rgba(52, 211, 153, 0.14);
   position: relative;
   z-index: 10;
 }
@@ -1782,7 +1782,7 @@ textarea {
 .order-timeline-title {
   font-size: 12px;
   font-weight: 700;
-  color: #67e8f9;
+  color: #6ee7b7;
   letter-spacing: 0.04em;
 }
 
@@ -1814,7 +1814,7 @@ textarea {
   left: 0;
   width: 100%;
   height: 1px;
-  background: rgba(34, 211, 238, 0.22);
+  background: rgba(52, 211, 153, 0.22);
 }
 
 .order-timeline-node:first-child::before {
@@ -1829,7 +1829,7 @@ textarea {
 .order-timeline-time {
   font-size: 11px;
   font-weight: 700;
-  color: #67e8f9;
+  color: #6ee7b7;
   font-variant-numeric: tabular-nums;
 }
 
@@ -1840,8 +1840,8 @@ textarea {
   margin: 7px 0;
   position: relative;
   z-index: 1;
-  background: #22d3ee;
-  box-shadow: 0 0 8px rgba(34, 211, 238, 0.7);
+  background: #34d399;
+  box-shadow: 0 0 8px rgba(52, 211, 153, 0.7);
 }
 
 .order-timeline-arrive .order-timeline-dot {
@@ -1886,7 +1886,7 @@ textarea {
   gap: 8px;
   height: 62px;
   font-size: 11px;
-  color: rgba(6, 182, 212, 0.45);
+  color: rgba(16, 185, 129, 0.45);
 }
 
 /* ─────────── 交互增强：toast 通知 / 图表卡片悬停 / 页签切换动画 ─────────── */
@@ -1912,7 +1912,35 @@ textarea {
   transition: border-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
 }
 .chart-card:hover {
-  border-color: rgba(34, 211, 238, 0.45);
+  border-color: rgba(52, 211, 153, 0.45);
   transform: translateY(-2px);
-  box-shadow: 0 10px 30px -12px rgba(6, 182, 212, 0.25);
+  box-shadow: 0 10px 30px -12px rgba(16, 185, 129, 0.25);
+}
+
+/* ─────────── 地铁站务风：LED 站务时钟 / 线路牌徽章 ─────────── */
+
+/* 站务时钟：仿站台 PIS 屏的 LED 显示——黑底、荧光绿、轻微辉光 */
+.led-clock {
+  background: #050d08;
+  color: #2fd9a5;
+  padding: 3px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(47, 217, 165, 0.25);
+  box-shadow: inset 0 0 8px rgba(47, 217, 165, 0.15), 0 0 10px rgba(47, 217, 165, 0.12);
+  text-shadow: 0 0 6px rgba(47, 217, 165, 0.55);
+  letter-spacing: 0.08em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 线路牌徽章：仿地铁线路胶囊（白点 + 绿底圆角条），用于头部标识 */
+.metro-line-badge {
+  background: linear-gradient(135deg, #00a862, #00874e);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  padding: 3px 12px 3px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 2px 8px rgba(0, 168, 98, 0.35);
 }
