@@ -24,6 +24,28 @@ AK 申请：[百度地图开放平台控制台](https://lbsyun.baidu.com/apicons
 
 前端默认跑在**本地模拟数据**上，不启动后端也能完整演示。
 
+## 测试
+
+```bash
+npm run typecheck   # 类型检查
+npm run test        # 前端单元测试（Vitest，122 例，约 2 秒）
+npm run test:e2e    # 端到端测试（Playwright，6 例，约 50 秒；用本机 Chrome，会自动拉起 dev server）
+```
+
+后端（首次需装测试依赖）：
+
+```powershell
+cd backend
+.\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
+.\.venv\Scripts\python.exe -m pytest        # 25 例
+```
+
+E2E 覆盖两处人眼最容易漏的基线：**1920×929 下一屏不出现纵向滚动**；
+**数据页筛选链路 620 → 32（线路）→ 6（品类）→ 2（月份）真的会变**。
+
+CI（GitHub Actions）目前跑 typecheck / 单测 / 构建 / 后端 pytest，
+E2E 需在 Linux 上额外下载 Chromium，暂留在本地跑。
+
 ## 后端（Python + SQLite）
 
 `backend/` 下是 FastAPI + SQLite 服务，实现运单/线网/车队/告警接口，并带运单增删改查。
