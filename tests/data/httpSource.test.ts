@@ -94,6 +94,7 @@ describe('httpSource：单接口失败 → 字段级回退', () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     warn.mockRestore();
     vi.unstubAllGlobals();
   });
@@ -161,6 +162,22 @@ describe('httpSource：单接口失败 → 字段级回退', () => {
     expect(bundle.fleet.total).toBe(AGV_FLEET.total);
     expect(bundle.alerts).toEqual(ALERTS);
     expect(bundle.degraded).toBe(true);
+  });
+
+  it('后端假死（挂起不报错）→ 15 秒超时后同样降级，页面不干等', async () => {
+    vi.useFakeTimers();
+    // 永不 resolve 的 fetch：比"报错"更阴险的故障形态
+    vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => {})));
+
+    const pending = httpSource.load(FALLBACK_LINES);
+    // 快进 15 秒（advanceTimersByTimeAsync 会连微任务一起冲刷，降级链路走完）
+    await vi.advanceTimersByTimeAsync(15_000);
+    const bundle = await pending;
+
+    expect(bundle.degraded).toBe(true);
+    expect(bundle.lines).toEqual(FALLBACK_LINES);
+    expect(bundle.fleet.total).toBe(AGV_FLEET.total);
+    expect(warn).toHaveBeenCalled();
   });
 });
 

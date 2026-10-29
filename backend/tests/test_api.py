@@ -1,4 +1,4 @@
-"""后端 12 个接口的行为测试。
+"""后端全部接口的行为测试。
 
 【术语小抄】
 - 接口（API / endpoint）：后端对外开的"服务窗口"。前端通过它拿数据，
@@ -15,6 +15,9 @@
 
 from __future__ import annotations
 
+import re
+from datetime import datetime
+
 SEEDED_WAYBILL_COUNT = 620
 
 
@@ -27,6 +30,21 @@ def test_health(client):
     assert body["status"] == "ok"
     assert body["lines"] == 20
     assert body["waybills"] == SEEDED_WAYBILL_COUNT
+
+
+def test_health_reports_process_identity(client):
+    """health 带进程身份三件套（commit / startedAt / pid）。
+
+    抓"幽灵旧进程"专用：端口被老进程占着、新接口莫名 404 时，
+    对一下 commit 就知道 8000 端口后面站的是哪一版代码。
+    """
+    body = client.get("/api/health").json()
+
+    # git 可用的环境返回短 hash（有未提交改动时带 +dirty）；
+    # 裸拷贝（没有 .git）返回 "unknown"，同样是合法值
+    assert re.fullmatch(r"[0-9a-f]{7,12}(\+dirty)?|unknown", body["commit"])
+    assert isinstance(body["pid"], int) and body["pid"] > 0
+    assert datetime.fromisoformat(body["startedAt"]) is not None
 
 
 def test_lines(client):
@@ -238,3 +256,31 @@ def test_waybill_create_validation(client):
 
     bad_month = {**bad_weight, "waybillNo": "YD-BAD-0002", "weightTon": 5, "month": "2024/05"}
     assert client.post("/api/waybills", json=bad_month).status_code == 422
+
+
+# ───────────── 仿真历史清理（放最后：会删仿真记录） ─────────────
+
+
+def test_simulations_cleanup_keeps_newest(client, sample_order, sample_route):
+    """清理历史：只保留最近 N 条，且留下的一定是 id 最大（最新）的那条。"""
+    for _ in range(3):
+        assert client.post(
+            "/api/simulate", json={"order": sample_order, "route": sample_route}
+        ).json()["success"]
+
+    before = client.get("/api/simulations", params={"limit": 200}).json()
+    assert len(before) >= 3
+
+    resp = client.delete("/api/simulations", params={"keep": 1})
+    assert resp.status_code == 200
+    assert resp.json() == {"deleted": len(before) - 1, "kept": 1}
+
+    after = client.get("/api/simulations", params={"limit": 200}).json()
+    assert len(after) == 1
+    assert after[0]["id"] == max(run["id"] for run in before), "留下的必须是最新一条"
+
+
+def test_simulations_cleanup_validation(client):
+    """keep 越界（负数 / 超过 1000）必须 422，不能悄悄按默认值处理。"""
+    assert client.delete("/api/simulations", params={"keep": -1}).status_code == 422
+    assert client.delete("/api/simulations", params={"keep": 1001}).status_code == 422

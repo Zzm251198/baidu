@@ -7,6 +7,7 @@
 //
 // 开启方式：.env.local 里设 VITE_DATA_SOURCE=http（可选 VITE_API_BASE 覆盖前缀）。
 import { API_BASE } from './apiBase';
+import { fetchWithTimeout, describeHttpError, READ_TIMEOUT_MS } from './fetchWithTimeout';
 import { ALERTS, AGV_FLEET } from './mockFleet';
 import { buildWaybills } from './mockWaybills';
 import type { AlertItem, DataBundle, FleetSnapshot, LineInfo, MissionDataSource, Waybill } from './types';
@@ -14,9 +15,14 @@ import type { AlertItem, DataBundle, FleetSnapshot, LineInfo, MissionDataSource,
 const BASE = API_BASE;
 
 async function getJson<T>(path: string): Promise<T> {
-  const response = await fetch(`${BASE}${path}`, { headers: { Accept: 'application/json' } });
+  // 15 秒超时：后端假死时这里会失败，走下面的字段级回退，而不是让页面干等
+  const response = await fetchWithTimeout(
+    `${BASE}${path}`,
+    { headers: { Accept: 'application/json' } },
+    READ_TIMEOUT_MS
+  );
   if (!response.ok) {
-    throw new Error(`${path} 请求失败（HTTP ${response.status}）`);
+    throw new Error(`${path} 请求失败（${await describeHttpError(response)}）`);
   }
   return (await response.json()) as T;
 }

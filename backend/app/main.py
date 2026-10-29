@@ -13,8 +13,11 @@
 from __future__ import annotations
 
 import json
+import os
+import subprocess
 from contextlib import asynccontextmanager
 from datetime import datetime
+from pathlib import Path
 from typing import Annotated
 
 from fastapi import FastAPI, HTTPException, Query, Response
@@ -69,12 +72,55 @@ def _row_to_waybill(row) -> WaybillOut:
     )
 
 
+def _git_commit() -> str:
+    """当前进程跑的是哪一版代码（短 commit hash，未提交改动会标 +dirty）。
+
+    用来抓"幽灵旧进程"：端口被老进程占着、新接口莫名 404 时，
+    对一下 health 里的 commit 就知道谁在顶班。git 不可用（如拷走的裸目录）
+    返回 "unknown"——这本身就是一条线索。
+    """
+    repo = Path(__file__).resolve().parents[2]
+    try:
+        head = subprocess.run(
+            ["git", "rev-parse", "--short", "HEAD"],
+            capture_output=True, text=True, timeout=3, cwd=repo,
+        )
+        commit = head.stdout.strip()
+        if not commit:
+            return "unknown"
+
+        # 已跟踪文件有未提交改动 → 标 dirty；忽略未跟踪文件（如作业目录），它们不参与运行
+        dirty = subprocess.run(
+            ["git", "status", "--porcelain", "--untracked-files=no"],
+            capture_output=True, text=True, timeout=3, cwd=repo,
+        )
+        if dirty.stdout.strip():
+            return f"{commit}+dirty"
+        return commit
+    except (OSError, subprocess.SubprocessError):
+        return "unknown"
+
+
+# 模块导入时定格：uvicorn --reload 重载模块会刷新这两个值，
+# 所以它们反映的就是"此刻正在服务请求的这段代码"
+_APP_STARTED_AT = datetime.now().isoformat(timespec="seconds")
+_GIT_COMMIT = _git_commit()
+
+
 @app.get("/api/health")
 def health() -> dict:
     with get_conn() as conn:
         waybills = conn.execute("SELECT COUNT(*) AS n FROM waybills").fetchone()["n"]
         lines = conn.execute("SELECT COUNT(*) AS n FROM lines").fetchone()["n"]
-    return {"status": "ok", "lines": lines, "waybills": waybills}
+    return {
+        "status": "ok",
+        "lines": lines,
+        "waybills": waybills,
+        # 进程身份三件套：commit 对代码版本，startedAt/pid 对进程本体
+        "commit": _GIT_COMMIT,
+        "startedAt": _APP_STARTED_AT,
+        "pid": os.getpid(),
+    }
 
 
 @app.get("/api/lines", response_model=list[LineOut])
@@ -296,6 +342,25 @@ def list_simulations(limit: Annotated[int, Query(ge=1, le=200)] = 20) -> list[Si
         )
         for row in rows
     ]
+
+
+@app.delete(
+    "/api/simulations",
+    summary="清理仿真历史（保留最近 N 条）",
+    description=(
+        "每次演示 / E2E 都会往 simulation_runs 落一条审计记录，时间久了列表会被测试记录刷屏。"
+        "按 id 倒序保留最近 keep 条，其余删除；keep=0 即清空。"
+    ),
+)
+def clear_simulations(keep: Annotated[int, Query(ge=0, le=1000)] = 20) -> dict:
+    with get_conn() as conn:
+        cursor = conn.execute(
+            """DELETE FROM simulation_runs
+               WHERE id NOT IN (SELECT id FROM simulation_runs ORDER BY id DESC LIMIT ?)""",
+            (keep,),
+        )
+        deleted = cursor.rowcount
+    return {"deleted": deleted, "kept": keep}
 
 
 @app.get(

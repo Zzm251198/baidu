@@ -4,6 +4,7 @@
 // 「编排 + 指标 + 风险」下沉到后端，结果可复现、可审计（后端会落库 simulation_runs）。
 
 import { API_BASE } from '../data/apiBase';
+import { fetchWithTimeout, describeHttpError, SIMULATE_TIMEOUT_MS } from '../data/fetchWithTimeout';
 
 export interface RemoteOrder {
   startStationName: string;
@@ -54,14 +55,21 @@ export function slimRoute(route: any): RemoteRoute {
 }
 
 export async function simulateRemote(order: RemoteOrder, route: any): Promise<any> {
-  const response = await fetch(`${API_BASE}/simulate`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-    body: JSON.stringify({ order, route: slimRoute(route) })
-  });
+  // 30 秒超时：后端纯计算本是毫秒级，真到 30 秒说明已假死，
+  // 抛错后 App.tsx 会回退本地引擎，演示不中断
+  const response = await fetchWithTimeout(
+    `${API_BASE}/simulate`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({ order, route: slimRoute(route) })
+    },
+    SIMULATE_TIMEOUT_MS
+  );
 
   if (!response.ok) {
-    throw new Error(`/simulate 请求失败（HTTP ${response.status}）`);
+    // 把 FastAPI 的 {"detail": "..."} 带出来，联调排错时看得见后端到底说了什么
+    throw new Error(`/simulate 请求失败（${await describeHttpError(response)}）`);
   }
 
   return response.json();

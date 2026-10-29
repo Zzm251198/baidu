@@ -78,7 +78,10 @@ describe('slimRoute：只保留后端需要的字段', () => {
 });
 
 describe('simulateRemote：请求形状', () => {
-  afterEach(() => vi.unstubAllGlobals());
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  });
 
   it('POST 到 {API_BASE}/simulate，body 为 { order, route }', async () => {
     const fetchMock = stubFetch({ ok: true, status: 200, json: async () => ({ success: true, runId: 'RUN-1' }) });
@@ -101,6 +104,21 @@ describe('simulateRemote：请求形状', () => {
   it('上游非 200 → 抛出可读错误（包含状态码）', async () => {
     stubFetch({ ok: false, status: 500, json: async () => ({}) });
     await expect(simulateRemote(ORDER, FAT_ROUTE)).rejects.toThrow('500');
+  });
+
+  it('上游返回 {"detail": "..."} → 错误信息带上后端说的人话', async () => {
+    stubFetch({ ok: false, status: 404, json: async () => ({ detail: '仿真记录不存在' }) });
+    await expect(simulateRemote(ORDER, FAT_ROUTE)).rejects.toThrow('仿真记录不存在');
+  });
+
+  it('后端假死（挂起不报错）→ 30 秒超时强制失败，交给调用方降级本地引擎', async () => {
+    vi.useFakeTimers();
+    vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => {})));
+
+    const pending = simulateRemote(ORDER, FAT_ROUTE);
+    const assertion = expect(pending).rejects.toThrow('请求超时（30 秒未响应）');
+    await vi.advanceTimersByTimeAsync(30_000);
+    await assertion;
   });
 
   it('网络异常向上抛，由调用方决定是否降级本地计算', async () => {
