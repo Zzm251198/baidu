@@ -24,6 +24,25 @@ VITE_DATA_SOURCE=http
 VITE_API_BASE=/api     # dev 由 vite.config.ts 代理到 127.0.0.1:8000
 ```
 
+## 测试
+
+```powershell
+# 首次：安装测试依赖（pytest + httpx，运行服务本身不需要）
+.\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
+
+# 运行全部用例（当前 25 个）
+.\.venv\Scripts\python.exe -m pytest
+```
+
+测试用 FastAPI 的 `TestClient` 在进程内调用接口，**不需要先启动服务、不占端口**；
+数据库会被指向临时目录，不会写脏你真实的 `data/cargo.db`。
+
+用例分两批：
+
+- `tests/test_api.py`：12 个接口的行为与状态码（200/201/204/400/404/409/422）；
+- `tests/test_simulation_parity.py`：与前端"口径对拍"——同样输入必须算出
+  收入 603.00 / 成本 125.10 / 利润 477.90，任何一边改费率而另一边没跟上都会红。
+
 ## 目录
 
 ```
@@ -34,8 +53,11 @@ backend/
     schemas.py           Pydantic 请求/响应模型（字段与前端对齐）
     services/
       simulation.py      成本/时效测算（与前端 computeMetrics 同口径）
+  tests/                  pytest 用例（接口行为 + 前后端口径对拍）
   data/cargo.db          SQLite 数据文件（自动生成，已 gitignore）
-  requirements.txt
+  requirements.txt       运行依赖
+  requirements-dev.txt   测试依赖（pytest / httpx）
+  pytest.ini
   run.ps1
 ```
 
@@ -108,9 +130,13 @@ backend/
 
 ## 数据
 
-当前种子数据覆盖 **6 条骨干线**（1/2/3/5/11/14），每条取前 8 站 × 4 个月 × 5 品类，
-共 192 条运单。生成方式与前端 `mockWaybills.ts` 同样采用"线网 + 固定种子"，
-同一份线网永远得到同一批数据。
+种子数据由 `public/data/line_network.json` 生成（与前端同一份线网，不在这边另存一份）：
+当前是 **20 条线 / 482 个站**，每条线取前 8 站（不足 8 站的全取）× 4 个月，
+**共 620 条运单**，覆盖 155 个"线路×站点"组合。
+
+生成方式是"线网 + 固定种子"，同一份线网永远得到同一批数据；但注意 Python 的
+`random.Random` 与前端 mulberry32 是两个不同的随机算法，**条数、品类、月份完全一致，
+重量等数值会差约 1%**——这是已知且已接受的差异（不影响任何统计口径）。
 
 重置数据库：
 

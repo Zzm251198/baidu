@@ -23,6 +23,12 @@ backend/__pycache__
 **/__pycache__
 *.pyc
 
+# pytest（含本机 TEMP 不可用时落在当前目录的临时目录）
+.pytest_cache
+**/.pytest_cache
+pytest-of-*/
+.wheels
+
 # 本地验证产物
 tmp-shots
 
