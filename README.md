@@ -30,8 +30,8 @@ AK 申请：[百度地图开放平台控制台](https://lbsyun.baidu.com/apicons
 
 ```bash
 npm run typecheck   # 类型检查
-npm run test        # 前端单元测试（Vitest，122 例，约 2 秒）
-npm run test:e2e    # 端到端测试（Playwright，6 例，约 50 秒；用本机 Chrome，会自动拉起 dev server）
+npm run test        # 前端单元测试（Vitest，195 例，约 2 秒）
+npm run test:e2e    # 端到端测试（Playwright，16 例，约 1 分钟；用本机 Chrome，会自动拉起 dev server）
 ```
 
 后端（首次需装测试依赖）：
@@ -39,11 +39,18 @@ npm run test:e2e    # 端到端测试（Playwright，6 例，约 50 秒；用本
 ```powershell
 cd backend
 .\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
-.\.venv\Scripts\python.exe -m pytest        # 25 例
+.\.venv\Scripts\python.exe -m pytest        # 52 例
 ```
 
-E2E 覆盖两处人眼最容易漏的基线：**1920×929 下一屏不出现纵向滚动**；
-**数据页筛选链路 620 → 32（线路）→ 6（品类）→ 2（月份）真的会变**。
+E2E 覆盖人眼最容易漏的基线：**1920×929 下一屏不出现纵向滚动**、
+**数据页筛选链路 620 → 32（线路）→ 6（品类）→ 2（月份）真的会变**、
+**导出 Excel 真的能下载到合法 xlsx**、**地图 SDK 挂掉时仿真页仍可选线路**。
+
+CI（GitHub Actions）三个 job：类型+单测+打包 / pytest+数据口径自检 / Playwright E2E。
+
+## 文档
+
+- [演示脚本与答辩口径](docs/演示与答辩.md) —— 10 分钟演示路径、可量化数据、17 个答辩问答、已知局限与上线清单
 
 CI（GitHub Actions）目前跑 typecheck / 单测 / 构建 / 后端 pytest，
 E2E 需在 Linux 上额外下载 Chromium，暂留在本地跑。
