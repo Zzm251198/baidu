@@ -861,7 +861,7 @@ const App: React.FC = () => {
                         onChange={(event) => setRouteStrategy(event.target.value as typeof routeStrategy)}
                       >
                         <option value="smart">路径 · 智能推荐</option>
-                        <option value="balanced">路径 · 综合最优</option>
+                        <option value="balanced">路径 · 均衡（换乘算 3 站）</option>
                         <option value="fewer">路径 · 少换乘优先</option>
                         <option value="faster">路径 · 时间优先</option>
                       </select>

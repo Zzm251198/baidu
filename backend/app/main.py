@@ -14,13 +14,14 @@ from __future__ import annotations
 
 import json
 import os
+import secrets
 import subprocess
 from contextlib import asynccontextmanager
 from datetime import datetime
 from pathlib import Path
 from typing import Annotated
 
-from fastapi import FastAPI, HTTPException, Query, Response
+from fastapi import FastAPI, Header, HTTPException, Query, Response
 from fastapi.middleware.cors import CORSMiddleware
 
 from .db import get_conn, init_db
@@ -114,20 +115,45 @@ _APP_STARTED_AT = datetime.now().isoformat(timespec="seconds")
 _GIT_COMMIT = _git_commit()
 
 
+def _require_admin_token(provided: str | None) -> None:
+    """管理类接口的令牌校验。
+
+    用 secrets.compare_digest 而不是 == ：后者在字符串比较时会"提前返回"，
+    理论上可被按响应时间逐字符猜出令牌（时序攻击）。虽然是 demo，习惯要立对。
+    """
+    expected = os.environ.get("DEMO_ADMIN_TOKEN")
+    if not expected:
+        # 未配置令牌 = 本地 demo 模式，保持可用性（README 里写明了上线必须配）
+        return
+    if not provided or not secrets.compare_digest(provided, expected):
+        raise HTTPException(status_code=403, detail="缺少或错误的管理令牌（请求头 X-Demo-Token）")
+
+
 @app.get("/api/health")
-def health() -> dict:
+def health(verbose: Annotated[bool, Query()] = False) -> dict:
+    """健康检查。
+
+    默认只返回业务计数（对外可暴露的部分）；进程身份（commit / startedAt / pid）
+    属于内部信息，需要显式 ?verbose=1 才给——排障时够用，平时不泄露。
+    """
     with get_conn() as conn:
         waybills = conn.execute("SELECT COUNT(*) AS n FROM waybills").fetchone()["n"]
         lines = conn.execute("SELECT COUNT(*) AS n FROM lines").fetchone()["n"]
-    return {
+
+    payload: dict = {
         "status": "ok",
         "lines": lines,
         "waybills": waybills,
-        # 进程身份三件套：commit 对代码版本，startedAt/pid 对进程本体
-        "commit": _GIT_COMMIT,
-        "startedAt": _APP_STARTED_AT,
-        "pid": os.getpid(),
     }
+    if verbose:
+        payload.update(
+            {
+                "commit": _GIT_COMMIT,
+                "startedAt": _APP_STARTED_AT,
+                "pid": os.getpid(),
+            }
+        )
+    return payload
 
 
 @app.get("/api/lines", response_model=list[LineOut])
@@ -371,7 +397,17 @@ def list_simulations(limit: Annotated[int, Query(ge=1, le=200)] = 20) -> list[Si
         "按 id 倒序保留最近 keep 条，其余删除；keep=0 即清空。"
     ),
 )
-def clear_simulations(keep: Annotated[int, Query(ge=0, le=1000)] = 20) -> dict:
+def clear_simulations(
+    keep: Annotated[int, Query(ge=0, le=1000)] = 20,
+    x_demo_token: Annotated[str | None, Header(alias="X-Demo-Token")] = None,
+) -> dict:
+    """清理仿真历史。
+
+    **需要管理令牌**：设了环境变量 DEMO_ADMIN_TOKEN 时，请求必须带
+    `X-Demo-Token: <同值>`；没设时按 demo 模式放行（本地演示不受影响）。
+    这样一旦把服务放到局域网/公网，不会有"任何人 curl 一下清空审计库"的窗口。
+    """
+    _require_admin_token(x_demo_token)
     with get_conn() as conn:
         cursor = conn.execute(
             """DELETE FROM simulation_runs

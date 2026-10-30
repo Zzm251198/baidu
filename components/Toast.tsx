@@ -7,7 +7,9 @@
 // 用法：const { toasts, push, dismiss } = useToasts();
 //       push('请完善仿真参数', 'warning');
 //       <ToastStack toasts={toasts} onDismiss={dismiss} />
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+
+import { createToastTimers } from '../src/ui/toastTimers';
 
 export type ToastKind = 'error' | 'warning' | 'success' | 'info';
 
@@ -33,14 +35,30 @@ export function useToasts() {
     setToasts((current) => current.filter((toast) => toast.id !== id));
   }, []);
 
-  const push = useCallback((text: string, kind: ToastKind = 'info') => {
-    const id = ++nextId.current;
-    // slice(-2)：保留旧栈最后两条 + 新消息 = 最多 3 条
-    setToasts((current) => [...current.slice(-2), { id, kind, text }]);
-    window.setTimeout(() => dismiss(id), 4200);
-  }, [dismiss]);
+  // 定时器统一记账：手动关掉就撤、组件卸载就全清。
+  // 否则"页面切走 4 秒后仍有一个回调在跑"，是 React 18 不会再报警的隐性泄漏。
+  const timers = useMemo(() => createToastTimers(4200, dismiss), [dismiss]);
+  useEffect(() => () => timers.cancelAll(), [timers]);
 
-  return { toasts, push, dismiss };
+  const push = useCallback(
+    (text: string, kind: ToastKind = 'info') => {
+      const id = ++nextId.current;
+      // slice(-2)：保留旧栈最后两条 + 新消息 = 最多 3 条
+      setToasts((current) => [...current.slice(-2), { id, kind, text }]);
+      timers.scheduleFor(id);
+    },
+    [timers]
+  );
+
+  const dismissWithTimer = useCallback(
+    (id: number) => {
+      timers.cancel(id);
+      dismiss(id);
+    },
+    [dismiss, timers]
+  );
+
+  return { toasts, push, dismiss: dismissWithTimer };
 }
 
 export const ToastStack: React.FC<{ toasts: ToastMessage[]; onDismiss: (id: number) => void }> = ({

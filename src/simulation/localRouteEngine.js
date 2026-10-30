@@ -76,11 +76,15 @@ const TRANSFER_MINUTES = 5;        // 每次换乘预留的走行+候车时间�
 // ─────────────── 路径策略（插点 A）───────────────
 // 同一个 Dijkstra，靠「换乘惩罚」改变取舍倾向——策略即参数，不是两套代码。
 // 真实分歧案例：赤湾→布吉
-//   直达 5 号线 29 站 0 换乘（≈72.5 分）
-//   经 5→11→14 号线 18 站 2 换乘（≈55 分）
+//   直达 5 号线 29 站 0 换乘（≈73 分）
+//   经 2→11→14 号线 17 站 2 换乘（≈53 分）
 //   少换乘优先选直达；时间优先选换乘——货运重柜怕装卸交接，客运怕久坐，各有道理。
+//
+// 实测口径（别写错）：短程 OD 上「均衡(3)」与「时间优先(2)」常给出同一条路
+// （两者都选 17 站 2 换乘），差异只出现在取舍边缘。演示时想让两种策略"看起来不同"，
+// 应换一条换乘更多的 OD，而不是声称它们等价或不同。
 export const ROUTE_STRATEGIES = {
-  balanced: { penalty: TRANSFER_PENALTY_STATIONS, label: '综合最优' },
+  balanced: { penalty: TRANSFER_PENALTY_STATIONS, label: '均衡（换乘算 3 站）' },
   fewer: { penalty: 8, label: '少换乘优先' },
   faster: { penalty: 2, label: '时间优先' }
 };
@@ -214,9 +218,9 @@ function buildSegments(path) {
 
 /**
  * 规划起终点间的地铁路径。
- * @param strategy 路径策略（插点 A）：'balanced' 综合最优（默认，行为与旧版一致）
+ * @param strategy 路径策略（插点 A）：'balanced' 均衡·换乘算 3 站（默认，行为与旧版一致）
  *                 | 'fewer' 少换乘优先（货运直达，减少装卸交接）
- *                 | 'faster' 时间优先（愿意换乘换总时长）。未知值回落 balanced。
+ *                 | 'faster' 时间优先（换乘 5 分钟 ≈ 2 站，惩罚取 2）。未知值回落 balanced。
  * @returns 与 parseBaiduTransitRoute 同构的 routeSummary；任一站不在数据集内或不可达时返回 null。
  */
 export function planLocalRoute(rawStartStationName, rawEndStationName, strategy = 'balanced') {

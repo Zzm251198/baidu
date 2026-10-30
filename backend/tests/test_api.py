@@ -33,18 +33,26 @@ def test_health(client):
 
 
 def test_health_reports_process_identity(client):
-    """health 带进程身份三件套（commit / startedAt / pid）。
+    """health?verbose=1 才返回进程身份三件套（commit / startedAt / pid）。
 
     抓"幽灵旧进程"专用：端口被老进程占着、新接口莫名 404 时，
     对一下 commit 就知道 8000 端口后面站的是哪一版代码。
     """
-    body = client.get("/api/health").json()
+    body = client.get("/api/health", params={"verbose": 1}).json()
 
     # git 可用的环境返回短 hash（有未提交改动时带 +dirty）；
     # 裸拷贝（没有 .git）返回 "unknown"，同样是合法值
     assert re.fullmatch(r"[0-9a-f]{7,12}(\+dirty)?|unknown", body["commit"])
     assert isinstance(body["pid"], int) and body["pid"] > 0
     assert datetime.fromisoformat(body["startedAt"]) is not None
+
+
+def test_health_hides_internals_by_default(client):
+    """默认响应不暴露 pid/commit —— 内部信息不该随手给出。"""
+    body = client.get("/api/health").json()
+
+    assert body == {"status": "ok", "lines": 20, "waybills": SEEDED_WAYBILL_COUNT}
+    assert "pid" not in body and "commit" not in body
 
 
 def test_lines(client):
