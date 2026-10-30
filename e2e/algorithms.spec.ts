@@ -33,6 +33,8 @@ test.describe('算法插点', () => {
     await selects.nth(1).selectOption({ label: '前海湾' });
     await selects.nth(2).selectOption({ label: '地铁11号线' });
     await selects.nth(3).selectOption({ label: '岗厦北' });
+    // 路径策略走本地引擎，避免 CI 上百度 SDK 不可用导致仿真永远不返回
+    await selects.nth(4).selectOption({ label: '路径 · 均衡（换乘算 3 站）' });
     await page.getByPlaceholder('请输入数值').fill('1200');
     // 派车算法 = 大运力优先（第 6 个下拉）
     await selects.nth(5).selectOption({ label: '派车 · 大运力优先' });

@@ -3,35 +3,47 @@ import { defineConfig } from '@playwright/test';
 /**
  * Playwright 配置。
  *
- * 【名词小抄】
- * - viewport：浏览器窗口的可视区域大小，这里固定成 1920×929（你的验证基线）。
- * - channel: 'chrome'：用系统已安装的 Chrome，而不是再下载一份 Chromium
- *   （省 150MB 下载，也避开国内 CDN 慢的问题）。
- * - baseURL：省得每个测试都写完整网址。
- * - screenshot: 'only-on-failure'：只有失败时才截图，方便看现场。
+ * 本地与 CI 的三个差异（这是能不能进 CI 的关键）：
+ * 1. 浏览器：本地用系统 Chrome（channel: 'chrome'，省 150MB 下载）；
+ *    CI 用 `npx playwright install chromium` 装的那份，所以 channel 必须置空。
+ * 2. 服务：webServer 用数组，CI 上同时拉起后端(8000)与前端(3000)。
+ * 3. 重试：CI 给 1 次（网络/冷启动抖动），本地不重试（失败要立刻看见）。
+ *
+ * 本地已有服务时 reuseExistingServer=true，不会顶掉你正在跑的进程。
  */
+const isCI = Boolean(process.env.CI);
+
 export default defineConfig({
   testDir: './e2e',
   timeout: 120_000,
   expect: { timeout: 20_000 },
   fullyParallel: false,
   workers: 1,
-  retries: 0,
+  retries: isCI ? 1 : 0,
   reporter: [['list']],
   use: {
     baseURL: 'http://localhost:3000',
     viewport: { width: 1920, height: 929 },
-    channel: 'chrome',
+    // 本地：系统 Chrome；CI：下载的 Chromium
+    channel: isCI ? undefined : 'chrome',
     screenshot: 'only-on-failure',
     video: 'off',
     trace: 'off'
   },
-  // 没手动开 dev server 时，Playwright 自己拉一个；已经开着就直接复用，
-  // 免得把你在跑的 3000 端口顶掉。
-  webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:3000',
-    reuseExistingServer: true,
-    timeout: 120_000
-  }
+  webServer: [
+    {
+      // 后端：CI 上 python 在 PATH 里（依赖由 workflow 装到系统环境）
+      command: 'python -m uvicorn app.main:app --host 127.0.0.1 --port 8000',
+      cwd: './backend',
+      url: 'http://127.0.0.1:8000/api/health',
+      reuseExistingServer: !isCI,
+      timeout: 120_000
+    },
+    {
+      command: 'npm run dev',
+      url: 'http://localhost:3000',
+      reuseExistingServer: !isCI,
+      timeout: 120_000
+    }
+  ]
 });

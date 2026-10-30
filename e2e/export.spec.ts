@@ -31,6 +31,8 @@ test.describe('仿真结果导出', () => {
     await selects.nth(1).selectOption({ label: '前海湾' });
     await selects.nth(2).selectOption({ label: '地铁11号线' });
     await selects.nth(3).selectOption({ label: '岗厦北' });
+    // 路径策略选「均衡」= 本地引擎，不依赖百度 Direction（CI 上未必能连通百度）
+    await selects.nth(4).selectOption({ label: '路径 · 均衡（换乘算 3 站）' });
 
     // 货运参数必须填，否则点「开始仿真」不会真正执行（输入框留空时按钮无效）
     await page.getByPlaceholder('请输入数值').fill('1200');

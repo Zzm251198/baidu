@@ -74,3 +74,58 @@ jobs:
           assert len(rows) == 620, f"运单应为 620 条，实际 {len(rows)}"
           print(f"线网 {len(lines)} 条 / 运单 {len(rows)} 条 ✓")
           PY
+
+  # 页面级回归：真开浏览器点按钮。比单测慢，但能抓到"布局塌了/点了没反应"。
+  # 依赖后端：http 模式需要 8000 的接口（Playwright 的 webServer 会自动拉起）。
+  e2e:
+    name: E2E · Playwright
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 准备 Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: 准备 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - name: 安装前端依赖
+        run: npm ci
+
+      - name: 安装后端依赖
+        working-directory: backend
+        run: pip install -r requirements.txt -r requirements-dev.txt
+
+      - name: 安装 Chromium（含系统依赖）
+        run: npx playwright install --with-deps chromium
+
+      # 仓库里没有 .env.local（被 gitignore），这里显式切到 http 数据源，
+      # 让页面从后端取 20 线 / 620 单，而不是依赖浏览器里的百度 SDK。
+      - name: 切到 http 数据源
+        run: |
+          printf 'VITE_DATA_SOURCE=http\nVITE_API_BASE=/api\n' > .env.local
+          cat .env.local
+
+      - name: 运行 E2E
+        env:
+          CI: 'true'
+        run: npx playwright test
+
+      # 失败时把截图与报告留下来，不然只能对着日志猜
+      - name: 上传失败现场
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-artifacts
+          path: |
+            test-results
+            playwright-report
+          retention-days: 7
+          if-no-files-found: ignore
