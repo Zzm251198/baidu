@@ -10,6 +10,16 @@ import { SimulationInsightPanel, type RouteData } from './components/SimulationI
 import { OrderTimeline, type TimelineEvent } from './components/OrderTimeline';
 import { ToastStack, useToasts } from './components/Toast';
 import { AlgorithmCompare } from './components/AlgorithmCompare';
+import { PlanCompareTable } from './components/PlanCompareTable';
+import { buildCandidates, dedupeRoutes, type PlanResult } from './src/analysis/planCompare';
+
+/** 把后端 riskAssessment 压成一个短标签，供多方案对比表显示 */
+function riskLabel(risk: any): string {
+  const levels = Object.values(risk || {}).map((item: any) => item?.level);
+  if (levels.includes('error')) return '路径不可用';
+  const warnings = levels.filter((level) => level === 'warning').length;
+  return warnings === 0 ? '低' : warnings === 1 ? '中' : '高';
+}
 import { parseBaiduTransitRoute } from './src/simulation/baiduRouteParser.js';
 import { LINE_DEFINITIONS, ROUTE_STRATEGIES, planLocalRoute } from './src/simulation/localRouteEngine.js';
 import { buildSimSourceNote } from './src/simulation/simSourceNote';
@@ -84,6 +94,9 @@ const App: React.FC = () => {
   const [schedulingAlgorithm, setSchedulingAlgorithm] = useState<'baseline' | 'capacity-first'>('baseline');
   // 非 baseline 算法跑完后，同步跑一次基线用于对比卡（null = 无对比）
   const [baselineOutput, setBaselineOutput] = useState<any | null>(null);
+  // 多方案对比：路径策略 × 派车算法的候选结果表（null = 未对比）
+  const [planResults, setPlanResults] = useState<PlanResult[] | null>(null);
+  const [isComparing, setIsComparing] = useState(false);
 
   useEffect(() => {
     const updateTime = () => {
@@ -404,6 +417,90 @@ const App: React.FC = () => {
     });
     setIsSimulating(false);
   }, [endLineName, routeStrategy, simParams, schedulingAlgorithm, sourceKind, startLineName]);
+
+  /**
+   * 多方案对比：一次跑完「路径策略 × 派车算法」的候选矩阵。
+   *
+   * 两个诚实边界：
+   * 1. 路径先按签名去重——均衡与时间优先常常同路，不去重会出现两行一模一样；
+   * 2. 前端计算（mock）模式下只有 baseline 一种派车算法，算法维度自动降为 1。
+   */
+  const comparePlans = useCallback(async () => {
+    const cargoValue = Number(simParams.cargoValue);
+    if (!simParams.startStationName || !simParams.endStationName || !Number.isFinite(cargoValue) || cargoValue <= 0) {
+      showToast('请先选择起终点并填写货运参数，再做多方案对比', 'warning');
+      return;
+    }
+
+    const orderInput = {
+      startLineName,
+      startStationName: simParams.startStationName,
+      endLineName,
+      endStationName: simParams.endStationName,
+      cargoWeightKg: simParams.cargoMode === 'weight' ? cargoValue : cargoValue * 20,
+      cargoCount: simParams.cargoMode === 'count' ? cargoValue : Math.max(1, Math.ceil(cargoValue / 60)),
+      startTime: '10:00'
+    };
+
+    const routeCandidates = Object.keys(ROUTE_STRATEGIES).map((key) => ({
+      strategy: String(key),
+      strategyLabel: ROUTE_STRATEGIES[key as keyof typeof ROUTE_STRATEGIES].label,
+      route: planLocalRoute(simParams.startStationName, simParams.endStationName, String(key))
+    }));
+
+    const uniqueRoutes = dedupeRoutes(routeCandidates as any);
+    if (uniqueRoutes.length === 0) {
+      showToast('该起终点不在本地骨干网（1/2/3/5/11/14 号线）内，无法枚举多方案；请改用「智能推荐」跑单方案', 'error');
+      return;
+    }
+
+    const algorithms =
+      sourceKind === 'http'
+        ? [
+            { key: 'baseline', label: '就近匹配（基线）' },
+            { key: 'capacity-first', label: '大运力优先' }
+          ]
+        : [{ key: 'baseline', label: '就近匹配（前端引擎）' }];
+
+    setIsComparing(true);
+    setPlanResults(null);
+
+    const results: PlanResult[] = [];
+    for (const candidate of buildCandidates(uniqueRoutes, algorithms)) {
+      try {
+        const output =
+          sourceKind === 'http'
+            ? await simulateRemote(orderInput, candidate.route, candidate.algorithm, candidate.strategy)
+            : simulateOrder(orderInput, candidate.route);
+
+        // 运力冗余：capacity-first 自带该字段；baseline 没有，就地按同一口径补算
+        // （不补的话帕累托比较会"看不见"这一项，导致所有方案都被标成推荐）
+        const plan = Array.isArray(output?.agvPlan) ? output.agvPlan : [];
+        const declaredHeadroom = Number(output?.metrics?.agvCapacityHeadroomKg);
+        const headroomKg = Number.isFinite(declaredHeadroom)
+          ? declaredHeadroom
+          : plan.length
+            ? plan.reduce((sum: number, agv: any) => sum + (Number(agv?.capacityKg) || 0), 0) -
+              Number(orderInput.cargoWeightKg || 0)
+            : null;
+
+        results.push({
+          candidate,
+          success: Boolean(output?.success && output?.metrics),
+          metrics: output?.metrics ?? null,
+          risk: { shortLabel: riskLabel(output?.riskAssessment) },
+          runId: output?.runId ?? null,
+          headroomKg
+        });
+      } catch (error) {
+        console.warn('方案仿真失败：', candidate.id, error);
+        results.push({ candidate, success: false, metrics: null, risk: null, error: String(error) });
+      }
+    }
+
+    setPlanResults(results);
+    setIsComparing(false);
+  }, [endLineName, showToast, simParams, sourceKind, startLineName]);
 
   const handleBaiduRouteResult = useCallback(async (payload: any) => {
     const cargoValue = Number(simParams.cargoValue);
@@ -738,6 +835,15 @@ const App: React.FC = () => {
             {/* 算法对比卡：选了非基线派车算法且基线对照成功时出现 */}
             {baselineOutput && <AlgorithmCompare current={simulationOutput} baseline={baselineOutput} />}
 
+            {/* 多方案对比表：一次点击跑完 路径策略 × 派车算法 的候选矩阵 */}
+            {planResults && (
+              <PlanCompareTable
+                results={planResults}
+                sourceLabel={sourceKind === 'http' ? '服务端计算' : '前端引擎'}
+                onClose={() => setPlanResults(null)}
+              />
+            )}
+
             <div className="simulation-main-grid grid grid-cols-1 lg:grid-cols-12 gap-6 bg-transparent">
               <div className="lg:col-span-4 bg-transparent rounded-xl p-6 border border-emerald-500/20 shadow-lg shadow-emerald-500/5 h-full min-h-[440px] flex flex-col relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-16 h-16 border-t border-l border-emerald-400/30 rounded-tl-xl pointer-events-none"></div>
@@ -899,6 +1005,21 @@ const App: React.FC = () => {
                         <span><i className="fa fa-spinner fa-spin mr-2"></i>计算最优路径中...</span>
                       ) : (
                         <span><i className="fa fa-rocket mr-2"></i>开始仿真</span>
+                      )}
+                    </button>
+                    <button
+                      onClick={comparePlans}
+                      disabled={isSimulating || isComparing}
+                      className={`w-full mt-2 py-2.5 rounded-lg text-xs font-bold border transition-all duration-300 ${
+                        isComparing
+                          ? 'bg-gray-700/60 cursor-not-allowed border-gray-600 text-gray-300'
+                          : 'bg-sky-500/10 hover:bg-sky-500/20 border-sky-500/30 text-sky-100 hover:shadow-sky-500/20'
+                      }`}
+                    >
+                      {isComparing ? (
+                        <span><i className="fa fa-spinner fa-spin mr-2"></i>多方案计算中...</span>
+                      ) : (
+                        <span><i className="fa fa-table-columns mr-2"></i>多方案对比（路径 × 派车）</span>
                       )}
                     </button>
                   </div>
