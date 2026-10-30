@@ -131,6 +131,9 @@ class SimulateRequest(BaseModel):
     # 调度算法开关（算法插点）：baseline=就近匹配（默认），capacity-first=大运力优先。
     # 未知值回落 baseline——开关写错不能让仿真挂掉。
     algorithm: str = "baseline"
+    # 路径策略（插点 A）：smart=百度实时路径；balanced/fewer/faster=本地引擎三种倾向。
+    # 只是记录用（路由结果由调用方给定），但审计要能归因"这条是怎么跑出来的"。
+    routeStrategy: str = "smart"
 
 
 class SimulationRunOut(BaseModel):
@@ -144,3 +147,6 @@ class SimulationRunOut(BaseModel):
     revenue: float
     totalCost: float
     profit: float
+    # 审计归因：这一条是哪种派车算法 + 哪条路径策略跑出来的
+    algorithm: str = "baseline"
+    routeStrategy: str = "smart"

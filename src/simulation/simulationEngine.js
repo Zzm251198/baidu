@@ -275,8 +275,13 @@ function buildOperationRows(routeSummary, trainPlan, agvPlan, input) {
     const nextTrain = trainPlan[Math.min(index + 1, Math.max(0, trainPlan.length - 1))] || relatedTrain;
     // 上/下车站点 = 该节点服务的列车段实际站点（此前中转节点两列都填 AGV 所在站，
     // 出现"上车=下车"的废话信息；以列车段为准，信息才有增量）
-    const boardingStop = relatedTrain.boardingStation || routeSummary.originStationName;
-    const alightingStop = relatedTrain.alightingStation || routeSummary.destinationStationName;
+    // 终端节点例外：货已到站，没有"上车"这回事。沿用列车段会与「中转换挂」行
+    // 完全重复（同站、同时刻），看起来像复制粘贴 bug。
+    const isTerminal = index === agvPlan.length - 1 && agvPlan.length > 1;
+    const boardingStop = isTerminal ? '—' : relatedTrain.boardingStation || routeSummary.originStationName;
+    const alightingStop = isTerminal
+      ? routeSummary.destinationStationName
+      : relatedTrain.alightingStation || routeSummary.destinationStationName;
 
     return {
       orderId: `ORD-${String(hashString(`${orderSeed}-${index}`) % 100000).padStart(5, '0')}`,
@@ -285,7 +290,7 @@ function buildOperationRows(routeSummary, trainPlan, agvPlan, input) {
       flightSegment: index === 0 ? '始发接驳' : index === agvPlan.length - 1 ? '终端出站' : `中转换挂 ${index}`,
       bindTrain: plan.bindTrain || relatedTrain.trainId || nextTrain.trainId || '待绑定',
       boardingStop,
-      boardingTime: relatedTrain.departureTime || plan.operationTime,
+      boardingTime: isTerminal ? '—' : relatedTrain.departureTime || plan.operationTime,
       AlightingStop: alightingStop,
       alightingTime: relatedTrain.arrivalTime || plan.operationTime
     };

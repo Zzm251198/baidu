@@ -332,10 +332,18 @@ def list_simulations(limit: Annotated[int, Query(ge=1, le=200)] = 20) -> list[Si
     with get_conn() as conn:
         rows = conn.execute(
             """SELECT id, created_at, origin, destination, station_count, duration_min,
-                      transfer_count, revenue, total_cost, profit
+                      transfer_count, revenue, total_cost, profit, request_json
                FROM simulation_runs ORDER BY id DESC LIMIT ?""",
             (limit,),
         ).fetchall()
+
+    def _audit_field(raw: str, key: str, fallback: str) -> str:
+        """从 request_json 取审计归因字段；早期记录没有该字段时回落到默认值。"""
+        try:
+            return str(json.loads(raw).get(key) or fallback)
+        except (TypeError, ValueError):
+            return fallback
+
     return [
         SimulationRunOut(
             id=row["id"],
@@ -348,6 +356,8 @@ def list_simulations(limit: Annotated[int, Query(ge=1, le=200)] = 20) -> list[Si
             revenue=row["revenue"],
             totalCost=row["total_cost"],
             profit=row["profit"],
+            algorithm=_audit_field(row["request_json"], "algorithm", "baseline"),
+            routeStrategy=_audit_field(row["request_json"], "routeStrategy", "smart"),
         )
         for row in rows
     ]

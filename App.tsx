@@ -12,6 +12,7 @@ import { ToastStack, useToasts } from './components/Toast';
 import { AlgorithmCompare } from './components/AlgorithmCompare';
 import { parseBaiduTransitRoute } from './src/simulation/baiduRouteParser.js';
 import { LINE_DEFINITIONS, ROUTE_STRATEGIES, planLocalRoute } from './src/simulation/localRouteEngine.js';
+import { buildSimSourceNote } from './src/simulation/simSourceNote';
 import { loadSimulationConfigs, simulateOrder } from './src/simulation/simulationEngine.js';
 import { buildExportUrl, simulateRemote } from './src/simulation/remoteSimulation';
 import {
@@ -356,25 +357,26 @@ const App: React.FC = () => {
 
     // 数据源是 http 时，编排与测算交给后端（可复现、可审计）；
     // 后端不可用则回退本地引擎，保证演示不中断。
+    // 来源说明由 buildSimSourceNote 统一生成：前端计算时必须明说"派车算法未生效"。
     let output: any;
-    let simSourceNote = '｜前端计算';
+    let simSourceNote = '';
     let baseline: any = null;
     if (sourceKind === 'http') {
       try {
-        output = await simulateRemote(orderInput, effectiveRoute, schedulingAlgorithm);
-        const algorithmNote = schedulingAlgorithm === 'baseline' ? '' : `｜${schedulingAlgorithm === 'capacity-first' ? '大运力优先' : schedulingAlgorithm}`;
-        simSourceNote = output?.runId ? `｜服务端计算 #${output.runId}${algorithmNote}` : `｜服务端计算${algorithmNote}`;
+        output = await simulateRemote(orderInput, effectiveRoute, schedulingAlgorithm, routeStrategy);
+        simSourceNote = buildSimSourceNote({ runId: output?.runId, algorithm: schedulingAlgorithm, source: 'remote' });
         // 算法对比：非基线算法时同步跑一次基线（同样落库审计），对比卡展示差异
         if (schedulingAlgorithm !== 'baseline' && output?.success) {
-          baseline = await simulateRemote(orderInput, effectiveRoute, 'baseline').catch(() => null);
+          baseline = await simulateRemote(orderInput, effectiveRoute, 'baseline', routeStrategy).catch(() => null);
         }
       } catch (error) {
         console.warn('服务端仿真失败，回退本地引擎：', error);
         output = simulateOrder(orderInput, effectiveRoute);
-        simSourceNote = '｜前端计算（服务端不可用）';
+        simSourceNote = buildSimSourceNote({ algorithm: schedulingAlgorithm, source: 'fallback' });
       }
     } else {
       output = simulateOrder(orderInput, effectiveRoute);
+      simSourceNote = buildSimSourceNote({ algorithm: schedulingAlgorithm, source: 'mock' });
     }
 
     if (!output.success || !output.metrics) {
@@ -401,7 +403,7 @@ const App: React.FC = () => {
       revenue: metrics.profit
     });
     setIsSimulating(false);
-  }, [endLineName, simParams, schedulingAlgorithm, sourceKind, startLineName]);
+  }, [endLineName, routeStrategy, simParams, schedulingAlgorithm, sourceKind, startLineName]);
 
   const handleBaiduRouteResult = useCallback(async (payload: any) => {
     const cargoValue = Number(simParams.cargoValue);
@@ -864,7 +866,11 @@ const App: React.FC = () => {
                         <option value="faster">路径 · 时间优先</option>
                       </select>
                       <select
-                        title="AGV 派车调度算法：大运力优先时，对比卡会同步跑一次基线作对照"
+                        title={
+                          sourceKind === 'http'
+                            ? 'AGV 派车调度算法：大运力优先时，对比卡会同步跑一次基线作对照'
+                            : '当前是前端计算（mock 或后端不可用）：派车算法仅在后端模式下生效，选它会提示「未生效」'
+                        }
                         className="bg-gray-900/60 border border-emerald-500/30 rounded-lg px-3 py-2.5 text-xs text-emerald-200 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-500/50 appearance-none cursor-pointer backdrop-blur-sm"
                         value={schedulingAlgorithm}
                         onChange={(event) => setSchedulingAlgorithm(event.target.value as typeof schedulingAlgorithm)}

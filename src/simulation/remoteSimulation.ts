@@ -54,7 +54,12 @@ export function slimRoute(route: any): RemoteRoute {
   };
 }
 
-export async function simulateRemote(order: RemoteOrder, route: any, algorithm = 'baseline'): Promise<any> {
+export async function simulateRemote(
+  order: RemoteOrder,
+  route: any,
+  algorithm = 'baseline',
+  routeStrategy = 'smart'
+): Promise<any> {
   // 30 秒超时：后端纯计算本是毫秒级，真到 30 秒说明已假死，
   // 抛错后 App.tsx 会回退本地引擎，演示不中断
   const response = await fetchWithTimeout(
@@ -62,8 +67,8 @@ export async function simulateRemote(order: RemoteOrder, route: any, algorithm =
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      // algorithm 是调度算法开关（插点 B）：baseline / capacity-first，后端未知值回落 baseline
-      body: JSON.stringify({ order, route: slimRoute(route), algorithm })
+      // algorithm / routeStrategy 是插点 A/B 的开关，同时进 request_json 供审计归因
+      body: JSON.stringify({ order, route: slimRoute(route), algorithm, routeStrategy })
     },
     SIMULATE_TIMEOUT_MS
   );

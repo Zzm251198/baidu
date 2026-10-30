@@ -298,8 +298,14 @@ def _build_operation_rows(route: dict, train_plan: list[dict], agv_plan: list[di
         nxt = train_plan[min(index + 1, last)] if train_plan else related
         # 上/下车站点 = 该节点服务的列车段实际站点（与前端 simulationEngine.js 同口径；
         # 此前中转节点两列都填 AGV 所在站，出现"上车=下车"的废话信息）
-        boarding_stop = related.get("boardingStation") or route["originStationName"]
-        alighting_stop = related.get("alightingStation") or route["destinationStationName"]
+        # 终端节点例外：货已到站，没有"上车"。沿用列车段会与「中转换挂」行完全重复。
+        is_terminal = index == len(agv_plan) - 1 and len(agv_plan) > 1
+        boarding_stop = "—" if is_terminal else (related.get("boardingStation") or route["originStationName"])
+        alighting_stop = (
+            route["destinationStationName"]
+            if is_terminal
+            else (related.get("alightingStation") or route["destinationStationName"])
+        )
 
         if index == 0:
             flight_segment = "始发接驳"
@@ -316,7 +322,7 @@ def _build_operation_rows(route: dict, train_plan: list[dict], agv_plan: list[di
                 "flightSegment": flight_segment,
                 "bindTrain": plan.get("bindTrain") or related.get("trainId") or nxt.get("trainId") or "待绑定",
                 "boardingStop": boarding_stop,
-                "boardingTime": related.get("departureTime") or plan["operationTime"],
+                "boardingTime": "—" if is_terminal else (related.get("departureTime") or plan["operationTime"]),
                 "AlightingStop": alighting_stop,
                 "alightingTime": related.get("arrivalTime") or plan["operationTime"],
             }

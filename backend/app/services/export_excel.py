@@ -74,6 +74,9 @@ def build_workbook(run: dict) -> bytes:
         ["运行编号", run.get("id")],
         ["生成时间", run.get("created_at")],
         ["起点 → 终点", f"{run.get('origin')} → {run.get('destination')}"],
+        # 审计归因：表格必须自证"这条是怎么跑出来的"，否则导出的 PDF/Excel 无法复盘
+        ["调度算法", request.get("algorithm") or "baseline"],
+        ["路径策略", request.get("routeStrategy") or "smart"],
         ["货运重量 (kg)", _round(order.get("cargoWeightKg"), 1)],
         ["货运件数 (件)", order.get("cargoCount")],
         ["列车段数", len(train_plan)],

@@ -17,8 +17,8 @@
 - 远程仓库：`Zzm251198/baidu`（public），push 后自动跑 `.github/workflows/ci.yml`，两个 job 均绿
 - 验证基线（回归对表）：186 辆 / 20 线 / 620 单 / 36 分钟 / 3 异常；牛湖→罗湖 72 分钟 / 27 站 / 1 换乘 / 收入 603.00 成本 125.10 利润 477.90；1920×929 一屏
 - 环境坑：本机 workspace-write 沙箱不可用（temp 缺失），npm/Python/Chrome 相关命令需 danger-full-access；PowerShell 不要用 `Get-Content | ConvertFrom-Json` 处理中文 UTF-8
-- 测试：`npm run test`（Vitest，141 例）/ `npm run typecheck`（tsc --noEmit）/ `npm run build`
-- 后端测试：`cd backend; .venv\Scripts\python.exe -m pytest`（38 例，含前后端口径对拍）；CI 见 `.github/workflows/ci.yml`
+- 测试：`npm run test`（Vitest，167 例）/ `npm run typecheck`（tsc --noEmit）/ `npm run build`
+- 后端测试：`cd backend; .venv\Scripts\python.exe -m pytest`（43 例，含前后端口径对拍）；CI 见 `.github/workflows/ci.yml`
 - E2E：`npm run test:e2e`（Playwright 13 例，用系统 Chrome `channel: 'chrome'`，未开 3000 时由 webServer 自动拉起）
 - 算法插点：插点 A=路径策略（`localRouteEngine.js` 的 ROUTE_STRATEGIES：换乘惩罚 3/8/2，分歧案例 赤湾→布吉）；插点 B=调度算法（`main.py` 的 ALGORITHMS 注册表：baseline 就近匹配 / capacity-first 大运力优先，`simulation_capacity.py`）。新算法登记一行即可，输出结构只增不改
 - 端口排查：8000 莫名 404/405 时先 `curl 127.0.0.1:8000/api/health` 看 `commit`（带 `+dirty` 表示有未提交改动）和 `pid`——多半是旧进程顶班；起后端建议用 `backend/run.ps1`（带 --reload）。仿真历史可 `DELETE /api/simulations?keep=N` 清理
