@@ -11,12 +11,10 @@
  */
 import { expect, test } from '@playwright/test';
 
-/** 在下拉里按关键字找实际线路名（如"2号线"匹配"地铁2号线(8号线)"），返回完整 label */
-async function lineLabel(lineSelect: import('@playwright/test').Locator, keyword: string): Promise<string> {
-  const option = lineSelect.locator('option', { hasText: keyword }).first();
-  await expect(option).toBeAttached();
-  return (await option.textContent()) ?? '';
-}
+import { pickLineLabel } from './helpers';
+
+// 线路名带数字，必须用数字边界匹配：'2号线' 不能命中 '12号线'
+const lineLabel = pickLineLabel;
 
 test.describe('算法插点', () => {
   test.use({ viewport: { width: 1920, height: 929 } });
@@ -29,9 +27,9 @@ test.describe('算法插点', () => {
     await expect(selects).toHaveCount(6);
 
     // 前海湾 → 岗厦北（11 号线直达，不依赖百度 Direction 是否可用）
-    await selects.nth(0).selectOption({ label: '地铁11号线' });
+    await selects.nth(0).selectOption({ label: await lineLabel(selects.nth(0), '11号线') });
     await selects.nth(1).selectOption({ label: '前海湾' });
-    await selects.nth(2).selectOption({ label: '地铁11号线' });
+    await selects.nth(2).selectOption({ label: await lineLabel(selects.nth(2), '11号线') });
     await selects.nth(3).selectOption({ label: '岗厦北' });
     // 路径策略走本地引擎，避免 CI 上百度 SDK 不可用导致仿真永远不返回
     await selects.nth(4).selectOption({ label: '路径 · 均衡（换乘算 3 站）' });

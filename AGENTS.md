@@ -19,7 +19,8 @@
 - 环境坑：本机 workspace-write 沙箱不可用（temp 缺失），npm/Python/Chrome 相关命令需 danger-full-access；PowerShell 不要用 `Get-Content | ConvertFrom-Json` 处理中文 UTF-8
 - 测试：`npm run test`（Vitest，195 例）/ `npm run typecheck`（tsc --noEmit）/ `npm run build`
 - 后端测试：`cd backend; .venv\Scripts\python.exe -m pytest`（52 例，含前后端口径对拍）；CI 见 `.github/workflows/ci.yml`
-- E2E：`npm run test:e2e`（Playwright 15 例，用系统 Chrome `channel: 'chrome'`，未开 3000 时由 webServer 自动拉起）
+- E2E：`npm run test:e2e`（Playwright 16 例，用系统 Chrome `channel: 'chrome'`，未开 3000 时由 webServer 自动拉起）；CI 也有 e2e job（用下载的 Chromium + `--with-deps`）
+- 离线兜底：仿真页线路/站点下拉优先用**数据源线网**（`lineInfos`），地图 SDK 不可用时仍可用（无 AK / 离线 / `file://` / CI）。`e2e/offlineFallback.spec.ts` 用 route 拦截百度验证这条
 - 多方案对比：`src/analysis/planCompare.ts`（纯逻辑，34 例单测）——路径按签名去重（均衡/时间优先常同路）、
   路径×算法笛卡尔积、帕累托前沿标推荐（不用加权分）。基线不带 `agvCapacityHeadroomKg`，
   调用方必须补算后放进 `PlanResult.headroomKg`，否则该项在比较中"看不见"，所有方案都会被标推荐

@@ -7,11 +7,10 @@
  */
 import { expect, test } from '@playwright/test';
 
-async function lineLabel(lineSelect: import('@playwright/test').Locator, keyword: string): Promise<string> {
-  const option = lineSelect.locator('option', { hasText: keyword }).first();
-  await expect(option).toBeAttached();
-  return (await option.textContent()) ?? '';
-}
+import { pickLineLabel } from './helpers';
+
+// 线路名带数字，必须用数字边界匹配：'2号线' 不能命中 '12号线'
+const lineLabel = pickLineLabel;
 
 test.describe('多方案对比', () => {
   test.use({ viewport: { width: 1920, height: 929 } });

@@ -13,6 +13,8 @@ import fs from 'node:fs';
 
 import { expect, test } from '@playwright/test';
 
+import { pickLineLabel } from './helpers';
+
 test.describe('仿真结果导出', () => {
   test.use({ viewport: { width: 1920, height: 929 } });
 
@@ -27,9 +29,11 @@ test.describe('仿真结果导出', () => {
     await expect(selects).toHaveCount(6);
 
     // 起点：11 号线 · 前海湾；终点：11 号线 · 岗厦北（直达，8 站）
-    await selects.nth(0).selectOption({ label: '地铁11号线' });
+    // 线路名随数据源而变（后端叫「地铁11号线」，本地兜底线网叫「11号线/机场线」），
+    // 所以按关键字找实际 label，不写死全名
+    await selects.nth(0).selectOption({ label: await pickLineLabel(selects.nth(0), '11号线') });
     await selects.nth(1).selectOption({ label: '前海湾' });
-    await selects.nth(2).selectOption({ label: '地铁11号线' });
+    await selects.nth(2).selectOption({ label: await pickLineLabel(selects.nth(2), '11号线') });
     await selects.nth(3).selectOption({ label: '岗厦北' });
     // 路径策略选「均衡」= 本地引擎，不依赖百度 Direction（CI 上未必能连通百度）
     await selects.nth(4).selectOption({ label: '路径 · 均衡（换乘算 3 站）' });

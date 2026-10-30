@@ -136,15 +136,7 @@ const App: React.FC = () => {
     return grouped;
   }, [mapStations]);
 
-  const subwayLineNames = useMemo(() => Object.keys(subwayStationsByLine), [subwayStationsByLine]);
-  const startStations = useMemo(
-    () => (startLineName ? subwayStationsByLine[startLineName] || [] : []),
-    [startLineName, subwayStationsByLine]
-  );
-  const endStations = useMemo(
-    () => (endLineName ? subwayStationsByLine[endLineName] || [] : []),
-    [endLineName, subwayStationsByLine]
-  );
+  // 注意：仿真页的下拉选项统一由 lineStationsByName 提供（地图失联时回退数据源线网）。
 
   // 地图推导出的线网（作为数据源的兜底；保持引用稳定，避免触发数据源重复加载）
   const mapLineInfos = useMemo<LineInfo[]>(() => {
@@ -178,6 +170,40 @@ const App: React.FC = () => {
     const specialCount = lineInfos.filter((line) => /云巴|有轨电车|城际/.test(line.name)).length;
     return specialCount > 0 ? `含 ${specialCount} 条非常规制式（云巴/有轨/城际）` : '均为地铁骨干线';
   }, [lineInfos]);
+
+  /**
+   * 仿真页「线路 / 站点」下拉的数据源。
+   *
+   * 优先级：**数据源线网（后端 /api/lines 或本地 mock）→ 地图 SDK 推导**。
+   * 两个理由：
+   * 1. 可用性：地图未就绪时（无 AK / 离线 / file:// / CI）下拉不能是空的；
+   * 2. 稳定性：数据源只加载一次，而地图 SDK 是异步加载的——
+   *    若以地图为主，选项会在"数据源名称 → 地图名称"之间二次切换，
+   *    用户（和 E2E）选到一半 label 变了就会卡住。
+   */
+  const lineStationsByName = useMemo<Record<string, string[]>>(() => {
+    const fromData: Record<string, string[]> = {};
+    for (const line of lineInfos) {
+      if (line?.name && Array.isArray(line.stations) && line.stations.length > 0) {
+        fromData[line.name] = line.stations;
+      }
+    }
+    if (Object.keys(fromData).length > 0) return fromData;
+
+    // 数据源还没就绪时先用地图线网顶上，避免首屏空下拉
+    return subwayStationsByLine;
+  }, [lineInfos, subwayStationsByLine]);
+
+  // 依据上面兜底后的线网生成下拉选项
+  const simulationLineNames = useMemo(() => Object.keys(lineStationsByName), [lineStationsByName]);
+  const startStations = useMemo(
+    () => (startLineName ? lineStationsByName[startLineName] || [] : []),
+    [lineStationsByName, startLineName]
+  );
+  const endStations = useMemo(
+    () => (endLineName ? lineStationsByName[endLineName] || [] : []),
+    [endLineName, lineStationsByName]
+  );
   const waybills = bundle?.waybills ?? EMPTY_WAYBILLS;
   const fleet = bundle?.fleet ?? AGV_FLEET;
   const alerts = bundle?.alerts ?? MOCK_ALERTS;
@@ -873,7 +899,7 @@ const App: React.FC = () => {
                         }}
                       >
                         <option value="">选择线路</option>
-                        {subwayLineNames.map((name) => (
+                        {simulationLineNames.map((name) => (
                           <option key={name} value={name} className="bg-gray-800 text-emerald-200">{name}</option>
                         ))}
                       </select>
@@ -906,7 +932,7 @@ const App: React.FC = () => {
                         }}
                       >
                         <option value="">选择线路</option>
-                        {subwayLineNames.map((name) => (
+                        {simulationLineNames.map((name) => (
                           <option key={name} value={name} className="bg-gray-800 text-emerald-200">{name}</option>
                         ))}
                       </select>
