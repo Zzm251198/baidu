@@ -30,3 +30,4 @@
 - pip 坑：本机 pip 建立连接后不下载（等几分钟无任何文件写入），但同一 venv 下 `python urllib` 请求镜像 0.5 秒即回。绕法：先用 urllib 把 wheel 抓到本地目录，再 `pip install --no-index --find-links <目录>` 离线安装
 - 构建坑：若 `npm run build` 报 `[vite:esbuild-transpile] remove ...Temp\esbuild-xxx: Access is denied`，先 `$env:TEMP=$env:TMP=<工作区内可写目录>` 再构建（esbuild 删不掉系统临时文件）
 - 依赖坑：本机 npm 10.9.x 装 vitest 会崩在 `#loadPeerSet`；用 `npx -y npm@11 install` 绕过。切记 `--legacy-peer-deps` 会漏装 peer（`react-is` 被裁掉会直接导致 recharts 打包失败）
+- 审计坑：本机 registry 指向 npmmirror，它不实现 audit 接口（报 NOT_IMPLEMENTED）——跑 `npm audit --registry=https://registry.npmjs.org`。npm 11 会警告 esbuild postinstall 被 allowScripts 拦截：无碍，esbuild 0.25 起用可选依赖放平台二进制，构建/测试照常。2026-11 已修至 audit 归零（vite 6.4 + vitest 4.1.12），后续新增依赖后建议复跑一次
