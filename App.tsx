@@ -81,6 +81,8 @@ const App: React.FC = () => {
   const [simulationOutput, setSimulationOutput] = useState<any | null>(null);
   const [isSimulating, setIsSimulating] = useState(false);
   const [routeRequestKey, setRouteRequestKey] = useState(0);
+  // 结果归因文本（路径策略 + 计算来源），随结果一起清空/写入，供效益看板显示
+  const [simSourceText, setSimSourceText] = useState('');
   const [selectedLine, setSelectedLine] = useState('all');
   const [selectedStation, setSelectedStation] = useState('all');
   const [selectedTransportTime, setSelectedTransportTime] = useState('all');
@@ -356,6 +358,7 @@ const App: React.FC = () => {
     setSimResult(null);
     setSimulationOutput(null);
     setBaselineOutput(null);
+    setSimSourceText('');
 
     if (routeStrategy === 'smart') {
       // 智能推荐：交给 SubwayMap 查百度路径，结果回调 handleBaiduRouteResult
@@ -429,6 +432,7 @@ const App: React.FC = () => {
 
     setBaselineOutput(baseline);
     setSimulationOutput(output);
+    setSimSourceText(`${routeSourceNote}${simSourceNote}`);
     setSimResult({
       pathIds: [],
       timeCost: metrics.totalDurationMin,
@@ -1140,6 +1144,7 @@ const App: React.FC = () => {
                   routeData={plannedRouteData}
                   simulationResult={simulationOutput}
                   exportUrl={buildExportUrl(simulationOutput?.runId)}
+                  sourceNote={simSourceText}
                 />
               </div>
             </div>

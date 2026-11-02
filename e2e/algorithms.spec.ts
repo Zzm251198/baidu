@@ -66,7 +66,10 @@ test.describe('算法插点', () => {
 
     await expect(page.getByText('运单执行与效益评估看板')).toBeVisible({ timeout: 30_000 });
     // 结果描述必须带「本地·时间优先」标注，证明走的是所选策略而不是百度/默认
-    await expect(page.getByText(/本地·时间优先/)).toBeVisible();
+    // （.first()：归因现在同时出现在路径描述与看板摘要条两处，strict 模式要求唯一）
+    await expect(page.getByText(/本地·时间优先/).first()).toBeVisible();
+    // 归因还必须进效益看板的摘要条：策略被 smart 兜底接管时，用户对着看板就能看出结果出自哪条策略
+    await expect(page.locator('.ops-summary-strip')).toContainText('本地·时间优先');
   });
 
   test('1366×768 小窗口：算法策略区与「开始仿真」按钮都必须可见可点', async ({ page }) => {

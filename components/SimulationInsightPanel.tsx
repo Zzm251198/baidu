@@ -100,6 +100,10 @@ export interface SimulationInsightPanelProps {
   simulationResult?: SimulationResult | null;
   /** 后端导出地址；为 null 表示当前没有可导出的运行记录（如 mock 模式或服务端不可用） */
   exportUrl?: string | null;
+  /** 结果归因（路径策略 + 计算来源），如 '｜本地·时间优先｜后端·runId#123'。
+   *  看板必须自证"这条结果是怎么跑出来的"——只写在路径区的话，
+   *  策略切换竞态时用户对着看板无从分辨结果出自哪条策略。 */
+  sourceNote?: string | null;
 }
 
 const EMPTY_VALUE = '--';
@@ -301,7 +305,8 @@ export const SimulationInsightPanel: React.FC<SimulationInsightPanelProps> = ({
   routeData,
   metrics: metricsOverride,
   simulationResult,
-  exportUrl
+  exportUrl,
+  sourceNote
 }) => {
   const model = useMemo(() => {
     const routeSummary: RouteSummary = {
@@ -384,6 +389,9 @@ export const SimulationInsightPanel: React.FC<SimulationInsightPanelProps> = ({
     `预计利润${formatMoney(profit)}`,
     `风险：${model.risk.shortLabel}`
   ];
+  // 归因进看板：结果与所选策略不符时（如 smart 兜底接管），用户能一眼看出
+  const cleanSourceNote = (sourceNote || '').replace(/^[\s｜|]+/, '').trim();
+  if (cleanSourceNote) summaryItems.push(`路径来源：${cleanSourceNote}`);
 
   const cards = [
     {
