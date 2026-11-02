@@ -48,7 +48,7 @@ export const StatsCards: React.FC<StatsCardsProps> = ({
       value: `${activeAgv} 辆`,
       hint: `在线 ${totalAgv} 台中的 ${activeAgv} 台`,
       icon: 'fa-truck',
-      color: 'text-emerald-400',
+      color: 'text-emerald-600',
       bar: 'bg-emerald-500',
       barGlow: 'shadow-[0_0_6px_rgba(16,185,129,0.8)]',
       hoverBorder: 'hover:border-emerald-500/40',
@@ -59,7 +59,7 @@ export const StatsCards: React.FC<StatsCardsProps> = ({
       value: `${totalWeightTon} 吨`,
       hint: `来自 ${waybillCount} 条运单`,
       icon: 'fa-cubes',
-      color: 'text-sky-400',
+      color: 'text-sky-600',
       bar: 'bg-sky-500',
       barGlow: 'shadow-[0_0_6px_rgba(56,189,248,0.8)]',
       hoverBorder: 'hover:border-sky-500/40',
@@ -70,7 +70,7 @@ export const StatsCards: React.FC<StatsCardsProps> = ({
       value: `${lineCount} 条`,
       hint: lineHint,
       icon: 'fa-map-signs',
-      color: 'text-amber-400',
+      color: 'text-amber-600',
       bar: 'bg-amber-500',
       barGlow: 'shadow-[0_0_6px_rgba(245,158,11,0.8)]',
       hoverBorder: 'hover:border-amber-500/40',
@@ -81,7 +81,7 @@ export const StatsCards: React.FC<StatsCardsProps> = ({
       value: `${avgDurationMin} 分钟`,
       hint: '含换乘与站停时间',
       icon: 'fa-clock-o',
-      color: 'text-teal-300',
+      color: 'text-teal-600',
       bar: 'bg-teal-500',
       barGlow: 'shadow-[0_0_6px_rgba(45,212,191,0.8)]',
       hoverBorder: 'hover:border-teal-500/40',
@@ -96,14 +96,14 @@ export const StatsCards: React.FC<StatsCardsProps> = ({
       {cards.map((card) => (
         <div
           key={card.label}
-          className={`stat-card relative rounded-xl px-4 py-3 border border-white/10 bg-black/20 backdrop-blur-md shadow-lg overflow-hidden flex flex-col justify-center min-h-0 ${card.hoverBorder}`}
+          className={`stat-card relative rounded-xl px-4 py-3 border border-black/10 bg-white/80 backdrop-blur-md shadow-lg overflow-hidden flex flex-col justify-center min-h-0 ${card.hoverBorder}`}
         >
           {/* 站务线路色条：仿地铁线路标识的左侧色杠 */}
           <div className={`absolute left-0 top-3 bottom-3 w-1 rounded-full ${card.bar} ${card.barGlow}`}></div>
           <div className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:15px_15px] pointer-events-none opacity-70"></div>
 
           <div className="flex items-center gap-2.5 relative z-10 mb-1.5">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center border border-white/10 bg-white/5 flex-shrink-0">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center border border-black/10 bg-black/5 flex-shrink-0">
               <i className={`fa ${card.icon} ${card.color} text-sm`}></i>
             </div>
             <span className="text-xs text-gray-300 tracking-wider truncate">{card.label}</span>
@@ -119,13 +119,13 @@ export const StatsCards: React.FC<StatsCardsProps> = ({
           <div className="flex items-end justify-between gap-2 relative z-10">
             {/* led-num：等宽数字 + currentColor 同色辉光，站务 LED 屏质感 */}
             <h3 className={`led-num text-2xl font-bold tracking-tight truncate ${card.color}`}>{card.value}</h3>
-            <span className="text-[10px] text-gray-400 bg-black/30 px-2 py-0.5 rounded-md border border-white/5 whitespace-nowrap truncate">{card.hint}</span>
+            <span className="text-[10px] text-gray-500 bg-slate-100 px-2 py-0.5 rounded-md border border-black/5 whitespace-nowrap truncate">{card.hint}</span>
           </div>
 
           {/* 活跃小车：在线率进度条——一眼看出 186/248 的占用水平 */}
           {card.progress !== null && (
             <div className="relative z-10 mt-2 flex items-center gap-2">
-              <div className="flex-1 h-1.5 rounded-full bg-white/5 overflow-hidden border border-white/5">
+              <div className="flex-1 h-1.5 rounded-full bg-black/5 overflow-hidden border border-black/5">
                 <div
                   className="h-full rounded-full bg-gradient-to-r from-emerald-600 to-emerald-400 transition-all duration-700"
                   style={{ width: `${Math.round(card.progress * 100)}%` }}

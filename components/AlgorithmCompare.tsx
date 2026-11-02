@@ -49,10 +49,10 @@ export const AlgorithmCompare: React.FC<AlgorithmCompareProps> = ({ current, bas
       </div>
       <div className="grid grid-cols-3 gap-4">
         {rows.map((row) => (
-          <div key={row.label} className="rounded-lg bg-black/20 border border-gray-800/40 px-3 py-2">
+          <div key={row.label} className="rounded-lg bg-slate-100 border border-black/10 px-3 py-2">
             <div className="text-[10px] text-gray-500 mb-1">{row.label}</div>
             <div className="flex items-baseline gap-2">
-              <span className="text-sm font-bold text-white">{row.currentText}</span>
+              <span className="text-sm font-bold text-gray-100">{row.currentText}</span>
               <span className="text-[10px] text-gray-500">基线 {row.baselineText}</span>
               <span className={`ml-auto text-xs font-bold ${TONE_CLASS[row.tone]}`}>{row.deltaText}</span>
             </div>

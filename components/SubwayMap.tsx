@@ -477,7 +477,7 @@ const SubwayMapComponent: React.FC<SubwayMapProps> = ({
             <div
                 id={containerId}
                 ref={containerRef}
-                className="subway-map-canvas subway-map-filter h-full w-full"
+                className="subway-map-canvas h-full w-full"
                 style={{ cursor: 'grab' }}
             />
             {/*

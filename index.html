@@ -11,13 +11,20 @@
       theme: {
         extend: {
           colors: {
-            // 地铁站务风：主色=深圳地铁绿，强调色=导视黄（调度/警示），底色维持深色控制台
+            // 地铁站务风·白主题：主色=深圳地铁绿，强调色=导视黄，底色=白系。
+            // dark 系 token 反转指向浅色 + gray 色阶整体反转——组件里的类名
+            // （bg-dark / text-gray-100 等）一行不改，深浅关系即随色板翻转。
             primary: '#00A862',
             secondary: '#2FD9A5',
             accent: '#F0A500',
-            dark: '#0F172A',
-            'dark-light': '#1E293B',
-            'dark-lighter': '#334155',
+            dark: '#FFFFFF',
+            'dark-light': '#F1F5F9',
+            'dark-lighter': '#E2E8F0',
+            gray: {
+              50: '#030712', 100: '#111827', 200: '#1F2937', 300: '#374151',
+              400: '#4B5563', 500: '#6B7280', 600: '#9CA3AF', 700: '#D1D5DB',
+              800: '#E5E7EB', 900: '#F3F4F6',
+            },
           },
           fontFamily: {
             sans: ['Microsoft YaHei', 'PingFang SC', 'Noto Sans SC', 'Arial', 'sans-serif'],
@@ -31,10 +38,10 @@
   </script>
   <style>
     body {
-      background-color: #0F172A;
+      background-color: #F8FAFC;
       background-image:
-        radial-gradient(circle at 10% 20%, rgba(0, 168, 98, 0.10) 0%, transparent 20%),
-        radial-gradient(circle at 90% 80%, rgba(47, 217, 165, 0.08) 0%, transparent 20%);
+        radial-gradient(circle at 10% 20%, rgba(0, 168, 98, 0.06) 0%, transparent 20%),
+        radial-gradient(circle at 90% 80%, rgba(47, 217, 165, 0.05) 0%, transparent 20%);
       background-attachment: fixed;
     }
     ::-webkit-scrollbar {
@@ -42,15 +49,15 @@
       height: 6px;
     }
     ::-webkit-scrollbar-track {
-      background: #1E293B;
+      background: #F1F5F9;
       border-radius: 3px;
     }
     ::-webkit-scrollbar-thumb {
-      background: #334155;
+      background: #CBD5E1;
       border-radius: 3px;
     }
     ::-webkit-scrollbar-thumb:hover {
-      background: #475569;
+      background: #94A3B8;
     }
   </style>
 <link rel="stylesheet" href="/index.css">

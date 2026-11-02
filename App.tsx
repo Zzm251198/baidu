@@ -601,13 +601,13 @@ const App: React.FC = () => {
 
           <div className="flex-1 flex justify-center">
             <div className="bg-dark p-1 rounded-lg border border-gray-700/50 flex space-x-1">
-              <button onClick={() => setActiveTab('monitor')} className={`px-4 lg:px-6 py-1.5 rounded-md text-sm font-medium transition-all duration-300 flex items-center ${activeTab === 'monitor' ? 'bg-primary text-white shadow-md' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}>
+              <button onClick={() => setActiveTab('monitor')} className={`px-4 lg:px-6 py-1.5 rounded-md text-sm font-medium transition-all duration-300 flex items-center ${activeTab === 'monitor' ? 'bg-primary text-white shadow-md' : 'text-gray-400 hover:text-gray-100 hover:bg-black/5'}`}>
                 <i className="fa fa-eye mr-2"></i>实时监控
               </button>
-              <button onClick={() => setActiveTab('data')} className={`px-4 lg:px-6 py-1.5 rounded-md text-sm font-medium transition-all duration-300 flex items-center ${activeTab === 'data' ? 'bg-primary text-white shadow-md' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}>
+              <button onClick={() => setActiveTab('data')} className={`px-4 lg:px-6 py-1.5 rounded-md text-sm font-medium transition-all duration-300 flex items-center ${activeTab === 'data' ? 'bg-primary text-white shadow-md' : 'text-gray-400 hover:text-gray-100 hover:bg-black/5'}`}>
                 <i className="fa fa-bar-chart mr-2"></i>货运数据
               </button>
-              <button onClick={() => setActiveTab('simulation')} className={`px-4 lg:px-6 py-1.5 rounded-md text-sm font-medium transition-all duration-300 flex items-center ${activeTab === 'simulation' ? 'bg-accent text-white shadow-md' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}>
+              <button onClick={() => setActiveTab('simulation')} className={`px-4 lg:px-6 py-1.5 rounded-md text-sm font-medium transition-all duration-300 flex items-center ${activeTab === 'simulation' ? 'bg-accent text-white shadow-md' : 'text-gray-400 hover:text-gray-100 hover:bg-black/5'}`}>
                 <i className="fa fa-cogs mr-2"></i>仿真模拟
               </button>
             </div>
@@ -623,9 +623,9 @@ const App: React.FC = () => {
                 type="button"
                 aria-label={`告警中心，${abnormalCount} 个异常`}
                 onClick={() => setAlertsOpen((open) => !open)}
-                className="relative p-2 rounded-full hover:bg-white/10 transition-colors group"
+                className="relative p-2 rounded-full hover:bg-black/5 transition-colors group"
               >
-                <i className="fa fa-bell text-gray-300 group-hover:text-white text-lg"></i>
+                <i className="fa fa-bell text-gray-300 group-hover:text-gray-100 text-lg"></i>
                 {abnormalCount > 0 && (
                   <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] rounded-full h-4 w-4 flex items-center justify-center animate-pulse">
                     {abnormalCount}
@@ -645,7 +645,7 @@ const App: React.FC = () => {
                   )}
                   <div className="absolute right-0 top-12 z-50 w-96 max-w-[calc(100vw-2rem)] rounded-xl border border-emerald-500/20 bg-gray-900/95 backdrop-blur-md shadow-2xl shadow-black/50 overflow-hidden animate-fade-in">
                     <div className="flex items-center justify-between px-4 py-3 border-b border-gray-700/50">
-                      <span className="text-sm font-bold text-white">
+                      <span className="text-sm font-bold text-gray-100">
                         <i className="fa fa-bell-o text-red-500 mr-2"></i>告警中心
                       </span>
                       <span className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 px-2 py-0.5 rounded-full">
@@ -656,7 +656,7 @@ const App: React.FC = () => {
                       {alerts.map((log) => (
                         <div
                           key={log.id}
-                          className="flex items-start gap-3 text-xs rounded-lg px-3 py-2 border border-gray-800/40 bg-black/20 hover:border-emerald-500/30 hover:bg-black/40 transition-colors"
+                          className="flex items-start gap-3 text-xs rounded-lg px-3 py-2 border border-black/10 bg-black/5 hover:border-emerald-500/40 hover:bg-black/10 transition-colors"
                         >
                           <i
                             className={`fa mt-0.5 ${
@@ -761,16 +761,16 @@ const App: React.FC = () => {
             {/* 筛选结果回执：让"筛选真的生效"这件事一眼可见 */}
             <div className="flex flex-wrap items-center gap-4 -mt-4 text-xs">
               <span className="text-emerald-300 bg-emerald-500/10 border border-emerald-500/25 rounded-full px-3 py-1">
-                命中 <b className="text-white">{dataSummary.waybillCount}</b> 条运单
+                命中 <b className="text-gray-100">{dataSummary.waybillCount}</b> 条运单
               </span>
               <span className="text-gray-400">
-                总货量 <b className="text-white">{dataSummary.totalWeightTon}</b> 吨
+                总货量 <b className="text-gray-100">{dataSummary.totalWeightTon}</b> 吨
               </span>
               <span className="text-gray-400">
-                覆盖车站 <b className="text-white">{dataSummary.stationCount}</b> 个
+                覆盖车站 <b className="text-gray-100">{dataSummary.stationCount}</b> 个
               </span>
               <span className="text-gray-400">
-                平均时效 <b className="text-white">{dataSummary.avgDurationMin}</b> 分钟
+                平均时效 <b className="text-gray-100">{dataSummary.avgDurationMin}</b> 分钟
               </span>
               {dataSummary.waybillCount === 0 && (
                 <button
@@ -801,7 +801,7 @@ const App: React.FC = () => {
                   数据源：本地模拟（后端不可用）
                 </span>
               ) : (
-                <span className="ml-auto px-3 py-1 rounded-full border border-white/10 text-gray-400">
+                <span className="ml-auto px-3 py-1 rounded-full border border-black/10 text-gray-400">
                   <i className="fa fa-database mr-1"></i>
                   数据源：{dataSourceLabel}
                   {dataLoading && <i className="fa fa-spinner fa-spin ml-2"></i>}
@@ -977,7 +977,7 @@ const App: React.FC = () => {
                     <input
                       type="number"
                       placeholder="请输入数值"
-                      className="w-full bg-gray-900/60 border border-emerald-500/30 rounded-lg px-4 py-2.5 text-sm text-white focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-500/50 backdrop-blur-sm"
+                      className="w-full bg-gray-900/60 border border-emerald-500/30 rounded-lg px-4 py-2.5 text-sm text-gray-100 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-500/50 backdrop-blur-sm"
                       value={simParams.cargoValue}
                       onChange={(event) => setSimParams({ ...simParams, cargoValue: event.target.value })}
                     />

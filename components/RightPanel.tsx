@@ -39,7 +39,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return (
     <div className="bg-black/60 backdrop-blur-md border border-emerald-500/30 rounded-lg p-3 shadow-[0_0_15px_rgba(6,182,212,0.3)]">
       <p className="text-xs text-gray-400">{label}</p>
-      <p className="text-sm font-bold text-white">{`${payload[0].value} 吨`}</p>
+      <p className="text-sm font-bold text-gray-100">{`${payload[0].value} 吨`}</p>
     </div>
   );
 };
@@ -49,7 +49,7 @@ const BatteryTooltip = ({ active, payload }: any) => {
 
   return (
     <div className="bg-black/60 backdrop-blur-md border border-green-500/30 rounded-lg p-3 shadow-[0_0_15px_rgba(16,185,129,0.3)]">
-      <p className="text-sm font-bold text-white">{`${payload[0].value}%`}</p>
+      <p className="text-sm font-bold text-gray-100">{`${payload[0].value}%`}</p>
       <p className="text-xs text-gray-400">{payload[0].name}</p>
     </div>
   );
@@ -70,9 +70,9 @@ export const RightPanel: React.FC<RightPanelProps> = ({ topStations = [], alerts
     <div className="flex flex-col gap-4 h-full w-full bg-transparent relative">
       <div className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none"></div>
 
-      <section className="relative rounded-xl p-4 border border-white/5 bg-black/10 backdrop-blur-xl flex-[4] flex flex-col overflow-hidden shadow-lg shadow-emerald-500/2">
+      <section className="relative rounded-xl p-4 border border-black/5 bg-black/10 backdrop-blur-xl flex-[4] flex flex-col overflow-hidden shadow-lg shadow-emerald-500/2">
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 to-purple-500"></div>
-        <h3 className="font-bold text-lg text-white mb-3 flex items-center flex-shrink-0 relative z-10">
+        <h3 className="font-bold text-lg text-gray-100 mb-3 flex items-center flex-shrink-0 relative z-10">
           <i className="fa fa-bell-o text-red-500 mr-2 animate-pulse"></i>
           异常监控（示例）
           <span className="ml-2 text-xs bg-red-500/10 text-red-400 px-2 py-0.5 rounded-full border border-red-500/20">
@@ -82,8 +82,8 @@ export const RightPanel: React.FC<RightPanelProps> = ({ topStations = [], alerts
 
         <div className="flex-1 overflow-y-auto pr-1 custom-scrollbar space-y-2 relative z-10 min-h-0">
           {logs.map((log) => (
-            <div key={log.id} className="flex items-start space-x-3 text-xs border border-gray-800/20 bg-black/10 rounded-lg p-3 hover:border-emerald-500/30 hover:bg-black/30 transition-all duration-300 group">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${getStatusColor(log.type)} bg-black/20 border border-white/10`}>
+            <div key={log.id} className="flex items-start space-x-3 text-xs border border-gray-800/20 bg-black/10 rounded-lg p-3 hover:border-emerald-500/30 hover:bg-black/20 transition-all duration-300 group">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${getStatusColor(log.type)} bg-black/5 border border-black/10`}>
                 <i className={`fa ${getStatusIcon(log.type)} text-white text-xs`}></i>
               </div>
               <div className="flex-1">
@@ -93,16 +93,16 @@ export const RightPanel: React.FC<RightPanelProps> = ({ topStations = [], alerts
                     {getStatusLabel(log.type)}
                   </span>
                 </div>
-                <div className="text-gray-200 leading-tight group-hover:text-white font-medium">{log.message}</div>
+                <div className="text-gray-200 leading-tight group-hover:text-gray-100 font-medium">{log.message}</div>
               </div>
             </div>
           ))}
         </div>
       </section>
 
-      <section className="relative rounded-xl p-4 border border-white/5 bg-black/10 backdrop-blur-xl flex-[3.5] flex flex-col overflow-hidden shadow-lg shadow-emerald-500/2">
+      <section className="relative rounded-xl p-4 border border-black/5 bg-black/10 backdrop-blur-xl flex-[3.5] flex flex-col overflow-hidden shadow-lg shadow-emerald-500/2">
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-emerald-400"></div>
-        <h3 className="font-bold text-lg text-white mb-2 flex items-center flex-shrink-0 relative z-10">
+        <h3 className="font-bold text-lg text-gray-100 mb-2 flex items-center flex-shrink-0 relative z-10">
           <i className="fa fa-trophy text-yellow-400 mr-2"></i>
           热门站点吞吐量
           <span className="ml-2 text-xs bg-blue-500/10 text-blue-400 px-2 py-0.5 rounded-full border border-blue-500/20">示例数据</span>
@@ -124,9 +124,9 @@ export const RightPanel: React.FC<RightPanelProps> = ({ topStations = [], alerts
         </div>
       </section>
 
-      <section className="relative rounded-xl p-4 border border-white/5 bg-black/10 backdrop-blur-xl flex-[2.5] flex flex-col overflow-hidden shadow-lg shadow-emerald-500/2">
+      <section className="relative rounded-xl p-4 border border-black/5 bg-black/10 backdrop-blur-xl flex-[2.5] flex flex-col overflow-hidden shadow-lg shadow-emerald-500/2">
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-green-500 to-emerald-400"></div>
-        <h3 className="font-bold text-lg text-white mb-4 flex items-center flex-shrink-0 relative z-10">
+        <h3 className="font-bold text-lg text-gray-100 mb-4 flex items-center flex-shrink-0 relative z-10">
           <i className="fa fa-battery-three-quarters text-green-400 mr-2 animate-pulse-slow"></i>
           小车电量监控
           <span className="ml-2 text-xs bg-green-500/10 text-green-400 px-2 py-0.5 rounded-full border border-green-500/20">示例数据</span>
@@ -153,19 +153,19 @@ export const RightPanel: React.FC<RightPanelProps> = ({ topStations = [], alerts
 
           <div className="flex-1 min-w-[120px] pr-1 space-y-2.5">
             {deviceData.map((item) => (
-              <div key={item.name} className="flex items-center justify-between rounded-lg bg-black/10 border border-gray-800/20 hover:border-white/10 hover:bg-black/30 transition-all duration-300 px-2 py-1.5">
+              <div key={item.name} className="flex items-center justify-between rounded-lg bg-black/10 border border-black/10 hover:border-black/20 hover:bg-black/20 transition-all duration-300 px-2 py-1.5">
                 <div className="flex items-center text-gray-200 whitespace-nowrap min-w-[80px]">
                   <div className="w-2 h-2 rounded-full mr-1.5" style={{ backgroundColor: item.color, boxShadow: `0 0 4px ${item.glow}` }}></div>
                   <span className="text-xs font-medium">{item.name}</span>
                 </div>
-                <span className="text-xs font-bold text-white">{item.value}%</span>
+                <span className="text-xs font-bold text-gray-100">{item.value}%</span>
               </div>
             ))}
 
-            <div className="mt-2 pt-2 border-t border-gray-800/20 text-[10px] text-gray-400 bg-black/10 rounded-lg p-1.5">
+            <div className="mt-2 pt-2 border-t border-black/10 text-[10px] text-gray-400 bg-black/10 rounded-lg p-1.5">
               <div className="flex justify-between mb-0.5">
                 <span><i className="fa fa-server mr-1 text-emerald-500 text-[9px]"></i>在线设备总数:</span>
-                <span className="text-white font-medium text-xs">{AGV_FLEET.total} 台</span>
+                <span className="text-gray-100 font-medium text-xs">{AGV_FLEET.total} 台</span>
               </div>
               <div className="flex justify-between">
                 <span><i className="fa fa-battery-quarter mr-1 text-red-500 text-[9px]"></i>低电量需充电:</span>

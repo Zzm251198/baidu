@@ -45,7 +45,7 @@ export const PlanCompareTable: React.FC<PlanCompareTableProps> = ({ results, sou
       <div className="overflow-x-auto">
         <table className="w-full text-[11px] text-left">
           <thead>
-            <tr className="text-gray-400 border-b border-white/10">
+            <tr className="text-gray-400 border-b border-black/10">
               <th className="py-1 pr-3 font-medium">路径策略</th>
               <th className="py-1 pr-3 font-medium">派车算法</th>
               <th className="py-1 pr-3 font-medium">时长</th>
@@ -62,7 +62,7 @@ export const PlanCompareTable: React.FC<PlanCompareTableProps> = ({ results, sou
             {rows.map((row) => (
               <tr
                 key={row.id}
-                className={`border-b border-white/5 ${row.recommended ? 'text-white' : 'text-gray-400'}`}
+                className={`border-b border-black/5 ${row.recommended ? 'text-gray-100' : 'text-gray-400'}`}
                 data-testid="plan-row"
               >
                 <td className="py-1 pr-3">
