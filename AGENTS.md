@@ -27,7 +27,10 @@
 - 算法插点：插点 A=路径策略（`localRouteEngine.js` 的 ROUTE_STRATEGIES：换乘惩罚 3/8/2，分歧案例 赤湾→布吉；注意短程 OD 上「均衡」与「时间优先」常同路，属预期）；插点 B=调度算法（`main.py` 的 ALGORITHMS 注册表：baseline 就近匹配 / capacity-first 大运力优先，`simulation_capacity.py`）。新算法登记一行即可，输出结构只增不改
 - 端口排查：8000 莫名 404/405 时先 `curl "127.0.0.1:8000/api/health?verbose=1"` 看 `commit`（带 `+dirty` 表示有未提交改动）和 `pid`——多半是旧进程顶班；默认 health 只给业务计数，不暴露进程身份。起后端建议用 `backend/run.ps1`（带 --reload）。仿真历史用 `DELETE /api/simulations?keep=N` 清理；设了环境变量 `DEMO_ADMIN_TOKEN` 后该接口必须带 `X-Demo-Token` 头
 - 进程坑（Windows）：杀 uvicorn 只杀可见进程不够——`--reload` 的 multiprocessing spawn 子进程会继承监听 socket、父死后继续应答（health 的 pid 与进程表对不上即此症状）。清理要 `taskkill /F /T` 或按 `Get-CimInstance Win32_Process` 查 "multiprocessing.spawn" 全灭
-- pip 坑：本机 pip 建立连接后不下载（等几分钟无任何文件写入），但同一 venv 下 `python urllib` 请求镜像 0.5 秒即回。绕法：先用 urllib 把 wheel 抓到本地目录，再 `pip install --no-index --find-links <目录>` 离线安装
+- pip 坑：本机 pip 下载**随机性停滞**——镜像直装时灵时不灵（同一会话内 pip-audit 装成、三件套升级两次全挂；挂住的特征 = 无活动网络连接 + CPU 空转数百秒）。唯一可靠绕法：urllib 抓 wheel + `pip install --no-index --find-links <目录>`，现成脚本 `backend/.wheels/fetch_wheels.py`（gitignored 本机工具，改动 TARGETS 字典即可复用）。注意 pip 版本号是两段式（`26.2`，不是 `26.2.0`）
+- 写入坑：本机 python.exe 写 `AppData\Local` 被 WinError 5 拒绝（PowerShell 却可以，疑似按可执行文件的受控目录拦截）。platformdirs 系工具（pip-audit 等）启动即崩，必须给 `--cache-dir` 指到工作区目录。pip-audit 已跑通（2026-11）：运行时四依赖干净，工具链已升 pip 26.2.2 / setuptools 84.1.0 / pytest 9.0.3，全环境审计归零
+- pytest 9 坑：`-q` 模式不再打印末尾 "N passed" 统计行，PowerShell 管道下更难见——判据用 exit code（0 = 全过）或 `--junitxml` 读 tests/failures 属性，别用肉眼找统计行
+- 杀进程坑：按命令行子串 `pip` 过滤 python 进程会误杀（multiprocessing spawn 的命令行含 `pipe` 字样也命中）——要匹配 `' -m pip '` 带空格的精确串，或用任务树整体停
 - 构建坑：若 `npm run build` 报 `[vite:esbuild-transpile] remove ...Temp\esbuild-xxx: Access is denied`，先 `$env:TEMP=$env:TMP=<工作区内可写目录>` 再构建（esbuild 删不掉系统临时文件）
 - 依赖坑：本机 npm 10.9.x 装 vitest 会崩在 `#loadPeerSet`；用 `npx -y npm@11 install` 绕过。切记 `--legacy-peer-deps` 会漏装 peer（`react-is` 被裁掉会直接导致 recharts 打包失败）
 - 审计坑：本机 registry 指向 npmmirror，它不实现 audit 接口（报 NOT_IMPLEMENTED）——跑 `npm audit --registry=https://registry.npmjs.org`。npm 11 会警告 esbuild postinstall 被 allowScripts 拦截：无碍，esbuild 0.25 起用可选依赖放平台二进制，构建/测试照常。2026-11 已修至 audit 归零（vite 6.4 + vitest 4.1.12），后续新增依赖后建议复跑一次
