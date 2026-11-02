@@ -4,8 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>深圳轨道物流 AGV 仿真系统</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <!-- 内联 SVG favicon：消除 /favicon.ico 404 的 console 报错（页面健康探针的零报错目标） -->
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='46' fill='%2300A862'/%3E%3Ctext x='50' y='67' font-size='54' text-anchor='middle' fill='white' font-family='Arial,sans-serif' font-weight='bold'%3EM%3C/text%3E%3C/svg%3E">
+  <!-- CDN 供应链加固：钉死精确版本（不再“永远最新”被静默投毒）。
+       SRI 说明：jsdelivr 支持 CORS，font-awesome 带 SRI；tailwind Play CDN 不发
+       Access-Control-Allow-Origin 头，SRI 的 CORS 前置条件不成立（加了必被拦），
+       故只钉版本。彻底消除该依赖的办法是本地打包 tailwind 运行时（见汇报建议）。 -->
+  <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet" integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous">
   <script>
     tailwind.config = {
       theme: {
