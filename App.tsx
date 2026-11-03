@@ -730,6 +730,7 @@ const App: React.FC = () => {
                   waybillCount={overallSummary.waybillCount}
                   lineCount={lineInfos.length}
                   lineHint={lineHint}
+                  lines={lineInfos}
                   avgDurationMin={overallSummary.avgDurationMin}
                 />
               </div>

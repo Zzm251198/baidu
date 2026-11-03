@@ -108,7 +108,9 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({
             <YAxis yAxisId="right" orientation="right" stroke={TECH_COLORS.secondary} tickLine={false} axisLine={false} unit="%" fontSize={12} tick={{ fill: '#475569' }} />
             <Tooltip contentStyle={tooltipStyle} cursor={{ fill: `${TECH_COLORS.primary}08` }} />
             <Legend wrapperStyle={legendStyle} />
-            <Bar yAxisId="left" dataKey="capacity" name="设计运力上限" fill="#E2E8F0" barSize={30} radius={[4, 4, 0, 0]} />
+            {/* 设计运力上限：背景柱用 slate-400——在白卡上既可见（#E2E8F0 会隐身，图例文字也看不清），
+                又与绿色实际负载保持"底/实"的视觉层级 */}
+            <Bar yAxisId="left" dataKey="capacity" name="设计运力上限" fill="#94A3B8" barSize={30} radius={[4, 4, 0, 0]} />
             <Bar yAxisId="left" dataKey="load" name="实际负载" fill={TECH_COLORS.primary} barSize={16} radius={[2, 2, 0, 0]} />
             <Line yAxisId="right" type="monotone" dataKey="rate" name="负载率趋势" stroke={TECH_COLORS.secondary} strokeWidth={3} dot={{ r: 4, fill: '#FFFFFF', strokeWidth: 2, stroke: TECH_COLORS.secondary }} />
           </ComposedChart>

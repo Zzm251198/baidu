@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 export interface StatsCardsProps {
   /** 执行任务中的 AGV 数 */
@@ -13,6 +14,8 @@ export interface StatsCardsProps {
   lineCount: number;
   /** 线路构成说明（由上层按实际线网推导，不要写死） */
   lineHint: string;
+  /** 线路明细（名称+站列表）："纳入建模线路"卡点击后弹层展示完整清单 */
+  lines?: Array<{ name: string; stations?: string[] }>;
   /** 平均运输时效（分钟） */
   avgDurationMin: number;
 }
@@ -38,8 +41,19 @@ export const StatsCards: React.FC<StatsCardsProps> = ({
   waybillCount,
   lineCount,
   lineHint,
+  lines,
   avgDurationMin
 }) => {
+  // 线路明细弹层：createPortal 到 body——避免父级 overflow/backdrop-filter 把
+  // fixed 定位的弹层裁掉（铃铛下拉踩过同款坑）
+  const [linesOpen, setLinesOpen] = useState(false);
+  useEffect(() => {
+    if (!linesOpen) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setLinesOpen(false); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [linesOpen]);
+
   // 所有数字都由上层从同一份数据集派生，不再有第二套口径
   const onlineRate = totalAgv > 0 ? Math.min(1, activeAgv / totalAgv) : 0;
   const cards: CardModel[] = [
@@ -90,13 +104,18 @@ export const StatsCards: React.FC<StatsCardsProps> = ({
   ];
 
   return (
-    // grid-rows-4 = repeat(4, minmax(0,1fr))：四卡严格均分列高，
-    // 矮窗口（1366×768 左栏约 600px）下不会因内容多寡互相挤压
+    <>
+    {/* grid-rows-4 = repeat(4, minmax(0,1fr))：四卡严格均分列高，
+       矮窗口（1366×768 左栏约 600px）下不会因内容多寡互相挤压 */}
     <div className="grid grid-cols-1 grid-rows-4 gap-3 h-full px-1 min-h-0">
-      {cards.map((card) => (
+      {cards.map((card) => {
+        const isLinesCard = card.label === '纳入建模线路';
+        return (
         <div
           key={card.label}
-          className={`stat-card relative rounded-xl px-4 py-3 border border-black/10 bg-white/80 backdrop-blur-md shadow-lg overflow-hidden flex flex-col justify-center min-h-0 ${card.hoverBorder}`}
+          onClick={isLinesCard ? () => setLinesOpen(true) : undefined}
+          title={isLinesCard ? '点击查看线路明细' : undefined}
+          className={`stat-card relative rounded-xl px-4 py-3 border border-black/10 bg-white/80 backdrop-blur-md shadow-lg overflow-hidden flex flex-col justify-center min-h-0 ${card.hoverBorder} ${isLinesCard ? 'cursor-pointer select-none' : ''}`}
         >
           {/* 站务线路色条：仿地铁线路标识的左侧色杠 */}
           <div className={`absolute left-0 top-3 bottom-3 w-1 rounded-full ${card.bar} ${card.barGlow}`}></div>
@@ -119,7 +138,10 @@ export const StatsCards: React.FC<StatsCardsProps> = ({
           <div className="flex items-end justify-between gap-2 relative z-10">
             {/* led-num：等宽数字 + currentColor 同色辉光，站务 LED 屏质感 */}
             <h3 className={`led-num text-2xl font-bold tracking-tight truncate ${card.color}`}>{card.value}</h3>
-            <span className="text-[10px] text-gray-500 bg-slate-100 px-2 py-0.5 rounded-md border border-black/5 whitespace-nowrap truncate">{card.hint}</span>
+            <span className="text-[10px] text-gray-500 bg-slate-100 px-2 py-0.5 rounded-md border border-black/5 whitespace-nowrap truncate">
+              {isLinesCard && <i className="fa fa-external-link mr-1 text-gray-400"></i>}
+              {card.hint}
+            </span>
           </div>
 
           {/* 活跃小车：在线率进度条——一眼看出 186/248 的占用水平 */}
@@ -135,7 +157,51 @@ export const StatsCards: React.FC<StatsCardsProps> = ({
             </div>
           )}
         </div>
-      ))}
+        );
+      })}
     </div>
+
+    {/* 线路明细弹层：完整线路清单 + 各线站点数，点击遮罩或 Esc 关闭 */}
+    {linesOpen && createPortal(
+      <div
+        className="fixed inset-0 z-[9999] flex items-center justify-center p-6"
+        style={{ background: 'rgba(15, 23, 42, 0.35)' }}
+        onClick={() => setLinesOpen(false)}
+      >
+        <div
+          className="bg-white rounded-2xl shadow-2xl border border-black/10 max-w-lg w-full max-h-[72vh] flex flex-col overflow-hidden animate-fade-in"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="px-5 py-4 border-b border-black/10 flex items-center justify-between flex-shrink-0">
+            <div>
+              <h3 className="font-bold text-gray-900 text-base">纳入建模线路 · {lineCount} 条</h3>
+              <p className="text-xs text-gray-500 mt-0.5">{lineHint}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setLinesOpen(false)}
+              className="w-8 h-8 rounded-lg border border-black/10 text-gray-500 hover:bg-black/5 transition-colors"
+              aria-label="关闭线路明细"
+            >
+              <i className="fa fa-times"></i>
+            </button>
+          </div>
+          <div className="overflow-y-auto custom-scrollbar p-4 grid grid-cols-2 gap-2">
+            {(lines ?? []).map((line) => (
+              <div key={line.name} className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-slate-50 border border-black/5">
+                <span className="text-sm text-gray-800 truncate" title={line.name}>{line.name}</span>
+                {line.stations && (
+                  <span className="text-xs text-emerald-800 bg-emerald-500/10 border border-emerald-600/15 px-1.5 py-0.5 rounded flex-shrink-0 whitespace-nowrap">
+                    {line.stations.length} 站
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>,
+      document.body
+    )}
+    </>
   );
 };

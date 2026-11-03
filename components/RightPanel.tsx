@@ -105,14 +105,14 @@ export const RightPanel: React.FC<RightPanelProps> = ({ topStations = [], alerts
         <h3 className="font-bold text-lg text-gray-100 mb-2 flex items-center flex-shrink-0 relative z-10">
           <i className="fa fa-trophy text-yellow-400 mr-2"></i>
           热门站点吞吐量
-          <span className="ml-2 text-xs bg-blue-500/10 text-blue-400 px-2 py-0.5 rounded-full border border-blue-500/20">示例数据</span>
+          <span className="ml-2 text-xs bg-blue-500/15 text-blue-700 px-2 py-0.5 rounded-full border border-blue-600/20">示例数据</span>
         </h3>
 
         <div className="flex-1 w-full min-h-0 relative z-10">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={rankData} layout="vertical" margin={{ top: 5, right: 10, left: 10, bottom: 5 }} barSize={14}>
               <XAxis type="number" hide domain={[0, 'dataMax']} />
-              <YAxis type="category" dataKey="name" stroke="#94A3B8" fontSize={11} tickLine={false} axisLine={false} width={70} tick={{ fill: '#e2e8f0' }} />
+              <YAxis type="category" dataKey="name" stroke="#94A3B8" fontSize={11} tickLine={false} axisLine={false} width={70} tick={{ fill: '#475569' }} />
               <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(6, 182, 212, 0.05)' }} />
               <Bar dataKey="value" radius={[0, 6, 6, 0]} animationDuration={1500}>
                 {rankData.map((entry, index) => (
@@ -129,7 +129,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({ topStations = [], alerts
         <h3 className="font-bold text-lg text-gray-100 mb-4 flex items-center flex-shrink-0 relative z-10">
           <i className="fa fa-battery-three-quarters text-green-400 mr-2 animate-pulse-slow"></i>
           小车电量监控
-          <span className="ml-2 text-xs bg-green-500/10 text-green-400 px-2 py-0.5 rounded-full border border-green-500/20">示例数据</span>
+          <span className="ml-2 text-xs bg-green-500/15 text-green-700 px-2 py-0.5 rounded-full border border-green-600/20">示例数据</span>
         </h3>
 
         {/* flex-wrap：右栏窄（如 1366 屏的 202px）时饼图与图例自动换成上下排布，
