@@ -32,5 +32,6 @@
 - pytest 9 坑：`-q` 模式不再打印末尾 "N passed" 统计行，PowerShell 管道下更难见——判据用 exit code（0 = 全过）或 `--junitxml` 读 tests/failures 属性，别用肉眼找统计行
 - 杀进程坑：按命令行子串 `pip` 过滤 python 进程会误杀（multiprocessing spawn 的命令行含 `pipe` 字样也命中）——要匹配 `' -m pip '` 带空格的精确串，或用任务树整体停
 - 构建坑：若 `npm run build` 报 `[vite:esbuild-transpile] remove ...Temp\esbuild-xxx: Access is denied`，先 `$env:TEMP=$env:TMP=<工作区内可写目录>` 再构建（esbuild 删不掉系统临时文件）
+- dist 坑：`dist/index.html` 是手动构建的快照——代码更新后它不会自动跟进，**演示/拷 U 盘前必须重新 `npm run build`**（2026-11 曾出现 dist 落后源码 5 个提交、缺多个已修复特性）。验证 dist 是否含某特性：用 `[System.IO.File]::ReadAllText($p, UTF8)` 读再搜——PowerShell 5.1 的 `Get-Content` 对无 BOM UTF-8 按 GBK 读，中文字符串必搜不到（假阴性）
 - 依赖坑：本机 npm 10.9.x 装 vitest 会崩在 `#loadPeerSet`；用 `npx -y npm@11 install` 绕过。切记 `--legacy-peer-deps` 会漏装 peer（`react-is` 被裁掉会直接导致 recharts 打包失败）
 - 审计坑：本机 registry 指向 npmmirror，它不实现 audit 接口（报 NOT_IMPLEMENTED）——跑 `npm audit --registry=https://registry.npmjs.org`。npm 11 会警告 esbuild postinstall 被 allowScripts 拦截：无碍，esbuild 0.25 起用可选依赖放平台二进制，构建/测试照常。2026-11 已修至 audit 归零（vite 6.4 + vitest 4.1.12），后续新增依赖后建议复跑一次
