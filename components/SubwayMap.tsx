@@ -328,6 +328,7 @@ const SubwayMapComponent: React.FC<SubwayMapProps> = ({
         let cancelled = false;
         let removeWheelListener: (() => void) | undefined;
         let removeTapListener: (() => void) | undefined;
+        let removeMousePick: (() => void) | undefined;
 
         const runRouteSearch = () => {
             const subway = subwayRef.current;
@@ -409,6 +410,41 @@ const SubwayMapComponent: React.FC<SubwayMapProps> = ({
                         }
                     };
 
+                    // BMapSub 的 tap 只在触摸手势下触发（实测桌面鼠标 click 不发 tap），
+                    // 不兜底的话桌面演示永远点不开站点浮层。命中站名文字或站点圆点时，
+                    // 走与 tap 完全相同的选中逻辑；线路标签（X号线）与空白区域不响应。
+                    const stationNameFromElement = (el: Element | null): string => {
+                        if (!el) return '';
+                        const own = (el.textContent || '').trim();
+                        if (/^[一-龥]{2,4}$/.test(own) && !own.endsWith('线')) return own;
+                        if (el.tagName.toLowerCase() === 'ellipse') {
+                            const rect = el.getBoundingClientRect();
+                            const texts = containerRef.current?.querySelectorAll('text');
+                            if (!texts) return '';
+                            for (const textEl of Array.from(texts)) {
+                                const tr = textEl.getBoundingClientRect();
+                                if (Math.abs(tr.x - rect.x) < 60 && Math.abs(tr.y - rect.y) < 40) {
+                                    const name = (textEl.textContent || '').trim();
+                                    if (/^[一-龥]{2,4}$/.test(name) && !name.endsWith('线')) return name;
+                                }
+                            }
+                        }
+                        return '';
+                    };
+                    const handleMousePick = (event: MouseEvent) => {
+                        const name = stationNameFromElement(event.target as Element);
+                        if (!name) return;
+                        const stat = stationIndexRef.current?.get(name);
+                        setSelectedStation({
+                            name,
+                            data: stat ? { ...stat, source: 'waybill' } : buildSampleStationData(name)
+                        });
+                    };
+                    containerRef.current?.addEventListener('click', handleMousePick);
+                    removeMousePick = () => {
+                        containerRef.current?.removeEventListener('click', handleMousePick);
+                    };
+
                     if (mode === 'simulation' && typeof BMapSub.Direction === 'function') {
                         directionRef.current = new BMapSub.Direction(subway, {
                             transitTypePolicy: typeof (window as any).BMAP_TRANSIT_TYPE_POLICY_SUBWAY !== 'undefined'
@@ -433,6 +469,7 @@ const SubwayMapComponent: React.FC<SubwayMapProps> = ({
             clearRouteResultTimers();
             removeWheelListener?.();
             removeTapListener?.();
+            removeMousePick?.();
             subwayRef.current = null;
             directionRef.current = null;
             if (containerRef.current) {

@@ -735,10 +735,17 @@ const App: React.FC = () => {
               </div>
               <div className="lg:col-span-8 h-full flex flex-col overflow-hidden">
                 <section className="monitor-map-panel h-full flex flex-col overflow-hidden">
-                  <div className="monitor-map-title flex items-center flex-shrink-0">
-                    <span className="monitor-map-title-bar"></span>
-                    <span className="monitor-map-title-dot"></span>
-                    深圳轨道物流线网图
+                  <div className="monitor-map-title flex items-center justify-between flex-shrink-0">
+                    <span className="flex items-center gap-2.5">
+                      <span className="monitor-map-title-bar"></span>
+                      <span className="monitor-map-title-dot"></span>
+                      深圳轨道物流线网图
+                    </span>
+                    {/* 动态信息徽章：线路/站点数来自数据源与 SDK 实际加载结果 */}
+                    <span className="flex items-center gap-2 text-[11px] font-semibold">
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-600/10 text-emerald-800 border border-emerald-600/20">{lineInfos.length} 条线路</span>
+                      <span className="px-2 py-0.5 rounded-full bg-black/5 text-gray-600 border border-black/10">{mapStations.length} 个站点</span>
+                    </span>
                   </div>
                   <div className="monitor-map-frame flex-1 min-h-0">
                     <SubwayMap mode="monitor" onMapLoaded={setMapStations} stationIndex={stationIndex} />
