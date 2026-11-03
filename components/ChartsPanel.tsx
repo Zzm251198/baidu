@@ -31,9 +31,10 @@ export interface ChartsPanelProps {
   emptyHint?: string;
 }
 
+// 品牌色系：与白主题导视系统对齐——深圳地铁绿主导、导视黄辅助（深色时代的青紫科技色已弃用）
 const TECH_COLORS = {
-  primary: '#06b6d4',
-  secondary: '#8b5cf6',
+  primary: '#00A862',
+  secondary: '#F0A500',
   success: '#10b981',
   warning: '#f59e0b',
   danger: '#ef4444',
@@ -41,7 +42,7 @@ const TECH_COLORS = {
   axis: 'rgba(100, 116, 139, 0.3)'
 };
 
-const chartColors = [TECH_COLORS.primary, TECH_COLORS.secondary, '#ec4899', TECH_COLORS.warning, TECH_COLORS.danger];
+const chartColors = ['#00A862', '#F0A500', '#2563EB', '#14B8A6', '#E11D48'];
 
 export const ChartsPanel: React.FC<ChartsPanelProps> = ({
   type,
@@ -72,7 +73,7 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({
   };
 
   const renderEmpty = () => (
-    <div className="h-full w-full flex flex-col items-center justify-center text-emerald-500/60 text-sm gap-2">
+    <div className="h-full w-full flex flex-col items-center justify-center text-emerald-600/70 text-sm gap-2">
       <i className="fa fa-filter text-2xl opacity-60"></i>
       <span>{emptyHint}</span>
     </div>
@@ -85,9 +86,9 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({
       return (
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
-            <Pie data={data} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value" stroke="none">
+            <Pie data={data} cx="50%" cy="50%" innerRadius="55%" outerRadius="76%" paddingAngle={3} dataKey="value">
               {data.map((entry: any, index: number) => (
-                <Cell key={entry.name} fill={colors[entry.name] || chartColors[index % chartColors.length]} />
+                <Cell key={entry.name} fill={colors[entry.name] || chartColors[index % chartColors.length]} stroke="#FFFFFF" strokeWidth={2} />
               ))}
             </Pie>
             <Tooltip contentStyle={tooltipStyle} itemStyle={{ color: '#0F172A' }} formatter={(value: any) => [`${value} 吨`, '货量']} />
@@ -107,7 +108,7 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({
             <YAxis yAxisId="right" orientation="right" stroke={TECH_COLORS.secondary} tickLine={false} axisLine={false} unit="%" fontSize={12} tick={{ fill: '#475569' }} />
             <Tooltip contentStyle={tooltipStyle} cursor={{ fill: `${TECH_COLORS.primary}08` }} />
             <Legend wrapperStyle={legendStyle} />
-            <Bar yAxisId="left" dataKey="capacity" name="设计运力上限" fill={TECH_COLORS.grid} barSize={30} radius={[4, 4, 0, 0]} />
+            <Bar yAxisId="left" dataKey="capacity" name="设计运力上限" fill="#E2E8F0" barSize={30} radius={[4, 4, 0, 0]} />
             <Bar yAxisId="left" dataKey="load" name="实际负载" fill={TECH_COLORS.primary} barSize={16} radius={[2, 2, 0, 0]} />
             <Line yAxisId="right" type="monotone" dataKey="rate" name="负载率趋势" stroke={TECH_COLORS.secondary} strokeWidth={3} dot={{ r: 4, fill: '#FFFFFF', strokeWidth: 2, stroke: TECH_COLORS.secondary }} />
           </ComposedChart>
@@ -134,10 +135,10 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({
                     <div className="font-bold text-gray-900 mb-1">{point.name}</div>
                     <div className="text-gray-600">距离: <span className="text-gray-900">{point.x} km</span></div>
                     <div className="text-gray-600">耗时: <span className="text-gray-900">{point.y} min</span></div>
-                    <div className="text-gray-300">货量: <span className="text-emerald-400">{point.z} 吨</span></div>
+                    <div className="text-gray-500">货量: <span className="text-emerald-700">{point.z} 吨</span></div>
                     <div className="mt-1 pt-1 border-t border-emerald-500/20">
-                      <span className="text-xs text-gray-400">平均时速 </span>
-                      <span className={`font-mono font-bold ${Number(speed) > 40 ? 'text-green-400' : 'text-yellow-400'}`}>{speed} km/h</span>
+                      <span className="text-xs text-gray-500">平均时速 </span>
+                      <span className={`font-mono font-bold ${Number(speed) > 40 ? 'text-emerald-600' : 'text-amber-600'}`}>{speed} km/h</span>
                     </div>
                   </div>
                 );
@@ -157,6 +158,17 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({
           <YAxis stroke="#94a3b8" tickLine={false} axisLine={false} fontSize={12} tick={{ fill: '#475569' }} />
           <Tooltip contentStyle={tooltipStyle} />
           <Legend wrapperStyle={legendStyle} />
+          <defs>
+            {series.map((key, index) => {
+              const color = colors[key] || chartColors[index % chartColors.length];
+              return (
+                <linearGradient key={key} id={`areaGrad-${key}`} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={color} stopOpacity={0.28} />
+                  <stop offset="100%" stopColor={color} stopOpacity={0.02} />
+                </linearGradient>
+              );
+            })}
+          </defs>
           {series.map((key, index) => (
             <Area
               key={key}
@@ -165,8 +177,7 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({
               name={key}
               stackId="cargo"
               stroke={colors[key] || chartColors[index % chartColors.length]}
-              fill={colors[key] || chartColors[index % chartColors.length]}
-              fillOpacity={0.18}
+              fill={`url(#areaGrad-${key})`}
               strokeWidth={2}
             />
           ))}

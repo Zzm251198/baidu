@@ -762,19 +762,19 @@ const App: React.FC = () => {
               {renderDataSelect('运单号', selectedWaybillNo, setSelectedWaybillNo, waybillNoOptions)}
             </div>
 
-            {/* 筛选结果回执：让"筛选真的生效"这件事一眼可见 */}
-            <div className="flex flex-wrap items-center gap-4 -mt-4 text-xs">
-              <span className="text-emerald-300 bg-emerald-500/10 border border-emerald-500/25 rounded-full px-3 py-1">
-                命中 <b className="text-gray-100">{dataSummary.waybillCount}</b> 条运单
+            {/* 筛选结果回执：四个统计统一成带图标的徽章，让"筛选真的生效"一眼可见 */}
+            <div className="flex flex-wrap items-center gap-3 -mt-4 text-xs">
+              <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-emerald-600/25 bg-emerald-500/10 text-emerald-800">
+                <i className="fa fa-files-o"></i>命中 <b className="text-gray-900">{dataSummary.waybillCount}</b> 条运单
               </span>
-              <span className="text-gray-400">
-                总货量 <b className="text-gray-100">{dataSummary.totalWeightTon}</b> 吨
+              <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-black/10 bg-white/80 text-gray-600">
+                <i className="fa fa-cubes text-gray-400"></i>总货量 <b className="text-gray-900">{dataSummary.totalWeightTon}</b> 吨
               </span>
-              <span className="text-gray-400">
-                覆盖车站 <b className="text-gray-100">{dataSummary.stationCount}</b> 个
+              <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-black/10 bg-white/80 text-gray-600">
+                <i className="fa fa-map-marker text-gray-400"></i>覆盖车站 <b className="text-gray-900">{dataSummary.stationCount}</b> 个
               </span>
-              <span className="text-gray-400">
-                平均时效 <b className="text-gray-100">{dataSummary.avgDurationMin}</b> 分钟
+              <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-black/10 bg-white/80 text-gray-600">
+                <i className="fa fa-clock-o text-gray-400"></i>平均时效 <b className="text-gray-900">{dataSummary.avgDurationMin}</b> 分钟
               </span>
               {dataSummary.waybillCount === 0 && (
                 <button
@@ -815,12 +815,12 @@ const App: React.FC = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 h-[400px]">
               <div className="lg:col-span-2 h-full">
-                <div className="chart-card h-full w-full bg-transparent border border-emerald-500/20 rounded-xl p-4 relative overflow-hidden">
+                <div className="chart-card h-full w-full bg-white/75 backdrop-blur-sm shadow-sm border border-emerald-600/15 rounded-xl p-4 relative overflow-hidden">
                   <ChartsPanel type="composed" title="各线路运力与实际负载分析" data={lineLoadData} />
                 </div>
               </div>
               <div className="lg:col-span-1 h-full">
-                <div className="chart-card h-full w-full bg-transparent border border-emerald-500/20 rounded-xl p-4 relative overflow-hidden">
+                <div className="chart-card h-full w-full bg-white/75 backdrop-blur-sm shadow-sm border border-emerald-600/15 rounded-xl p-4 relative overflow-hidden">
                   <ChartsPanel type="pie" title="运输货物类型分布" data={categoryPieData} colors={CATEGORY_COLORS} />
                 </div>
               </div>
@@ -828,12 +828,12 @@ const App: React.FC = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-[380px]">
               <div className="h-full">
-                <div className="chart-card h-full w-full bg-transparent border border-emerald-500/20 rounded-xl p-4 relative overflow-hidden">
+                <div className="chart-card h-full w-full bg-white/75 backdrop-blur-sm shadow-sm border border-emerald-600/15 rounded-xl p-4 relative overflow-hidden">
                   <ChartsPanel type="scatter" title="线路运输效能矩阵（距离/耗时/货量）" data={efficiencyData} />
                 </div>
               </div>
               <div className="h-full">
-                <div className="chart-card h-full w-full bg-transparent border border-emerald-500/20 rounded-xl p-4 relative overflow-hidden">
+                <div className="chart-card h-full w-full bg-white/75 backdrop-blur-sm shadow-sm border border-emerald-600/15 rounded-xl p-4 relative overflow-hidden">
                   <ChartsPanel
                     type="area"
                     title="全网24小时货运流量趋势（按品类，吨）"
@@ -846,9 +846,9 @@ const App: React.FC = () => {
             </div>
 
             <div className="w-full bg-transparent">
-              <div className="bg-transparent rounded-xl p-6 border border-emerald-500/20 relative overflow-hidden chart-card">
-                <h3 className="font-bold text-emerald-300 mb-6 flex items-center relative z-10">
-                  <i className="fa fa-trophy text-yellow-400 mr-3 text-lg"></i>
+              <div className="bg-white/75 backdrop-blur-sm shadow-sm rounded-xl p-6 border border-emerald-600/15 relative overflow-hidden chart-card">
+                <h3 className="font-bold text-emerald-700 mb-6 flex items-center relative z-10">
+                  <i className="fa fa-trophy text-amber-500 mr-3 text-lg"></i>
                   <span className="tracking-wider">综合效率排行榜</span>
                   <div className="ml-4 h-1 flex-1 bg-gradient-to-r from-emerald-500/50 to-transparent rounded-full"></div>
                 </h3>
