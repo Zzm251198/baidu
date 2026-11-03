@@ -134,9 +134,9 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({
                 const speed = (point.x / (point.y / 60)).toFixed(1);
                 return (
                   <div style={tooltipStyle} className="border border-emerald-500/30 shadow-lg">
-                    <div className="font-bold text-gray-900 mb-1">{point.name}</div>
-                    <div className="text-gray-600">距离: <span className="text-gray-900">{point.x} km</span></div>
-                    <div className="text-gray-600">耗时: <span className="text-gray-900">{point.y} min</span></div>
+                    <div className="font-bold text-slate-900 mb-1">{point.name}</div>
+                    <div className="text-slate-600">距离: <span className="text-slate-900">{point.x} km</span></div>
+                    <div className="text-slate-600">耗时: <span className="text-slate-900">{point.y} min</span></div>
                     <div className="text-gray-500">货量: <span className="text-emerald-700">{point.z} 吨</span></div>
                     <div className="mt-1 pt-1 border-t border-emerald-500/20">
                       <span className="text-xs text-gray-500">平均时速 </span>

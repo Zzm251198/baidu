@@ -77,7 +77,7 @@ export const AGV: React.FC<{ rows?: AgvOperationRow[] }> = ({ rows }) => {
                 <span className="px-2.5 py-1 rounded-full bg-emerald-600/10 text-emerald-800 border border-emerald-600/20 font-semibold">
                     <i className="fa fa-list-ul mr-1"></i>{displayData.length} 条作业单
                 </span>
-                <span className="px-2.5 py-1 rounded-full bg-black/5 text-gray-600 border border-black/10">
+                <span className="px-2.5 py-1 rounded-full bg-black/5 text-slate-600 border border-black/10">
                     <i className="fa fa-exchange mr-1 text-gray-400"></i>
                     {displayData.filter((r) => r.orderType.includes('中转')).length} 次中转换挂
                 </span>
@@ -101,10 +101,10 @@ export const AGV: React.FC<{ rows?: AgvOperationRow[] }> = ({ rows }) => {
                             </span>
                         </div>
                         <div className="mt-1.5 flex items-center gap-2 flex-wrap text-sm">
-                            <span className="font-bold text-gray-800">{item.boardingStop}</span>
+                            <span className="font-bold text-slate-800">{item.boardingStop}</span>
                             <span className="font-mono text-xs text-amber-700">{item.boardingTime}</span>
                             <i className="fa fa-long-arrow-right text-emerald-600 mx-0.5"></i>
-                            <span className="font-bold text-gray-800">{item.AlightingStop}</span>
+                            <span className="font-bold text-slate-800">{item.AlightingStop}</span>
                             <span className="font-mono text-xs text-amber-700">{item.alightingTime}</span>
                             {/* 绑定列车：允许换行的徽章（超长车次号不再截断） */}
                             <span

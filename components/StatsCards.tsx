@@ -174,7 +174,7 @@ export const StatsCards: React.FC<StatsCardsProps> = ({
         >
           <div className="px-5 py-4 border-b border-black/10 flex items-center justify-between flex-shrink-0">
             <div>
-              <h3 className="font-bold text-gray-900 text-base">纳入建模线路 · {lineCount} 条</h3>
+              <h3 className="font-bold text-slate-900 text-base">纳入建模线路 · {lineCount} 条</h3>
               <p className="text-xs text-gray-500 mt-0.5">{lineHint}</p>
             </div>
             <button
@@ -189,7 +189,7 @@ export const StatsCards: React.FC<StatsCardsProps> = ({
           <div className="overflow-y-auto custom-scrollbar p-4 grid grid-cols-2 gap-2">
             {(lines ?? []).map((line) => (
               <div key={line.name} className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-slate-50 border border-black/5">
-                <span className="text-sm text-gray-800 truncate" title={line.name}>{line.name}</span>
+                <span className="text-sm text-slate-800 truncate" title={line.name}>{line.name}</span>
                 {line.stations && (
                   <span className="text-xs text-emerald-800 bg-emerald-500/10 border border-emerald-600/15 px-1.5 py-0.5 rounded flex-shrink-0 whitespace-nowrap">
                     {line.stations.length} 站

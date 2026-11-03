@@ -745,7 +745,7 @@ const App: React.FC = () => {
                     {/* 动态信息徽章：线路/站点数来自数据源与 SDK 实际加载结果 */}
                     <span className="flex items-center gap-2 text-[11px] font-semibold">
                       <span className="px-2 py-0.5 rounded-full bg-emerald-600/10 text-emerald-800 border border-emerald-600/20">{lineInfos.length} 条线路</span>
-                      <span className="px-2 py-0.5 rounded-full bg-black/5 text-gray-600 border border-black/10">{mapStations.length} 个站点</span>
+                      <span className="px-2 py-0.5 rounded-full bg-black/5 text-slate-600 border border-black/10">{mapStations.length} 个站点</span>
                     </span>
                   </div>
                   <div className="monitor-map-frame flex-1 min-h-0">
@@ -773,16 +773,16 @@ const App: React.FC = () => {
             {/* 筛选结果回执：四个统计统一成带图标的徽章，让"筛选真的生效"一眼可见 */}
             <div className="flex flex-wrap items-center gap-3 -mt-4 text-xs">
               <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-emerald-600/25 bg-emerald-500/10 text-emerald-800">
-                <i className="fa fa-files-o"></i>命中 <b className="text-gray-900">{dataSummary.waybillCount}</b> 条运单
+                <i className="fa fa-files-o"></i>命中 <b className="text-slate-900">{dataSummary.waybillCount}</b> 条运单
               </span>
-              <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-black/10 bg-white/80 text-gray-600">
-                <i className="fa fa-cubes text-gray-400"></i>总货量 <b className="text-gray-900">{dataSummary.totalWeightTon}</b> 吨
+              <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-black/10 bg-white/80 text-slate-600">
+                <i className="fa fa-cubes text-gray-400"></i>总货量 <b className="text-slate-900">{dataSummary.totalWeightTon}</b> 吨
               </span>
-              <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-black/10 bg-white/80 text-gray-600">
-                <i className="fa fa-map-marker text-gray-400"></i>覆盖车站 <b className="text-gray-900">{dataSummary.stationCount}</b> 个
+              <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-black/10 bg-white/80 text-slate-600">
+                <i className="fa fa-map-marker text-gray-400"></i>覆盖车站 <b className="text-slate-900">{dataSummary.stationCount}</b> 个
               </span>
-              <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-black/10 bg-white/80 text-gray-600">
-                <i className="fa fa-clock-o text-gray-400"></i>平均时效 <b className="text-gray-900">{dataSummary.avgDurationMin}</b> 分钟
+              <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-black/10 bg-white/80 text-slate-600">
+                <i className="fa fa-clock-o text-gray-400"></i>平均时效 <b className="text-slate-900">{dataSummary.avgDurationMin}</b> 分钟
               </span>
               {dataSummary.waybillCount === 0 && (
                 <button

@@ -61,13 +61,13 @@ export const AutoScrollChart: React.FC<{ rows?: LineRanking[] }> = ({ rows = [] 
                 <span className={`inline-flex items-center justify-center w-7 h-7 rounded-lg font-bold text-xs ${
                   item.rank <= 3
                     ? 'bg-gradient-to-br from-emerald-500 to-emerald-700 text-white shadow-md border border-emerald-400/50'
-                    : 'bg-slate-100 text-gray-600 border border-black/10'
+                    : 'bg-slate-100 text-slate-600 border border-black/10'
                 }`}>
                   {item.rank}
                 </span>
               </div>
 
-              <div className="col-span-4 text-gray-800 font-medium truncate pr-3" title={item.line}>
+              <div className="col-span-4 text-slate-800 font-medium truncate pr-3" title={item.line}>
                 {item.line}
               </div>
 
@@ -93,7 +93,7 @@ export const AutoScrollChart: React.FC<{ rows?: LineRanking[] }> = ({ rows = [] 
                 </span>
               </div>
 
-              <div className="col-span-3 text-right text-gray-900 font-mono font-bold text-base">
+              <div className="col-span-3 text-right text-slate-900 font-mono font-bold text-base">
                 <span className="text-emerald-700">{item.score}</span>
               </div>
             </div>
