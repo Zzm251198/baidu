@@ -48,7 +48,7 @@ const fallbackRows: AgvOperationRow[] = [
     }
 ];
 
-const HEADERS = ['订单编号', '订单类型', 'AGV编号', '负责航段', '绑定列车', '上车站点', '上车时间', '下车站点', '下车时间'];
+
 
 /**
  * 仿真页「订单数据」作业行网格。
@@ -70,53 +70,52 @@ export const AGV: React.FC<{ rows?: AgvOperationRow[] }> = ({ rows }) => {
         return 'text-emerald-700 bg-emerald-500/10';
     };
 
-    // 编号 | 类型 | AGV | 航段 | 列车(最宽) | 上车站 | 时间 | 下车站 | 时间
-    // 列车 180 / AGV 104：1366 窄屏实测——180 容纳最长的 14 号线车次号（SZM-14号线东部快线-xxxx，实测 176px）
-    const gridTemplate = 'minmax(88px,1fr) minmax(76px,0.85fr) minmax(104px,1fr) minmax(76px,0.85fr) minmax(180px,1.35fr) minmax(64px,0.8fr) minmax(52px,0.6fr) minmax(64px,0.8fr) minmax(52px,0.6fr)';
-
     return (
-        <div className="w-full h-full flex flex-col overflow-hidden bg-transparent relative">
-            <div
-                className="text-xs text-emerald-700 border-b border-emerald-600/20 pb-2.5 mb-0 px-3 uppercase tracking-wider font-semibold"
-                style={{ display: 'grid', gridTemplateColumns: gridTemplate }}
-            >
-                {HEADERS.map((h) => (
-                    <span key={h} className="text-center truncate">{h}</span>
-                ))}
+        <div className="w-full h-full flex flex-col overflow-hidden bg-transparent relative gap-2">
+            {/* 汇总条：一眼看到作业规模 */}
+            <div className="flex items-center gap-2 text-xs flex-shrink-0">
+                <span className="px-2.5 py-1 rounded-full bg-emerald-600/10 text-emerald-800 border border-emerald-600/20 font-semibold">
+                    <i className="fa fa-list-ul mr-1"></i>{displayData.length} 条作业单
+                </span>
+                <span className="px-2.5 py-1 rounded-full bg-black/5 text-gray-600 border border-black/10">
+                    <i className="fa fa-exchange mr-1 text-gray-400"></i>
+                    {displayData.filter((r) => r.orderType.includes('中转')).length} 次中转换挂
+                </span>
             </div>
 
-            <div className="flex-1 min-h-0 relative overflow-y-auto custom-scrollbar bg-white/50 rounded-lg border border-emerald-600/10">
-                {/* 背景网格装饰（绿色极低透明，随内容滚动区独立、绝不压字） */}
-                <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(0,168,98,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(0,168,98,0.05)_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
-
-                <div className="relative">
-                    {displayData.map((item, index) => (
-                        <div
-                            key={`${item.orderId}-${index}`}
-                            className="items-center text-sm py-2.5 px-3 border-b border-emerald-600/10 hover:bg-emerald-500/10 transition-colors"
-                            style={{ display: 'grid', gridTemplateColumns: gridTemplate }}
-                        >
-                            <div className="text-gray-700 font-medium truncate text-center" title={item.orderId}>
-                                <span className="inline-block w-1 h-1 bg-emerald-500 rounded-full mr-1"></span>
-                                {item.orderId}
-                            </div>
-                            <div className="truncate text-center" title={item.orderType}>
-                                <span className={`inline-block px-1.5 py-0.5 rounded text-xs ${getOrderTypeClass(item.orderType)}`}>
-                                    {item.orderType}
-                                </span>
-                            </div>
-                            <div className="text-gray-700 truncate text-center" title={item.agvId}>{item.agvId}</div>
-                            <div className="text-gray-700 truncate text-center" title={item.flightSegment}>{item.flightSegment}</div>
-                            {/* 列车号：后端风格会内嵌线路与站名（最长实测 252px），截断必丢信息——
-                                改为自然换行（连字符处断开），行高自适应，全文可读 */}
-                            <div className="text-emerald-700 font-medium text-center leading-snug break-words" title={item.bindTrain}>{item.bindTrain}</div>
-                            <div className="text-gray-700 truncate text-center" title={item.boardingStop}>{item.boardingStop}</div>
-                            <div className="text-amber-700 truncate text-center" title={item.boardingTime}>{item.boardingTime}</div>
-                            <div className="text-gray-700 truncate text-center" title={item.AlightingStop}>{item.AlightingStop}</div>
-                            <div className="text-amber-700 truncate text-center" title={item.alightingTime}>{item.alightingTime}</div>
+            {/* 作业卡片栈：卡片式替代九列表格——文字换行永不截断，行数多时纵向滚动 */}
+            <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar space-y-2 pr-1">
+                {displayData.map((item, index) => (
+                    <div
+                        key={`${item.orderId}-${index}`}
+                        className="bg-white/85 border border-black/5 hover:border-emerald-600/35 rounded-xl px-4 py-2.5 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5"
+                    >
+                        <div className="flex items-center gap-2.5 flex-wrap">
+                            <span className={`px-2 py-0.5 rounded-full text-xs font-bold border ${getOrderTypeClass(item.orderType)}`}>
+                                {item.orderType}
+                            </span>
+                            <span className="text-xs text-gray-500">{item.flightSegment}</span>
+                            <span className="font-mono text-xs text-gray-400">{item.orderId}</span>
+                            <span className="ml-auto text-xs text-gray-500">
+                                <i className="fa fa-cube mr-1 text-gray-400"></i>{item.agvId}
+                            </span>
                         </div>
-                    ))}
-                </div>
+                        <div className="mt-1.5 flex items-center gap-2 flex-wrap text-sm">
+                            <span className="font-bold text-gray-800">{item.boardingStop}</span>
+                            <span className="font-mono text-xs text-amber-700">{item.boardingTime}</span>
+                            <i className="fa fa-long-arrow-right text-emerald-600 mx-0.5"></i>
+                            <span className="font-bold text-gray-800">{item.AlightingStop}</span>
+                            <span className="font-mono text-xs text-amber-700">{item.alightingTime}</span>
+                            {/* 绑定列车：允许换行的徽章（超长车次号不再截断） */}
+                            <span
+                                className="ml-auto text-xs text-emerald-800 bg-emerald-500/10 border border-emerald-600/20 rounded-md px-2 py-0.5 max-w-[52%] text-right break-words leading-snug"
+                                title={item.bindTrain}
+                            >
+                                <i className="fa fa-train mr-1"></i>{item.bindTrain}
+                            </span>
+                        </div>
+                    </div>
+                ))}
             </div>
         </div>
     );
