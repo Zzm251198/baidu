@@ -48,123 +48,76 @@ const fallbackRows: AgvOperationRow[] = [
     }
 ];
 
+const HEADERS = ['订单编号', '订单类型', 'AGV编号', '负责航段', '绑定列车', '上车站点', '上车时间', '下车站点', '下车时间'];
+
+/**
+ * 仿真页「订单数据」作业行网格。
+ *
+ * 2026-11 重做的三个决定（对应实测问题）：
+ * 1. 列宽按内容分配，不再 9 列均分——均分在半宽面板里每列只有 ~60-127px，
+ *    19 字符的列车号（SZM-2号线8号线-2629）必然截断；列车/编号列给足宽度。
+ * 2. 删掉跑马灯：行数多时复制一份循环滚动 + 上下两块 64px 渐变遮罩压字，
+ *    是"转运点多时重叠看不清"的直接来源；改为静态行 + 容器纵向滚动。
+ * 3. 白主题配色：浅色辉光字（300/400 系）在白底上对比度不足，全部加深。
+ */
 export const AGV: React.FC<{ rows?: AgvOperationRow[] }> = ({ rows }) => {
     const displayData = rows && rows.length > 0 ? rows : fallbackRows;
-    // 行数少时不做跑马灯（否则会把同一订单复制 4 份，看起来像重复下单）
-    const shouldScroll = displayData.length > 4;
-    const renderedRows = shouldScroll ? [...displayData, ...displayData] : displayData;
 
     const getOrderTypeClass = (type: string) => {
-        if (type.includes('始发')) return 'text-emerald-400 glow-green';
-        if (type.includes('终端')) return 'text-blue-400 glow-blue';
-        if (type.includes('中转')) return 'text-amber-400 glow-yellow';
-        return 'text-emerald-300';
+        if (type.includes('始发')) return 'text-emerald-700 bg-emerald-500/10';
+        if (type.includes('终端')) return 'text-blue-700 bg-blue-500/10';
+        if (type.includes('中转')) return 'text-amber-700 bg-amber-500/10';
+        return 'text-emerald-700 bg-emerald-500/10';
     };
+
+    // 编号 | 类型 | AGV | 航段 | 列车(最宽) | 上车站 | 时间 | 下车站 | 时间
+    // 列车 180 / AGV 104：1366 窄屏实测——180 容纳最长的 14 号线车次号（SZM-14号线东部快线-xxxx，实测 176px）
+    const gridTemplate = 'minmax(88px,1fr) minmax(76px,0.85fr) minmax(104px,1fr) minmax(76px,0.85fr) minmax(180px,1.35fr) minmax(64px,0.8fr) minmax(52px,0.6fr) minmax(64px,0.8fr) minmax(52px,0.6fr)';
 
     return (
         <div className="w-full h-full flex flex-col overflow-hidden bg-transparent relative">
-            <div className="grid grid-cols-9 text-xs text-emerald-300 border-b border-emerald-500/30 pb-3 mb-3 px-3 uppercase tracking-wider font-semibold relative z-10">
-                <div className="absolute -bottom-1 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-emerald-400 to-transparent"></div>
-                <span className="col-span-1 text-center">订单编号</span>
-                <span className="col-span-1 text-center">订单类型</span>
-                <span className="col-span-1 text-center">AGV编号</span>
-                <span className="col-span-1 text-center">负责航段</span>
-                <span className="col-span-1 text-center">绑定列车</span>
-                <span className="col-span-1 text-center">上车站点</span>
-                <span className="col-span-1 text-center">上车时间</span>
-                <span className="col-span-1 text-center">下车站点</span>
-                <span className="col-span-1 text-center">下车时间</span>
+            <div
+                className="text-xs text-emerald-700 border-b border-emerald-600/20 pb-2.5 mb-0 px-3 uppercase tracking-wider font-semibold"
+                style={{ display: 'grid', gridTemplateColumns: gridTemplate }}
+            >
+                {HEADERS.map((h) => (
+                    <span key={h} className="text-center truncate">{h}</span>
+                ))}
             </div>
 
-            <div className="flex-1 relative overflow-hidden group bg-gray-900/10 rounded-lg border border-emerald-500/10">
-                <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(6,182,212,0.1)_1px,transparent_1px),linear-gradient(to_bottom,rgba(6,182,212,0.1)_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none"></div>
+            <div className="flex-1 min-h-0 relative overflow-y-auto custom-scrollbar bg-white/50 rounded-lg border border-emerald-600/10">
+                {/* 背景网格装饰（绿色极低透明，随内容滚动区独立、绝不压字） */}
+                <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(0,168,98,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(0,168,98,0.05)_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
 
-                <div className={`absolute top-0 left-0 w-full z-10 ${shouldScroll ? 'animate-marquee hover:pause-animation' : ''}`}>
-                    {renderedRows.map((item, index) => (
+                <div className="relative">
+                    {displayData.map((item, index) => (
                         <div
                             key={`${item.orderId}-${index}`}
-                            className="grid grid-cols-9 items-center text-sm py-2.5 px-3 border-b border-emerald-900/10 hover:bg-emerald-900/20 hover:border-emerald-500/30 transition-all duration-300"
+                            className="items-center text-sm py-2.5 px-3 border-b border-emerald-600/10 hover:bg-emerald-500/10 transition-colors"
+                            style={{ display: 'grid', gridTemplateColumns: gridTemplate }}
                         >
-                            <div className="col-span-1 text-gray-200 font-medium truncate text-center" title={item.orderId}>
-                                <span className="inline-block w-1 h-1 bg-emerald-400 rounded-full mr-1"></span>
+                            <div className="text-gray-700 font-medium truncate text-center" title={item.orderId}>
+                                <span className="inline-block w-1 h-1 bg-emerald-500 rounded-full mr-1"></span>
                                 {item.orderId}
                             </div>
-                            <div className="col-span-1 truncate text-center" title={item.orderType}>
+                            <div className="truncate text-center" title={item.orderType}>
                                 <span className={`inline-block px-1.5 py-0.5 rounded text-xs ${getOrderTypeClass(item.orderType)}`}>
                                     {item.orderType}
                                 </span>
                             </div>
-                            <div className="col-span-1 text-gray-200 truncate text-center" title={item.agvId}>
-                                {item.agvId}
-                            </div>
-                            <div className="col-span-1 text-gray-200 truncate text-center" title={item.flightSegment}>
-                                {item.flightSegment}
-                            </div>
-                            <div className="col-span-1 text-emerald-300 font-medium truncate text-center glow-blue" title={item.bindTrain}>
-                                {item.bindTrain}
-                            </div>
-                            <div className="col-span-1 text-gray-200 truncate text-center" title={item.boardingStop}>
-                                {item.boardingStop}
-                            </div>
-                            <div className="col-span-1 text-amber-300 truncate text-center" title={item.boardingTime}>
-                                {item.boardingTime}
-                            </div>
-                            <div className="col-span-1 text-gray-200 truncate text-center" title={item.AlightingStop}>
-                                {item.AlightingStop}
-                            </div>
-                            <div className="col-span-1 text-amber-300 truncate text-center" title={item.alightingTime}>
-                                {item.alightingTime}
-                            </div>
+                            <div className="text-gray-700 truncate text-center" title={item.agvId}>{item.agvId}</div>
+                            <div className="text-gray-700 truncate text-center" title={item.flightSegment}>{item.flightSegment}</div>
+                            {/* 列车号：后端风格会内嵌线路与站名（最长实测 252px），截断必丢信息——
+                                改为自然换行（连字符处断开），行高自适应，全文可读 */}
+                            <div className="text-emerald-700 font-medium text-center leading-snug break-words" title={item.bindTrain}>{item.bindTrain}</div>
+                            <div className="text-gray-700 truncate text-center" title={item.boardingStop}>{item.boardingStop}</div>
+                            <div className="text-amber-700 truncate text-center" title={item.boardingTime}>{item.boardingTime}</div>
+                            <div className="text-gray-700 truncate text-center" title={item.AlightingStop}>{item.AlightingStop}</div>
+                            <div className="text-amber-700 truncate text-center" title={item.alightingTime}>{item.alightingTime}</div>
                         </div>
                     ))}
                 </div>
-
-                <div className="absolute inset-0 border border-emerald-500/20 rounded-lg pointer-events-none"></div>
-                <div className="absolute inset-1 border border-emerald-500/10 rounded-lg pointer-events-none"></div>
-                <div className="absolute top-0 left-0 w-full h-16 bg-gradient-to-b from-gray-900/80 to-transparent pointer-events-none z-20"></div>
-                <div className="absolute bottom-0 left-0 w-full h-16 bg-gradient-to-t from-gray-900/80 to-transparent pointer-events-none z-20"></div>
-                <div className="absolute top-0 left-0 w-8 h-8 border-t border-l border-emerald-400/40 rounded-tl-lg pointer-events-none"></div>
-                <div className="absolute top-0 right-0 w-8 h-8 border-t border-r border-emerald-400/40 rounded-tr-lg pointer-events-none"></div>
-                <div className="absolute bottom-0 left-0 w-8 h-8 border-b border-l border-emerald-400/40 rounded-bl-lg pointer-events-none"></div>
-                <div className="absolute bottom-0 right-0 w-8 h-8 border-b border-r border-emerald-400/40 rounded-br-lg pointer-events-none"></div>
             </div>
-
-            <style>{`
-                @keyframes marquee {
-                    0% { transform: translateY(0); }
-                    100% { transform: translateY(-50%); }
-                }
-                .animate-marquee {
-                    animation: marquee 80s linear infinite;
-                }
-                .hover\\:pause-animation:hover {
-                    animation-play-state: paused;
-                }
-                .glow-green {
-                    text-shadow: 0 0 6px rgba(74, 222, 128, 0.7), 0 0 12px rgba(74, 222, 128, 0.3);
-                }
-                .glow-blue {
-                    text-shadow: 0 0 6px rgba(96, 165, 250, 0.7), 0 0 12px rgba(96, 165, 250, 0.3);
-                }
-                .glow-yellow {
-                    text-shadow: 0 0 6px rgba(250, 204, 21, 0.7), 0 0 12px rgba(250, 204, 21, 0.3);
-                }
-                .group::-webkit-scrollbar {
-                    width: 4px;
-                    height: 4px;
-                }
-                .group::-webkit-scrollbar-track {
-                    background: rgba(6, 182, 212, 0.1);
-                    border-radius: 2px;
-                }
-                .group::-webkit-scrollbar-thumb {
-                    background: rgba(6, 182, 212, 0.5);
-                    border-radius: 2px;
-                }
-                .group::-webkit-scrollbar-thumb:hover {
-                    background: rgba(6, 182, 212, 0.7);
-                }
-            `}</style>
         </div>
     );
 };
