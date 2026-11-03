@@ -1073,7 +1073,10 @@ const App: React.FC = () => {
                     <span className="tracking-wider">订单数据</span>
                     <div className="ml-4 h-1 flex-1 bg-gradient-to-r from-emerald-500/50 to-transparent rounded-full"></div>
                   </h3>
-                  <div className="flex-1 min-h-[180px] relative z-10 bg-transparent">
+                  {/* min-h-0 必须有：多换乘时卡片天然高度会超过 flex 分配空间，
+                      没有它内容会撑破面板边界线被裁半截（字体重叠的来源）；
+                      卡片栈自带 overflow-y-auto，约束建立后改为内部滚动 */}
+                  <div className="flex-1 min-h-0 relative z-10 bg-transparent">
                     <AGV rows={simulationOutput?.operationRows} />
                   </div>
                   <OrderTimeline events={timelineEvents} />

@@ -18,7 +18,7 @@ interface OrderTimelineProps {
 export const OrderTimeline: React.FC<OrderTimelineProps> = ({ events }) => {
   if (events.length === 0) {
     return (
-      <div className="order-timeline">
+      <div className="order-timeline flex-shrink-0">
         <div className="order-timeline-head">
           <span className="order-timeline-title">
             <i className="fa fa-clock-o mr-2 text-emerald-400"></i>作业时间轴
@@ -33,7 +33,7 @@ export const OrderTimeline: React.FC<OrderTimelineProps> = ({ events }) => {
   }
 
   return (
-    <div className="order-timeline">
+    <div className="order-timeline flex-shrink-0">
       <div className="order-timeline-head">
         <span className="order-timeline-title">
           <i className="fa fa-clock-o mr-2 text-emerald-400"></i>作业时间轴
