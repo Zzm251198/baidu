@@ -57,7 +57,9 @@ body {
 .subway-map-caption {
   position: absolute;
   right: 14px;
-  bottom: 10px;
+  /* 抬高到 48px：避开百度 SDK 在地图右下角自绘的"详情>"按钮（高 42px）与耗时信息条，
+     原先 bottom:10px 会与之互叠 */
+  bottom: 48px;
   z-index: 2;
   padding: 3px 9px;
   border: 1px solid rgba(0, 168, 98, 0.324);
@@ -900,6 +902,11 @@ textarea {
 
 .simulation-main-grid {
   min-height: 440px;
+  /* flex-shrink: 0 —— 仿真页外层是固定高度的 flex 滚动列，底部网格已 shrink-0（936px），
+     主网格若可被挤压会缩到 min-height 440px，而订单面板内容（h3+卡片栈+时间轴 ≈576px）
+     收不进 440px 的行高里，会穿透网格底边压到下方效益看板上（字体重叠的根因）。
+     按自然高度参与排列，溢出交给外层 ov:auto 滚动兜底。 */
+  flex-shrink: 0;
 }
 
 .simulation-bottom-grid {
