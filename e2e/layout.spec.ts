@@ -169,7 +169,7 @@ test.describe('地图视觉增强层：只画不挡', () => {
   test('网格 / 暗角 / 标注都在，且全部 pointer-events: none', async ({ page }) => {
     await waitForDashboard(page);
 
-    await expect(page.getByText('示意图 · 非地理投影')).toBeVisible();
+    await expect(page.getByText('真实地理底图 · 百度地图')).toBeVisible();
 
     const layers = await page.evaluate(() => {
       const pick = (selector: string) => {

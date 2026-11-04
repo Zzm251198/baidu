@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { SubwayMap, StationNode } from './components/SubwayMap';
+import { GeoMetroMap } from './components/GeoMetroMap';
 import { StatsCards } from './components/StatsCards';
 import { AutoScrollChart } from './components/AutoScrollChart';
 import { AGV } from './components/agv.tsx';
@@ -749,7 +750,9 @@ const App: React.FC = () => {
                     </span>
                   </div>
                   <div className="monitor-map-frame flex-1 min-h-0">
-                    <SubwayMap mode="monitor" onMapLoaded={setMapStations} stationIndex={stationIndex} />
+                    {/* 监控页用真实底图地图（真实深圳地图 + 真实走位线网）；
+                        仿真页仍用 SubwayMap 示意图（查路依赖 BMapSub） */}
+                    <GeoMetroMap onMapLoaded={setMapStations} stationIndex={stationIndex} />
                   </div>
                 </section>
               </div>
