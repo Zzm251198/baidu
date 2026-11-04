@@ -10,7 +10,7 @@
   不能返回 weight_ton（下划线），否则前端读不到。
 
 注意顺序：这里先测"只读接口"，最后测"增删改接口"，
-因为增删改会改动数据库，先跑它们会把 620 这个数字弄脏。
+因为增删改会改动数据库，先跑它们会把 492 这个数字弄脏。
 """
 
 from __future__ import annotations
@@ -18,7 +18,7 @@ from __future__ import annotations
 import re
 from datetime import datetime
 
-SEEDED_WAYBILL_COUNT = 620
+SEEDED_WAYBILL_COUNT = 492
 
 
 # ───────────── 只读接口 ─────────────
@@ -28,7 +28,7 @@ def test_health(client):
     """健康检查：服务活着，且种子数据已灌入。"""
     body = client.get("/api/health").json()
     assert body["status"] == "ok"
-    assert body["lines"] == 20
+    assert body["lines"] == 16
     assert body["waybills"] == SEEDED_WAYBILL_COUNT
 
 
@@ -51,24 +51,24 @@ def test_health_hides_internals_by_default(client):
     """默认响应不暴露 pid/commit —— 内部信息不该随手给出。"""
     body = client.get("/api/health").json()
 
-    assert body == {"status": "ok", "lines": 20, "waybills": SEEDED_WAYBILL_COUNT}
+    assert body == {"status": "ok", "lines": 16, "waybills": SEEDED_WAYBILL_COUNT}
     assert "pid" not in body and "commit" not in body
 
 
 def test_lines(client):
-    """线网：20 条线、482 个站，且与 public/data/line_network.json 同源。"""
+    """线网：16 条线（纯地铁）、431 个站，与 public/data/line_network.json 同源。"""
     resp = client.get("/api/lines")
     assert resp.status_code == 200
 
     lines = resp.json()
-    assert len(lines) == 20
-    assert len({line["name"] for line in lines}) == 20  # 线名不重复
-    assert sum(len(line["stations"]) for line in lines) == 482
+    assert len(lines) == 16
+    assert len({line["name"] for line in lines}) == 16  # 线名不重复
+    assert sum(len(line["stations"]) for line in lines) == 431
     assert all(line["stations"] for line in lines)  # 没有空线路
 
 
 def test_waybills_contract_and_count(client):
-    """运单列表：620 条，且字段名必须是前端认的驼峰格式。"""
+    """运单列表：492 条，且字段名必须是前端认的驼峰格式。"""
     resp = client.get("/api/waybills")
     assert resp.status_code == 200
 
@@ -83,7 +83,7 @@ def test_waybills_contract_and_count(client):
 
 
 def test_waybills_filters(client):
-    """筛选器链路：620 → 32（线路）→ 6（品类）→ 2（月份）。"""
+    """筛选器链路：492 → 32（线路）→ 6（品类）→ 2（月份）。"""
     params = {"line": "地铁1号线(罗宝线)"}
     assert len(client.get("/api/waybills", params=params).json()) == 32
 

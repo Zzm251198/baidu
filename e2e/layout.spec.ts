@@ -7,7 +7,7 @@
  *
  * 覆盖你验证基线里唯一还没被自动化的两条：
  *   1. 布局：1920×929 下一屏，不出现纵向滚动
- *   2. 交互：数据页 620 → 32（线路）→ 6（品类）→ 2（月份）
+ *   2. 交互：数据页 492 → 32（线路）→ 6（品类）→ 2（月份）
  *
  * 注意：这几个数字在 mock 与 http 两种数据源下都成立（620/32/6/2 只取决于
  * 线网结构，与随机权重无关），所以断言可以写死。
@@ -83,8 +83,8 @@ test.describe('监控页 KPI 口径', () => {
 
     expect(text).toContain('186 辆'); // 活跃运输小车
     expect(text).toContain('在线 248 台中的 186 台'); // 明确区分「在线总数」与「在任务数」
-    expect(text).toContain('来自 620 条运单');
-    expect(text).toContain('20 条'); // 纳入建模线路
+    expect(text).toContain('来自 492 条运单');
+    expect(text).toContain('16 条'); // 纳入建模线路（纯地铁口径）
     expect(text).toContain('36 分钟'); // 平均运输时效
     expect(text).toContain('3 个异常'); // error + warning
   });
@@ -106,13 +106,13 @@ test.describe('监控页 KPI 口径', () => {
 test.describe('数据页筛选器：五个都真生效', () => {
   test.use({ viewport: VIEWPORT });
 
-  test('下钻链路 620 → 32 → 6 → 2', async ({ page }) => {
+  test('下钻链路 492 → 32 → 6 → 2', async ({ page }) => {
     await waitForDashboard(page);
     await page.getByRole('button', { name: '货运数据' }).click();
 
     const selects = page.locator('select');
     await expect(selects).toHaveCount(5);
-    await expect(page.getByText('命中 620 条运单')).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByText('命中 492 条运单')).toBeVisible({ timeout: 20_000 });
 
     // 1) 选线路：620 → 32（8 个站 × 4 个月）
     await selects.nth(0).selectOption({ label: '地铁1号线(罗宝线)' });

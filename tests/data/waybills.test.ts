@@ -1,6 +1,6 @@
 // 运单生成层测试。
 //
-// 为什么先测这一层：整个项目的数字（620 单、36 分钟、21012.7 吨）都从
+// 为什么先测这一层：整个项目的数字（492 单、36 分钟、16888.2 吨）都从
 // buildWaybills 派生。这一层一旦漂移，监控页每个卡片都会错，
 // 而错误极其隐蔽——页面不报错，只是数字悄悄变了。
 import { describe, expect, it } from 'vitest';
@@ -20,24 +20,24 @@ const STATIONS_PER_LINE = 8;
 const WAYBILLS = buildWaybills(LINES);
 
 describe('线网 → 运单：规模与确定性', () => {
-  it('线网为 20 条线 / 482 个站（与后端 line_network.json 同源）', () => {
-    expect(LINES).toHaveLength(20);
-    expect(LINES.reduce((sum, line) => sum + line.stations.length, 0)).toBe(482);
+  it('线网为 16 条线 / 431 个站（纯地铁口径，与后端 line_network.json 同源）', () => {
+    expect(LINES).toHaveLength(16);
+    expect(LINES.reduce((sum, line) => sum + line.stations.length, 0)).toBe(431);
   });
 
-  it('每条线取前 8 站 × 4 个月，合计 620 单', () => {
-    // 20 号线只有 4 站、6 号线支线 7 站，其余 18 条各取满 8 站
+  it('每条线取前 8 站 × 4 个月，合计 492 单', () => {
+    // 20 号线只有 4 站、6 号线支线 7 站，其余 14 条各取满 8 站
     const slots = LINES.reduce((sum, line) => sum + Math.min(STATIONS_PER_LINE, line.stations.length), 0);
-    expect(slots).toBe(155);
+    expect(slots).toBe(123);
     expect(WAYBILLS).toHaveLength(slots * MONTHS.length);
-    expect(WAYBILLS).toHaveLength(620);
+    expect(WAYBILLS).toHaveLength(492);
   });
 
-  it('按线路分单量：18 条各 32 单，支线 28，20 号线 16', () => {
+  it('按线路分单量：14 条各 32 单，支线 28，20 号线 16', () => {
     const counts = new Map<string, number>();
     WAYBILLS.forEach((w) => counts.set(w.lineName, (counts.get(w.lineName) || 0) + 1));
 
-    expect(counts.size).toBe(20);
+    expect(counts.size).toBe(16);
     LINES.forEach((line) => {
       const expected = Math.min(STATIONS_PER_LINE, line.stations.length) * MONTHS.length;
       expect(counts.get(line.name)).toBe(expected);
@@ -114,10 +114,10 @@ describe('筛选器：五个都真生效，且是 AND 语义', () => {
   const withFilters = (patch: Partial<DataFilters>) => filterWaybills(WAYBILLS, { ...EMPTY_FILTERS, ...patch });
 
   it('全 all 等价于不过滤', () => {
-    expect(filterWaybills(WAYBILLS, EMPTY_FILTERS)).toHaveLength(620);
+    expect(filterWaybills(WAYBILLS, EMPTY_FILTERS)).toHaveLength(492);
   });
 
-  it('数据页下钻链路：620 → 32（线路）→ 6（品类）→ 2（月份）', () => {
+  it('数据页下钻链路：492 → 32（线路）→ 6（品类）→ 2（月份）', () => {
     const byLine = withFilters({ line: '地铁1号线(罗宝线)' });
     expect(byLine).toHaveLength(32);
 

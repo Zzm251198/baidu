@@ -70,8 +70,8 @@ jobs:
 
           lines = load_line_definitions()
           rows = _build_waybills(lines)
-          assert len(lines) == 20, f"线网应为 20 条，实际 {len(lines)}"
-          assert len(rows) == 620, f"运单应为 620 条，实际 {len(rows)}"
+          assert len(lines) == 16, f"线网应为 16 条，实际 {len(lines)}"
+          assert len(rows) == 492, f"运单应为 492 条，实际 {len(rows)}"
           print(f"线网 {len(lines)} 条 / 运单 {len(rows)} 条 ✓")
           PY
 

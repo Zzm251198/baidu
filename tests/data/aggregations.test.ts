@@ -21,12 +21,12 @@ const LINES = lineNetworkJson as unknown as LineInfo[];
 const WAYBILLS = buildWaybills(LINES);
 
 describe('summarize：监控页四个 KPI 的唯一来源', () => {
-  it('620 单 / 21012.7 吨 / 平均 36 分钟 / 155 个站位', () => {
+  it('492 单 / 16888.2 吨 / 平均 36 分钟 / 123 个站位', () => {
     expect(summarize(WAYBILLS)).toEqual({
-      waybillCount: 620,
-      totalWeightTon: 21012.7,
+      waybillCount: 492,
+      totalWeightTon: 16888.2,
       avgDurationMin: 36,
-      stationCount: 155
+      stationCount: 123
     });
   });
 
@@ -66,8 +66,8 @@ describe('buildLineLoad：线路负荷', () => {
   const points = buildLineLoad(WAYBILLS, LINES);
 
   it('一条线一个点，短名不撞车', () => {
-    expect(points).toHaveLength(20);
-    expect(new Set(points.map((p) => p.name)).size).toBe(20);
+    expect(points).toHaveLength(16);
+    expect(new Set(points.map((p) => p.name)).size).toBe(16);
   });
 
   it('装载率 = 货量 / 运力，保留整数百分比', () => {
@@ -83,7 +83,7 @@ describe('buildLineLoad：线路负荷', () => {
 
   it('筛不到数据时回退全量线网，避免空图', () => {
     const empty = buildLineLoad([], LINES);
-    expect(empty).toHaveLength(20);
+    expect(empty).toHaveLength(16);
     expect(empty.every((p) => p.load === 0 && p.rate === 0)).toBe(true);
   });
 });
@@ -116,7 +116,7 @@ describe('buildTopStations：热门站点排行', () => {
   it('limit 可调，且取的是货量最大的前 N 个', () => {
     const top3 = buildTopStations(WAYBILLS, 3);
     expect(top3).toHaveLength(3);
-    const all = buildTopStations(WAYBILLS, 155);
+    const all = buildTopStations(WAYBILLS, 123);
     expect(top3).toEqual(all.slice(0, 3));
   });
 });

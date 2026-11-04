@@ -19,14 +19,14 @@ const sumBy = (rows: Waybill[]) => rows.reduce((sum, w) => sum + w.weightTon, 0)
 const round1 = (value: number) => Math.round(value * 10) / 10;
 
 describe('站点索引：覆盖率', () => {
-  it('按"站名"聚合：155 个站位 → 144 个不重复站名', () => {
+  it('按"站名"聚合：123 个站位 → 120 个不重复站名', () => {
     // 这里有个极易混淆的区别，正是测试帮我抓出来的：
-    //   站位（line × station）= 155 个，因为换乘站在 N 条线上各算一次；
-    //   站点（station 本身）    = 144 个，同名换乘站合并成一个。
+    //   站位（line × station）= 123 个，因为换乘站在 N 条线上各算一次；
+    //   站点（station 本身）    = 120 个，同名换乘站合并成一个。
     // 站点弹窗问的是"这个车站吞吐多少"，所以按站名聚合是对的。
     const distinctNames = new Set(WAYBILLS.map((w) => w.station)).size;
     expect(INDEX.size).toBe(distinctNames);
-    expect(INDEX.size).toBe(144);
+    expect(INDEX.size).toBe(120);
   });
 
   it('同名换乘站跨线合并：货量相加，而不是后写的覆盖先写的', () => {
@@ -49,9 +49,9 @@ describe('站点索引：覆盖率', () => {
     }
   });
 
-  it('每个站记录的运单条数之和 = 620', () => {
+  it('每个站记录的运单条数之和 = 492', () => {
     const total = Array.from(INDEX.values()).reduce((sum, s) => sum + s.waybillCount, 0);
-    expect(total).toBe(620);
+    expect(total).toBe(492);
   });
 
   it('空输入返回空索引', () => {

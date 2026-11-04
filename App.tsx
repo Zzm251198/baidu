@@ -13,6 +13,8 @@ import { ToastStack, useToasts } from './components/Toast';
 import { AlgorithmCompare } from './components/AlgorithmCompare';
 import { PlanCompareTable } from './components/PlanCompareTable';
 import { buildCandidates, dedupeRoutes, type PlanResult } from './src/analysis/planCompare';
+// 权威线网（与后端共用同一份文件）：纯地铁 16 条线
+import lineNetworkJson from './public/data/line_network.json';
 
 /** 把后端 riskAssessment 压成一个短标签，供多方案对比表显示 */
 function riskLabel(risk: any): string {
@@ -141,7 +143,15 @@ const App: React.FC = () => {
 
   // 注意：仿真页的下拉选项统一由 lineStationsByName 提供（地图失联时回退数据源线网）。
 
-  // 地图推导出的线网（作为数据源的兜底；保持引用稳定，避免触发数据源重复加载）
+  // 权威线网：与后端共用 public/data/line_network.json（纯地铁口径，2026-11 起
+  // 云巴/城际/有轨不接入建模）。mock 运单、设计运力、下拉全部以它为准——
+  // 不再喂地图推导结果（主线路归并会让每线站表缺换乘站，设计运力口径不准）。
+  const canonicalLines = useMemo<LineInfo[]>(
+    () => (lineNetworkJson as unknown as Array<{ name: string; stations: string[] }>),
+    []
+  );
+
+  // 地图推导出的线网（仅作 line_network.json 缺失时的最后兜底；保持引用稳定）
   const mapLineInfos = useMemo<LineInfo[]>(() => {
     // 显式指定 entries 的元素类型：不加 <string[]> 时，TS 5.8 在这处
     // （useMemo<LineInfo[]> 的上下文里）会把 T 推断成 unknown，
@@ -158,14 +168,16 @@ const App: React.FC = () => {
     }));
   }, [subwayStationsByLine]);
 
-  // 统一数据入口：默认本地模拟，VITE_DATA_SOURCE=http 时走后端接口
-  const { bundle, loading: dataLoading, error: dataError, sourceKind } = useDataBundle(mapLineInfos);
+  // 统一数据入口：默认本地模拟，VITE_DATA_SOURCE=http 时走后端接口。
+  // mock 优先用权威线网；仅当权威文件意外缺失时才退回地图推导结果
+  const dataSeedLines = canonicalLines.length > 0 ? canonicalLines : mapLineInfos;
+  const { bundle, loading: dataLoading, error: dataError, sourceKind } = useDataBundle(dataSeedLines);
 
   // 真正用于聚合的线网：数据源给了就用它的（含各线设计运力所需的全站列表），
-  // 否则用地图推导结果。注意不能反过来喂给 useDataBundle，否则会形成加载循环。
+  // 否则用权威线网兜底。注意不能反过来喂给 useDataBundle，否则会形成加载循环。
   const lineInfos = useMemo<LineInfo[]>(
-    () => (bundle?.lines && bundle.lines.length > 0 ? bundle.lines : mapLineInfos),
-    [bundle?.lines, mapLineInfos]
+    () => (bundle?.lines && bundle.lines.length > 0 ? bundle.lines : dataSeedLines),
+    [bundle?.lines, dataSeedLines]
   );
 
   // 线路构成的说明必须跟着实际线网走：mock 模式含云巴/有轨/城际，后端模式只有地铁骨干线
