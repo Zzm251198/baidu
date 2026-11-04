@@ -1,4 +1,4 @@
-import React, { useEffect, useId, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
 import type { StationStat } from '../src/data/stationStats';
 import type { StationNode } from './SubwayMap';
 import { StationLogisticsPanel, buildSampleStationData, type StationPanelData } from './StationLogisticsPanel';
@@ -109,13 +109,29 @@ function loadBMapJsApi(): Promise<any> {
     return window.__bmapLoaderPromise;
 }
 
+/**
+ * 物流中心 → 地铁站的接驳运输路线（供后续路径算法接入：算出结果喂进来即可绘制）。
+ * loadFactor 为线路/站点负载率（0~1）：<0.7 绿 / <0.9 琥珀 / ≥0.9 红，缺省蓝。
+ */
+export interface WarehouseRoute {
+    /** 起点物流中心名（对应仓库层 POI） */
+    warehouse: string;
+    /** 终点地铁站名 */
+    station: string;
+    /** 折线路径（BD-09 经纬度） */
+    path: Array<{ lng: number; lat: number }>;
+    loadFactor?: number;
+}
+
 interface GeoMetroMapProps {
     onMapLoaded?: (stations: StationNode[]) => void;
     /** 站点货运统计索引（由运单集聚合）；未命中的站点退化为示例值 */
     stationIndex?: Map<string, StationStat>;
+    /** 运输路线结果（算法输出）；变化时自动重绘 */
+    warehouseRoutes?: WarehouseRoute[];
 }
 
-const GeoMetroMapComponent: React.FC<GeoMetroMapProps> = ({ onMapLoaded, stationIndex }) => {
+const GeoMetroMapComponent: React.FC<GeoMetroMapProps> = ({ onMapLoaded, stationIndex, warehouseRoutes }) => {
     const rawId = useId();
     const containerId = `geo-map-${rawId.replace(/[^a-zA-Z0-9]/g, '')}`;
     const containerRef = useRef<HTMLDivElement>(null);
@@ -123,9 +139,80 @@ const GeoMetroMapComponent: React.FC<GeoMetroMapProps> = ({ onMapLoaded, station
     stationIndexRef.current = stationIndex;
     const onMapLoadedRef = useRef(onMapLoaded);
     onMapLoadedRef.current = onMapLoaded;
+    const routesRef = useRef(warehouseRoutes);
+    routesRef.current = warehouseRoutes;
 
     const [selectedStation, setSelectedStation] = useState<{ name: string; data: StationPanelData } | null>(null);
     const [mapError, setMapError] = useState<string | null>(null);
+    // 实时路况图层开关（默认关：路况红黄绿与彩色线网叠加较花，演示需要时一键打开）
+    const [trafficOn, setTrafficOn] = useState(false);
+    const trafficOnRef = useRef(trafficOn);
+    trafficOnRef.current = trafficOn;
+
+    // 地图实例与图层引用：初始化 effect 写入，路况/路线 effect 读取
+    const mapRef = useRef<any>(null);
+    const trafficLayerRef = useRef<any>(null);
+    const routeOverlaysRef = useRef<any[]>([]);
+
+    /** 清掉现有路线覆盖物 */
+    const clearRoutes = useCallback(() => {
+        const map = mapRef.current;
+        for (const overlay of routeOverlaysRef.current) {
+            try {
+                map?.removeOverlay(overlay);
+            } catch {
+                // 地图已销毁时忽略
+            }
+        }
+        routeOverlaysRef.current = [];
+    }, []);
+
+    /** 画接驳路线：虚线 + 终点方位角箭头（BMap.Symbol/IconSequence 是 GL 版专属，
+     *  经典版没有——箭头用自绘 SVG 三角按航向旋转实现），颜色按负载率分级（缺省蓝） */
+    const drawRoutes = useCallback((routes?: WarehouseRoute[]) => {
+        const map = mapRef.current;
+        const BMap = window.BMap;
+        if (!map || !BMap || !routes?.length) return;
+        const routeColor = (lf?: number) => lf == null ? '#2563EB'
+            : lf < 0.7 ? '#10B981' : lf < 0.9 ? '#F59E0B' : '#EF4444';
+        const arrowCache = new Map<string, any>();
+        const arrowIcon = (color: string, deg: number) => {
+            const bucket = Math.round(deg / 5) * 5;
+            const key = `${color}-${bucket}`;
+            if (arrowCache.has(key)) return arrowCache.get(key);
+            const size = 13;
+            const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 13 13"><g transform="rotate(${bucket} 6.5 6.5)"><path d="M12 6.5 L4 2.5 L6 6.5 L4 10.5 Z" fill="${color}" stroke="#ffffff" stroke-width="1"/></g></svg>`;
+            const icon = new BMap.Icon(
+                `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`,
+                new BMap.Size(size, size),
+                { anchor: new BMap.Size(size / 2, size / 2) }
+            );
+            arrowCache.set(key, icon);
+            return icon;
+        };
+        for (const route of routes) {
+            const pts = (route.path || [])
+                .filter((p) => Number.isFinite(p?.lng) && Number.isFinite(p?.lat))
+                .map((p) => new BMap.Point(p.lng, p.lat));
+            if (pts.length < 2) continue;
+            const color = routeColor(route.loadFactor);
+            const polyline = new BMap.Polyline(pts, {
+                strokeColor: color,
+                strokeWeight: 5,
+                strokeOpacity: 0.9,
+                strokeStyle: 'dashed'
+            });
+            map.addOverlay(polyline);
+            routeOverlaysRef.current.push(polyline);
+            // 终点箭头：按最后两个点的航向旋转（经度按 cos(纬度) 折算屏幕比例）
+            const a = route.path[route.path.length - 2];
+            const b = route.path[route.path.length - 1];
+            const deg = Math.atan2(-(b.lat - a.lat), (b.lng - a.lng) * Math.cos((b.lat * Math.PI) / 180)) * 180 / Math.PI;
+            const arrow = new BMap.Marker(pts[pts.length - 1], { icon: arrowIcon(color, deg) });
+            map.addOverlay(arrow);
+            routeOverlaysRef.current.push(arrow);
+        }
+    }, []);
 
     useEffect(() => {
         let cancelled = false;
@@ -151,9 +238,18 @@ const GeoMetroMapComponent: React.FC<GeoMetroMapProps> = ({ onMapLoaded, station
                 if (cancelled || !containerRef.current) return;
 
                 map = new BMap.Map(containerId);
+                mapRef.current = map;
+                // 实时路况图层：创建但不挂载，等右上角开关按需 add/removeTileLayer
+                trafficLayerRef.current = new BMap.TrafficLayer();
                 // dev 探针/E2E 用：拿实例换算像素坐标（仅开发构建，生产被裁掉）
                 if (import.meta.env.DEV) {
                     (window as any).__geoMap = map;
+                    // 算法联调入口：算法出结果后，控制台先看效果再正式接 prop
+                    // __geoDrawRoutes([{warehouse:'…', station:'…', path:[{lng,lat},…], loadFactor:0.8}])
+                    (window as any).__geoDrawRoutes = (routes: WarehouseRoute[]) => {
+                        clearRoutes();
+                        drawRoutes(routes);
+                    };
                 }
                 map.centerAndZoom(new BMap.Point(114.06, 22.55), 12);
                 map.enableScrollWheelZoom(true);
@@ -331,6 +427,12 @@ const GeoMetroMapComponent: React.FC<GeoMetroMapProps> = ({ onMapLoaded, station
                     map.setViewport(allPoints, { margins: [30, 30, 30, 30] });
                 }
                 applyZoomStyles();
+
+                // 初始化时同步开关状态与已有路线（effect 首跑时地图可能未就绪）
+                if (trafficOnRef.current && trafficLayerRef.current) {
+                    map.addTileLayer(trafficLayerRef.current);
+                }
+                drawRoutes(routesRef.current);
             })
             .catch((err: Error) => {
                 if (!cancelled) setMapError(err?.message || '地图加载失败');
@@ -342,12 +444,30 @@ const GeoMetroMapComponent: React.FC<GeoMetroMapProps> = ({ onMapLoaded, station
                 map.removeEventListener('zoomend', zoomHandler);
             }
             map = null;
+            mapRef.current = null;
+            trafficLayerRef.current = null;
+            routeOverlaysRef.current = [];
             labels = [];
             if (containerRef.current) {
                 containerRef.current.innerHTML = '';
             }
         };
-    }, [containerId]);
+    }, [containerId, clearRoutes, drawRoutes]);
+
+    // 实时路况开关：图层挂载/摘除
+    useEffect(() => {
+        const map = mapRef.current;
+        const layer = trafficLayerRef.current;
+        if (!map || !layer) return;
+        if (trafficOn) map.addTileLayer(layer);
+        else map.removeTileLayer(layer);
+    }, [trafficOn]);
+
+    // 运输路线 prop 变化时重绘（算法输出更新 → 地图自动跟随）
+    useEffect(() => {
+        clearRoutes();
+        drawRoutes(warehouseRoutes);
+    }, [warehouseRoutes, clearRoutes, drawRoutes]);
 
     return (
         <div className="subway-map-shell relative h-full w-full overflow-hidden">
@@ -360,6 +480,19 @@ const GeoMetroMapComponent: React.FC<GeoMetroMapProps> = ({ onMapLoaded, station
             <div className="subway-map-grid" aria-hidden="true" />
             <div className="subway-map-vignette" aria-hidden="true" />
             <div className="subway-map-caption">真实地理底图 · 百度地图</div>
+            {/* 实时路况开关：道路红黄绿实时流量（运输路线规划的参考层），默认关避免与彩色线网叠加过花 */}
+            <button
+                type="button"
+                onClick={() => setTrafficOn((v) => !v)}
+                className={`absolute right-3 top-3 z-[3] flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-semibold backdrop-blur-sm transition-colors ${
+                    trafficOn
+                        ? 'bg-emerald-600/90 border-emerald-600 text-white shadow-sm'
+                        : 'bg-white/85 border-black/10 text-slate-600 hover:border-emerald-500/40'
+                }`}
+            >
+                <i className="fa fa-road" aria-hidden="true"></i>
+                实时路况{trafficOn ? ' · 开' : ''}
+            </button>
             {/* 图例：站点圆点 vs 仓库三角形，演示时一眼分清两层 */}
             <div className="absolute left-3 bottom-3 z-[2] flex gap-2 pointer-events-none">
                 <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/85 border border-black/10 text-[10px] text-slate-600 backdrop-blur-sm">
@@ -369,6 +502,12 @@ const GeoMetroMapComponent: React.FC<GeoMetroMapProps> = ({ onMapLoaded, station
                     <i className="inline-block w-0 h-0 border-l-[5px] border-r-[5px] border-b-[9px] border-l-transparent border-r-transparent border-b-amber-500" />
                     物流仓库 {warehouses.length}
                 </span>
+                {warehouseRoutes && warehouseRoutes.length > 0 && (
+                    <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/85 border border-black/10 text-[10px] text-slate-600 backdrop-blur-sm">
+                        <i className="inline-block w-3 border-t-2 border-dashed border-blue-600" />
+                        接驳路线 {warehouseRoutes.length} 条
+                    </span>
+                )}
             </div>
             {selectedStation && (
                 <StationLogisticsPanel
