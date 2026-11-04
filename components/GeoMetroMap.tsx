@@ -3,6 +3,7 @@ import type { StationStat } from '../src/data/stationStats';
 import type { StationNode } from './SubwayMap';
 import { StationLogisticsPanel, buildSampleStationData, type StationPanelData } from './StationLogisticsPanel';
 import networkJson from '../src/data/szMetroNetwork.json';
+import warehousesJson from '../src/data/szLogisticsWarehouses.json';
 
 /**
  * 监控页真实地图：百度地图 JS API v3.0 真实深圳底图 + 真实走位的地铁线网。
@@ -39,6 +40,16 @@ interface MetroStationJson {
 
 // 42KB 的 JSON 直接推断字面量类型会很重，收窄成显式接口
 const network = networkJson as unknown as { source: string; lines: MetroLineJson[]; stations: MetroStationJson[] };
+
+interface WarehouseJson {
+    name: string;
+    lng: number;
+    lat: number;
+    addr?: string;
+}
+
+// 真实物流仓库 POI（百度地点检索烘焙，BD-09 坐标，可直接构造 BMap.Point）
+const warehouses = (warehousesJson as unknown as { warehouses: WarehouseJson[] }).warehouses;
 
 declare global {
     interface Window {
@@ -209,6 +220,26 @@ const GeoMetroMapComponent: React.FC<GeoMetroMapProps> = ({ onMapLoaded, station
                     allPoints.push(point);
                 }
 
+                // 物流仓库层：真实 POI（物流园/仓储/分拨中心/货运站），三角形图标与站点圆点同尺寸。
+                // 后于站点绘制 → 三角形压在圆点之上，密集区不被线网站点淹没
+                const warehouseIcon = (() => {
+                    const size = 15;
+                    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}"><path d="M${size / 2} 1 L${size - 1} ${size - 2} L1 ${size - 2} Z" fill="#F59E0B" stroke="#ffffff" stroke-width="1.5" stroke-linejoin="round"/></svg>`;
+                    return new BMap.Icon(
+                        `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`,
+                        new BMap.Size(size, size),
+                        { anchor: new BMap.Size(size / 2, size / 2) }
+                    );
+                })();
+                for (const wh of warehouses) {
+                    if (!Number.isFinite(wh.lng) || !Number.isFinite(wh.lat)) continue;
+                    const marker = new BMap.Marker(new BMap.Point(wh.lng, wh.lat), {
+                        icon: warehouseIcon,
+                        title: `${wh.name}${wh.addr ? `（${wh.addr}）` : ''}`
+                    });
+                    map.addOverlay(marker);
+                }
+
                 // 站名标注：城市级缩放不显示（395 个站全开会糊成一片），放大到街区级再出现
                 labels = network.stations
                     .filter((st) => st.lines.length > 1 && pointByName.has(st.name))
@@ -273,6 +304,16 @@ const GeoMetroMapComponent: React.FC<GeoMetroMapProps> = ({ onMapLoaded, station
             <div className="subway-map-grid" aria-hidden="true" />
             <div className="subway-map-vignette" aria-hidden="true" />
             <div className="subway-map-caption">真实地理底图 · 百度地图</div>
+            {/* 图例：站点圆点 vs 仓库三角形，演示时一眼分清两层 */}
+            <div className="absolute left-3 bottom-3 z-[2] flex gap-2 pointer-events-none">
+                <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/85 border border-black/10 text-[10px] text-slate-600 backdrop-blur-sm">
+                    <i className="inline-block w-2 h-2 rounded-full bg-white border border-black/25" />地铁站点
+                </span>
+                <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/85 border border-black/10 text-[10px] text-slate-600 backdrop-blur-sm">
+                    <i className="inline-block w-0 h-0 border-l-[5px] border-r-[5px] border-b-[9px] border-l-transparent border-r-transparent border-b-amber-500" />
+                    物流仓库 {warehouses.length}
+                </span>
+            </div>
             {selectedStation && (
                 <StationLogisticsPanel
                     station={selectedStation}
