@@ -60,17 +60,25 @@ declare global {
 
 function loadBMapJsApi(): Promise<any> {
     if (window.BMap) return Promise.resolve(window.BMap);
+    // 空 AK（CI / 未配置环境）直接短路：不发脚本请求。
+    // 曾经的坑：空 AK 也发请求，海外 CI 到百度慢/被拒，脚本晚于 15s 超时才回来，
+    // 回调已被删除 → 百度调用时抛 ReferenceError → E2E"无未捕获异常"用例挂。
+    if (!BMAP_AK) return Promise.reject(new Error('未配置百度地图 AK（VITE_BMAP_SUBWAY_AK）'));
     if (window.__bmapLoaderPromise) return window.__bmapLoaderPromise;
 
+    let settled = false;
     window.__bmapLoaderPromise = new Promise((resolve, reject) => {
         const callbackName = `__initBMapCb${Math.floor(Math.random() * 1e6)}`;
+        // 回调不 delete：慢网络下脚本晚于超时到达时百度仍会调用它，
+        // 删掉会变成未捕获 ReferenceError（页面级异常，测试能抓到）
         (window as any)[callbackName] = () => {
+            if (settled) return;
+            settled = true;
             if (window.BMap) {
                 resolve(window.BMap);
             } else {
                 reject(new Error('脚本已回调但 window.BMap 不存在'));
             }
-            delete (window as any)[callbackName];
         };
 
         const existing = document.getElementById(BMAP_SCRIPT_ID);
@@ -79,12 +87,17 @@ function loadBMapJsApi(): Promise<any> {
         const script = document.createElement('script');
         script.id = BMAP_SCRIPT_ID;
         script.src = `https://api.map.baidu.com/api?v=3.0&ak=${BMAP_AK}&callback=${callbackName}`;
-        script.onerror = () => reject(new Error('脚本请求失败（网络不可达或 AK 校验不过）'));
+        script.onerror = () => {
+            if (settled) return;
+            settled = true;
+            reject(new Error('脚本请求失败（网络不可达或 AK 校验不过）'));
+        };
         document.head.appendChild(script);
 
         // JSONP 卡死兜底
         window.setTimeout(() => {
-            if (window.BMap) return;
+            if (settled) return;
+            settled = true;
             reject(new Error('脚本加载超时（15s）'));
         }, 15_000);
     }).catch((err) => {
