@@ -174,6 +174,19 @@ const GeoMetroMapComponent: React.FC<GeoMetroMapProps> = ({ onMapLoaded, station
 
                 const colorByLabel = new Map<string, string>(network.lines.map((l) => [l.label, l.color]));
 
+                /* ── 缩放自适应：两层图标与线宽共用一套系数，随地图缩放统一变大/变小 ──
+                 * 背景：BMap 覆盖物是固定屏幕像素，缩到全市视野时 454 个标记挤成一团。
+                 * 方案：zoomend 时重算 factor（zoom 10→0.55 … 13→1.0 … 17+→1.6），
+                 *       图标尺寸、线宽、低级别站点显隐全部由它统一驱动。
+                 *       zoom < 12 时隐藏非换乘站（293 个小站是拥挤的主要来源）。 */
+                const BASE = { station: 15, transfer: 20, warehouse: 15, casing: 7, line: 4 };
+                const zoomFactor = (z: number) => Math.min(1.6, Math.max(0.55, 0.55 + (z - 10) * 0.15));
+                const scaled = (base: number, f: number) => Math.max(8, Math.round(base * f));
+
+                const linePairs: { casing: any; colored: any }[] = [];
+                const stationMarks: { marker: any; color: string; big: boolean }[] = [];
+                const warehouseMarks: { marker: any }[] = [];
+
                 // 线路：白色描边打底 + 官方线色覆盖（真实走位 = 相邻站坐标直连）
                 const allPoints: any[] = [];
                 for (const line of network.lines) {
@@ -182,16 +195,19 @@ const GeoMetroMapComponent: React.FC<GeoMetroMapProps> = ({ onMapLoaded, station
                         .filter(Boolean);
                     if (pts.length < 2) continue;
                     if (line.loop) pts.push(pts[0]);
-                    map.addOverlay(new BMap.Polyline(pts, {
+                    const casing = new BMap.Polyline(pts, {
                         strokeColor: '#ffffff',
-                        strokeWeight: 7,
+                        strokeWeight: BASE.casing,
                         strokeOpacity: 0.85
-                    }));
-                    map.addOverlay(new BMap.Polyline(pts, {
+                    });
+                    const colored = new BMap.Polyline(pts, {
                         strokeColor: line.color,
-                        strokeWeight: 4,
+                        strokeWeight: BASE.line,
                         strokeOpacity: 0.95
-                    }));
+                    });
+                    map.addOverlay(casing);
+                    map.addOverlay(colored);
+                    linePairs.push({ casing, colored });
                     allPoints.push(...pts);
                 }
 
@@ -199,10 +215,9 @@ const GeoMetroMapComponent: React.FC<GeoMetroMapProps> = ({ onMapLoaded, station
                 // 注意经典版 BMap 没有 CircleMarker（那是 BMapGL 的 API），
                 // 圆点用 Marker + 内联 SVG 图标实现（每线一色，换乘站加大）
                 const dotIconCache = new Map<string, any>();
-                const dotIcon = (color: string, big: boolean) => {
-                    const key = `${color}-${big}`;
+                const dotIcon = (color: string, big: boolean, size: number) => {
+                    const key = `${color}-${big}-${size}`;
                     if (dotIconCache.has(key)) return dotIconCache.get(key);
-                    const size = big ? 20 : 15;
                     const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}"><circle cx="${size / 2}" cy="${size / 2}" r="${size / 2 - 1.5}" fill="#ffffff" stroke="${color}" stroke-width="${big ? 3 : 2.5}"/></svg>`;
                     const icon = new BMap.Icon(
                         `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`,
@@ -210,6 +225,18 @@ const GeoMetroMapComponent: React.FC<GeoMetroMapProps> = ({ onMapLoaded, station
                         { anchor: new BMap.Size(size / 2, size / 2) }
                     );
                     dotIconCache.set(key, icon);
+                    return icon;
+                };
+                const warehouseIconCache = new Map<number, any>();
+                const warehouseIcon = (size: number) => {
+                    if (warehouseIconCache.has(size)) return warehouseIconCache.get(size);
+                    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}"><path d="M${size / 2} 1 L${size - 1} ${size - 2} L1 ${size - 2} Z" fill="#F59E0B" stroke="#ffffff" stroke-width="1.5" stroke-linejoin="round"/></svg>`;
+                    const icon = new BMap.Icon(
+                        `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`,
+                        new BMap.Size(size, size),
+                        { anchor: new BMap.Size(size / 2, size / 2) }
+                    );
+                    warehouseIconCache.set(size, icon);
                     return icon;
                 };
                 const pickStation = (name: string) => {
@@ -224,33 +251,27 @@ const GeoMetroMapComponent: React.FC<GeoMetroMapProps> = ({ onMapLoaded, station
                     const point = pointByName.get(st.name);
                     if (!point) continue;
                     const isTransfer = st.lines.length > 1;
+                    const color = colorByLabel.get(st.lines[0]) ?? '#334155';
                     const marker = new BMap.Marker(point, {
-                        icon: dotIcon(colorByLabel.get(st.lines[0]) ?? '#334155', isTransfer),
+                        icon: dotIcon(color, isTransfer, isTransfer ? BASE.transfer : BASE.station),
                         title: st.name
                     });
                     marker.addEventListener('click', () => pickStation(st.name));
                     map.addOverlay(marker);
+                    stationMarks.push({ marker, color, big: isTransfer });
                     allPoints.push(point);
                 }
 
                 // 物流仓库层：真实 POI（物流园/仓储/分拨中心/货运站），三角形图标与站点圆点同尺寸。
                 // 后于站点绘制 → 三角形压在圆点之上，密集区不被线网站点淹没
-                const warehouseIcon = (() => {
-                    const size = 15;
-                    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}"><path d="M${size / 2} 1 L${size - 1} ${size - 2} L1 ${size - 2} Z" fill="#F59E0B" stroke="#ffffff" stroke-width="1.5" stroke-linejoin="round"/></svg>`;
-                    return new BMap.Icon(
-                        `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`,
-                        new BMap.Size(size, size),
-                        { anchor: new BMap.Size(size / 2, size / 2) }
-                    );
-                })();
                 for (const wh of warehouses) {
                     if (!Number.isFinite(wh.lng) || !Number.isFinite(wh.lat)) continue;
                     const marker = new BMap.Marker(new BMap.Point(wh.lng, wh.lat), {
-                        icon: warehouseIcon,
+                        icon: warehouseIcon(BASE.warehouse),
                         title: `${wh.name}${wh.addr ? `（${wh.addr}）` : ''}`
                     });
                     map.addOverlay(marker);
+                    warehouseMarks.push({ marker });
                 }
 
                 // 站名标注：城市级缩放不显示（395 个站全开会糊成一片），放大到街区级再出现
@@ -281,13 +302,35 @@ const GeoMetroMapComponent: React.FC<GeoMetroMapProps> = ({ onMapLoaded, station
                     const show = map.getZoom() >= 13;
                     labels.forEach((l) => (show ? l.show() : l.hide()));
                 };
-                zoomHandler = syncLabels;
+                // 统一缩放：站点/仓库图标尺寸 + 线宽 + 低级别小站显隐
+                const applyZoomStyles = () => {
+                    const z = map.getZoom();
+                    const f = zoomFactor(z);
+                    const hideMinor = z < 12;
+                    for (const { marker, color, big } of stationMarks) {
+                        marker.setIcon(dotIcon(color, big, scaled(big ? BASE.transfer : BASE.station, f)));
+                        if (hideMinor && !big) marker.hide();
+                        else marker.show();
+                    }
+                    for (const { marker } of warehouseMarks) {
+                        marker.setIcon(warehouseIcon(scaled(BASE.warehouse, f)));
+                    }
+                    for (const { casing, colored } of linePairs) {
+                        casing.setStrokeWeight(Math.max(1.5, Math.round(BASE.casing * f)));
+                        colored.setStrokeWeight(Math.max(1.5, Math.round(BASE.line * f)));
+                    }
+                };
+                zoomHandler = () => {
+                    applyZoomStyles();
+                    syncLabels();
+                };
                 map.addEventListener('zoomend', zoomHandler);
 
                 // 视野自适应：一键框住全网
                 if (allPoints.length > 0) {
                     map.setViewport(allPoints, { margins: [30, 30, 30, 30] });
                 }
+                applyZoomStyles();
             })
             .catch((err: Error) => {
                 if (!cancelled) setMapError(err?.message || '地图加载失败');
