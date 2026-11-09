@@ -47,6 +47,7 @@ import {
   buildLineLoad,
   buildLineRanking,
   buildTopStations,
+  shortenLineName,
   summarize
 } from './src/data/aggregations';
 import { buildStationIndex } from './src/data/stationStats';
@@ -301,6 +302,26 @@ const App: React.FC = () => {
   const topStations = useMemo(() => buildTopStations(waybills), [waybills]);
   // 站点弹窗用同一份运单集聚合，避免出现"地图弹窗和图表对不上"
   const stationIndex = useMemo(() => buildStationIndex(waybills), [waybills]);
+
+  // 运输数据独立弹层的全量排行：站点吞吐降序 + 主线路短名（供 RightPanel 展示）
+  const stationRanking = useMemo(() => {
+    const primaryLine = new Map<string, string>();
+    for (const [lineName, stations] of Object.entries(lineStationsByName)) {
+      const short = shortenLineName(lineName);
+      for (const stationName of stations) {
+        if (!primaryLine.has(stationName)) primaryLine.set(stationName, short);
+      }
+    }
+    return [...stationIndex.values()]
+      .map((stat) => ({
+        station: stat.station,
+        lineLabel: primaryLine.get(stat.station) ?? '—',
+        volumeTon: stat.volumeTon,
+        waybillCount: stat.waybillCount,
+        congestionIndex: stat.congestionIndex
+      }))
+      .sort((a, b) => b.volumeTon - a.volumeTon);
+  }, [stationIndex, lineStationsByName]);
 
   // 换线路后，原先选中的车站/运单号可能已不在候选里 → 自动回落，避免"永远 0 条"
   useEffect(() => {
@@ -772,7 +793,7 @@ const App: React.FC = () => {
                 </section>
               </div>
               <div className="lg:col-span-2 h-full flex flex-col overflow-hidden">
-                <RightPanel topStations={topStations} alerts={alerts} />
+                <RightPanel topStations={topStations} alerts={alerts} stationRanking={stationRanking} />
               </div>
             </div>
           </div>

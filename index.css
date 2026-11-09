@@ -375,6 +375,11 @@ body {
   gap: 5px;
 }
 
+/* 独立弹层（全车队明细）里用 6 列：空间大，248 辆也不拖长 */
+.station-agv-grid--wide {
+  grid-template-columns: repeat(6, 1fr);
+}
+
 .station-agv-chip {
   min-width: 0;
   padding: 4px 6px;
