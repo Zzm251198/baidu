@@ -24,12 +24,14 @@ from typing import Annotated
 from fastapi import FastAPI, Header, HTTPException, Query, Response
 from fastapi.middleware.cors import CORSMiddleware
 
-from .db import get_conn, init_db
+from .db import get_conn, init_db, load_agv_pool_agvs
 from .schemas import (
     AlertOut,
+    AgvVehicleOut,
     CostBreakdown,
     CostRequest,
     FleetOut,
+    FleetVehiclesOut,
     LineOut,
     SimulateRequest,
     SimulationRunOut,
@@ -282,6 +284,29 @@ def get_fleet() -> FleetOut:
         charging=row["charging"],
         battery=json.loads(row["battery"]),
     )
+
+
+@app.get("/api/fleet/vehicles", response_model=FleetVehiclesOut)
+def list_fleet_vehicles(station: str | None = Query(default=None, description="按站点过滤（homeStation 精确匹配）")) -> FleetVehiclesOut:
+    """车队逐车明细——真实小车数据的接入窗口。
+
+    现阶段从 agv_pool.json 供数（与 /api/fleet 聚合同源）；
+    未来接入真实车队时替换 db.load_agv_pool_agvs 的实现即可，本接口契约不变。
+    """
+    agvs = load_agv_pool_agvs()
+    if station:
+        agvs = [a for a in agvs if a.get("homeStation") == station]
+    items = [
+        AgvVehicleOut(
+            id=str(a.get("id", "")),
+            homeStation=str(a.get("homeStation", "")),
+            status=str(a.get("status", "idle")),
+            battery=int(a.get("battery", 0)),
+            capacityKg=int(a.get("capacityKg", 0)),
+        )
+        for a in agvs
+    ]
+    return FleetVehiclesOut(count=len(items), agvs=items)
 
 
 @app.get("/api/alerts", response_model=list[AlertOut])

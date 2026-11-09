@@ -124,6 +124,28 @@ def test_fleet(client):
     assert len(body["battery"]) == 3
 
 
+def test_fleet_vehicles(client):
+    """逐车明细（数据接入窗口）：与聚合口径同源，字段为前端认的驼峰。"""
+    body = client.get("/api/fleet/vehicles").json()
+
+    assert body["count"] == 248
+    assert len(body["agvs"]) == 248
+    first = body["agvs"][0]
+    assert set(first) == {"id", "homeStation", "status", "battery", "capacityKg"}
+    assert first["status"] in {"idle", "busy", "charging"}
+    assert 0 <= first["battery"] <= 100
+
+    # 按站点过滤：岗厦北 24 台（与车池一致）
+    filtered = client.get("/api/fleet/vehicles", params={"station": "岗厦北"}).json()
+    assert filtered["count"] == 24
+    assert all(a["homeStation"] == "岗厦北" for a in filtered["agvs"])
+
+    # 过滤不存在的站 → 空列表而不是 404（前端按"未部署"渲染）
+    empty = client.get("/api/fleet/vehicles", params={"station": "不存在的站"}).json()
+    assert empty["count"] == 0
+    assert empty["agvs"] == []
+
+
 def test_alerts(client):
     """告警：6 条，其中 error + warning 共 3 条（监控卡片上的"异常"数）。"""
     alerts = client.get("/api/alerts").json()

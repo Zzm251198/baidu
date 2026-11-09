@@ -38,6 +38,7 @@ import {
 import { ALERTS as MOCK_ALERTS, AGV_FLEET, countAbnormalAlerts } from './src/data/mockFleet';
 import { dataSourceLabel } from './src/data/source';
 import { useDataBundle } from './src/hooks/useDataBundle';
+import { useFleetVehicles } from './src/hooks/useFleetVehicles';
 import type { Waybill } from './src/data/types';
 import {
   buildCategoryPie,
@@ -172,6 +173,8 @@ const App: React.FC = () => {
   // mock 优先用权威线网；仅当权威文件意外缺失时才退回地图推导结果
   const dataSeedLines = canonicalLines.length > 0 ? canonicalLines : mapLineInfos;
   const { bundle, loading: dataLoading, error: dataError, sourceKind } = useDataBundle(dataSeedLines);
+  // 车队逐车明细（按站点分组）：站点弹窗"该站小车"分区；http 模式走后端接入窗口，失败回退本地车池
+  const fleetVehicles = useFleetVehicles();
 
   // 真正用于聚合的线网：数据源给了就用它的（含各线设计运力所需的全站列表），
   // 否则用权威线网兜底。注意不能反过来喂给 useDataBundle，否则会形成加载循环。
@@ -764,7 +767,7 @@ const App: React.FC = () => {
                   <div className="monitor-map-frame flex-1 min-h-0">
                     {/* 监控页用真实底图地图（真实深圳地图 + 真实走位线网）；
                         仿真页仍用 SubwayMap 示意图（查路依赖 BMapSub） */}
-                    <GeoMetroMap onMapLoaded={setMapStations} stationIndex={stationIndex} />
+                    <GeoMetroMap onMapLoaded={setMapStations} stationIndex={stationIndex} fleetByStation={fleetVehicles.byStation} />
                   </div>
                 </section>
               </div>

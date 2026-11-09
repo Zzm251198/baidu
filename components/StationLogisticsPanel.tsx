@@ -1,5 +1,7 @@
 import React, { useId } from 'react';
 import type { StationStat } from '../src/data/stationStats';
+import type { AgvPoolEntry } from '../src/data/mockFleet';
+import { groupByBatteryBand } from '../src/hooks/useFleetVehicles';
 
 /**
  * 站点物流弹窗（监控页两种地图共用）。
@@ -91,9 +93,19 @@ function buildTrendPolyline(values: number[]): string {
 interface StationLogisticsPanelProps {
     station: { name: string; data: StationPanelData };
     onClose: () => void;
+    /** 该站部署的小车逐车明细（未部署为空/未传，显示"由枢纽池调配"） */
+    agvs?: AgvPoolEntry[];
 }
 
-export const StationLogisticsPanel: React.FC<StationLogisticsPanelProps> = ({ station, onClose }) => {
+const AGV_STATUS_LABEL: Record<string, string> = { busy: '在运', idle: '空闲', charging: '充电中' };
+
+const BAND_META = [
+    { key: 'low', label: '低电量', range: '< 30%' },
+    { key: 'medium', label: '中等', range: '30–60%' },
+    { key: 'high', label: '充足', range: '> 60%' }
+] as const;
+
+export const StationLogisticsPanel: React.FC<StationLogisticsPanelProps> = ({ station, onClose, agvs }) => {
     // useId 含冒号，svg url(#id) 引用前先洗掉
     const rawId = useId();
     const svgId = rawId.replace(/[^a-zA-Z0-9]/g, '');
@@ -229,6 +241,60 @@ export const StationLogisticsPanel: React.FC<StationLogisticsPanelProps> = ({ st
                         </div>
                     </div>
                 </div>
+            </div>
+
+            {/* 该站小车：三电量段分组（低在前，告警优先）+ 芯片网格，站点车多也不拥挤 */}
+            <div className="station-agv-section">
+                <div className="station-agv-head">
+                    <span className="station-agv-title">
+                        <i className="fa fa-battery-three-quarters mr-2 text-emerald-500"></i>该站小车
+                    </span>
+                    <span className="station-agv-count">{agvs?.length ?? 0} 辆</span>
+                    {(() => {
+                        const lowCount = agvs ? groupByBatteryBand(agvs).low.length : 0;
+                        return lowCount > 0 ? <span className="station-agv-lowbadge">{lowCount} 辆低电量</span> : null;
+                    })()}
+                </div>
+                {!agvs || agvs.length === 0 ? (
+                    <div className="station-agv-empty">
+                        <i className="fa fa-info-circle mr-1"></i>该站未部署小车（由枢纽池统一调配）
+                    </div>
+                ) : (
+                    <div className="station-agv-bands custom-scrollbar">
+                        {BAND_META.map((band) => {
+                            const group = groupByBatteryBand(agvs)[band.key];
+                            if (group.length === 0) return null;
+                            return (
+                                <div key={band.key} className="station-agv-band">
+                                    <div className="station-agv-band-head">
+                                        <i className={`station-agv-band-dot station-agv-band-dot-${band.key}`} />
+                                        {band.label}
+                                        <span style={{ fontWeight: 400 }}>{band.range}</span>
+                                        <b>{group.length} 辆</b>
+                                    </div>
+                                    <div className="station-agv-grid">
+                                        {group.map((agv) => (
+                                            <div
+                                                key={agv.id}
+                                                className="station-agv-chip"
+                                                title={`${agv.id} · ${AGV_STATUS_LABEL[agv.status] ?? agv.status} · 载重 ${agv.capacityKg}kg`}
+                                            >
+                                                <span className="station-agv-chip-top">
+                                                    <i className={`station-agv-status station-agv-status-${agv.status}`} />
+                                                    <span className="station-agv-id">{agv.id.split('-').pop()}</span>
+                                                    <b className={`station-agv-battery station-agv-battery-${band.key}`}>{agv.battery}%</b>
+                                                </span>
+                                                <span className="station-agv-bar">
+                                                    <i className={`station-agv-fill station-agv-fill-${band.key}`} style={{ width: `${agv.battery}%` }} />
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
             </div>
         </section>
     );

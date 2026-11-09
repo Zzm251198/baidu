@@ -163,6 +163,15 @@ def load_line_definitions() -> list[dict]:
     return LINE_DEFINITIONS
 
 
+def load_agv_pool_agvs() -> list[dict]:
+    """逐车明细：现阶段直接读 agv_pool.json；未来接真实小车数据时
+    只需把这里换成查表/消息网关，接口层不变。"""
+    if not AGV_POOL_PATH.exists():
+        return []
+    pool = json.loads(AGV_POOL_PATH.read_text(encoding="utf-8"))
+    return pool.get("agvs", [])
+
+
 def build_fleet_seed() -> tuple:
     """车队快照由 agv_pool.json 统计得出，不再单独维护一份数字。"""
     if not AGV_POOL_PATH.exists():

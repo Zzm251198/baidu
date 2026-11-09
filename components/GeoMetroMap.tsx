@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
 import type { StationStat } from '../src/data/stationStats';
+import type { AgvPoolEntry } from '../src/data/mockFleet';
 import type { StationNode } from './SubwayMap';
 import { StationLogisticsPanel, buildSampleStationData, type StationPanelData } from './StationLogisticsPanel';
 import networkJson from '../src/data/szMetroNetwork.json';
@@ -127,11 +128,13 @@ interface GeoMetroMapProps {
     onMapLoaded?: (stations: StationNode[]) => void;
     /** 站点货运统计索引（由运单集聚合）；未命中的站点退化为示例值 */
     stationIndex?: Map<string, StationStat>;
+    /** 车队逐车明细（按站点分组）：站点弹窗"该站小车"分区的数据源 */
+    fleetByStation?: Map<string, AgvPoolEntry[]>;
     /** 运输路线结果（算法输出）；变化时自动重绘 */
     warehouseRoutes?: WarehouseRoute[];
 }
 
-const GeoMetroMapComponent: React.FC<GeoMetroMapProps> = ({ onMapLoaded, stationIndex, warehouseRoutes }) => {
+const GeoMetroMapComponent: React.FC<GeoMetroMapProps> = ({ onMapLoaded, stationIndex, fleetByStation, warehouseRoutes }) => {
     const rawId = useId();
     const containerId = `geo-map-${rawId.replace(/[^a-zA-Z0-9]/g, '')}`;
     const containerRef = useRef<HTMLDivElement>(null);
@@ -513,6 +516,7 @@ const GeoMetroMapComponent: React.FC<GeoMetroMapProps> = ({ onMapLoaded, station
                 <StationLogisticsPanel
                     station={selectedStation}
                     onClose={() => setSelectedStation(null)}
+                    agvs={fleetByStation?.get(selectedStation.name)}
                 />
             )}
             {mapError && (

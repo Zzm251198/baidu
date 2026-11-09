@@ -74,6 +74,22 @@ class FleetOut(BaseModel):
     battery: list[BatterySlice]
 
 
+class AgvVehicleOut(BaseModel):
+    """逐车明细：监控页站点弹窗"该站小车"分区与未来真实车队数据接入共用。"""
+    id: str
+    homeStation: str
+    status: str
+    battery: int
+    capacityKg: int
+
+
+class FleetVehiclesOut(BaseModel):
+    """车队逐车明细（数据接入窗口）：现阶段从 agv_pool.json 供数，
+    未来接真实小车数据时保持接口不变、替换数据源即可。"""
+    count: int
+    agvs: list[AgvVehicleOut]
+
+
 class CostRequest(BaseModel):
     """成本测算入参，供后续接优化算法时复用同一套口径。"""
 
