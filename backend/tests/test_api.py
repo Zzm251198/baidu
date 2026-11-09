@@ -135,10 +135,10 @@ def test_fleet_vehicles(client):
     assert first["status"] in {"idle", "busy", "charging"}
     assert 0 <= first["battery"] <= 100
 
-    # 按站点过滤：岗厦北 24 台（与车池一致）
-    filtered = client.get("/api/fleet/vehicles", params={"station": "岗厦北"}).json()
-    assert filtered["count"] == 24
-    assert all(a["homeStation"] == "岗厦北" for a in filtered["agvs"])
+    # 按站点过滤：松岗 9 台（车池按「物流中心邻近 + 货运量」配比，松岗物流园聚集区配车最多）
+    filtered = client.get("/api/fleet/vehicles", params={"station": "松岗"}).json()
+    assert filtered["count"] == 9
+    assert all(a["homeStation"] == "松岗" for a in filtered["agvs"])
 
     # 过滤不存在的站 → 空列表而不是 404（前端按"未部署"渲染）
     empty = client.get("/api/fleet/vehicles", params={"station": "不存在的站"}).json()
@@ -196,7 +196,7 @@ def test_simulate_writes_audit_row(client, sample_order, sample_route):
     assert runs, "仿真跑完必须留下审计记录"
     assert runs[0]["id"] == result["runId"]
     assert runs[0]["origin"] == "牛湖"
-    assert runs[0]["destination"] == "罗湖"
+    assert runs[0]["destination"] == "公明广场"
     assert runs[0]["profit"] == 477.9
 
 
@@ -240,10 +240,10 @@ def test_operation_rows_stations_follow_train_segments(client, sample_order, sam
     for row in rows:
         assert row["boardingStop"] != row["AlightingStop"], "同一行的上/下车站点不允许相同"
     assert rows[0]["boardingStop"] == "牛湖"
-    assert rows[0]["AlightingStop"] == "会展中心"  # 第 1 行跟随 4 号线段
-    assert rows[1]["boardingStop"] == "会展中心"
-    assert rows[1]["AlightingStop"] == "罗湖"      # 第 2 行跟随 1 号线段
-    assert rows[2]["AlightingStop"] == "罗湖"      # 终端出站行跟随末段列车
+    assert rows[0]["AlightingStop"] == "松岗"  # 第 1 行跟随 4 号线段
+    assert rows[1]["boardingStop"] == "松岗"
+    assert rows[1]["AlightingStop"] == "公明广场"      # 第 2 行跟随 1 号线段
+    assert rows[2]["AlightingStop"] == "公明广场"      # 终端出站行跟随末段列车
 
 
 # ───────────── 增删改（放最后，避免污染计数） ─────────────

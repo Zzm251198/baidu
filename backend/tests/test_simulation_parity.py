@@ -132,13 +132,15 @@ def test_agv_allocation_prefers_station_pool(sample_order, sample_route):
     assert len(agv_plan) == 3
     origin, transfer, destination = agv_plan
 
+    # 车池按「物流中心邻近 + 货运量」配比后无 default 底座池：
+    # 牛湖无配车 → 跨站调度（枢纽池机动位）；松岗/公明广场有本站待命车
     assert origin["station"] == "牛湖"
-    assert origin["source"] == "default-pool"
+    assert origin["source"] == "cross-station"
 
-    assert transfer["station"] == "会展中心"
+    assert transfer["station"] == "松岗"
     assert transfer["source"] == "station-pool"
 
-    assert destination["station"] == "罗湖"
+    assert destination["station"] == "公明广场"
     assert destination["source"] == "station-pool"
 
 

@@ -24,16 +24,16 @@ def test_operation_rows_terminal_node_is_not_duplicated(sample_order, sample_rou
     first, middle, last = rows
 
     assert first["boardingStop"] == "牛湖"
-    assert first["AlightingStop"] == "会展中心"
+    assert first["AlightingStop"] == "松岗"
 
-    assert middle["boardingStop"] == "会展中心"
-    assert middle["AlightingStop"] == "罗湖"
+    assert middle["boardingStop"] == "松岗"
+    assert middle["AlightingStop"] == "公明广场"
 
     # 终端节点不再复制上一段
     assert last["flightSegment"] == "终端出站"
     assert last["boardingStop"] == "—"
     assert last["boardingTime"] == "—"
-    assert last["AlightingStop"] == "罗湖"
+    assert last["AlightingStop"] == "公明广场"
 
     keys = {
         (row["boardingStop"], row["boardingTime"], row["AlightingStop"], row["alightingTime"]) for row in rows
@@ -46,8 +46,8 @@ def test_operation_rows_parity_with_frontend(sample_order, sample_route):
     rows = simulation.simulate(sample_order, sample_route)["operationRows"]
 
     # 始发/中转沿用列车段，终端用占位符——这条规则前端 simulationEngine.js 必须一致
-    assert [row["boardingStop"] for row in rows] == ["牛湖", "会展中心", "—"]
-    assert [row["AlightingStop"] for row in rows] == ["会展中心", "罗湖", "罗湖"]
+    assert [row["boardingStop"] for row in rows] == ["牛湖", "松岗", "—"]
+    assert [row["AlightingStop"] for row in rows] == ["松岗", "公明广场", "公明广场"]
 
 
 def test_simulations_list_reports_algorithm_and_route_strategy(client, sample_order, sample_route):

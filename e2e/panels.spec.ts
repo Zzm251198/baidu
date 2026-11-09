@@ -30,9 +30,9 @@ test.describe('右侧面板独立窗口', () => {
     await expect(modal.getByText('小车电量监控 · 全车队明细')).toBeVisible();
     await expect(modal.getByText('248 台')).toBeVisible();
 
-    // 岗厦北部署 24 辆：站头出现"24 辆"（多站同为此数，取其一即可）
-    await expect(modal.getByText('岗厦北', { exact: true })).toBeVisible();
-    await expect(modal.getByText(/24 辆 · 均电/).first()).toBeVisible();
+    // 松岗配车最多（9 辆）：物流中心邻近 + 货运量双因子配比的第一名
+    await expect(modal.getByText('松岗', { exact: true })).toBeVisible();
+    await expect(modal.getByText(/9 辆 · 均电/).first()).toBeVisible();
 
     // 分组里能看到电量芯片（车号尾段 + 百分号）
     const chips = modal.locator('.station-agv-chip');

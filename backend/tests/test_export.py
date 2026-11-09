@@ -58,7 +58,7 @@ def test_export_numbers_match_simulation(client, sample_order, sample_route):
     values = {row[0]: row[1] for row in sheet.iter_rows(min_row=2, values_only=True)}
 
     assert values["运行编号"] == run_id
-    assert values["起点 → 终点"] == "牛湖 → 罗湖"
+    assert values["起点 → 终点"] == "牛湖 → 公明广场"
     assert values["列车段数"] == 2
     assert values["总站数"] == 27
     assert values["总时长 (分钟)"] == 72

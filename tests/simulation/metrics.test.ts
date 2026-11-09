@@ -16,27 +16,29 @@ import operationConfig from '../../public/data/operation_config.json';
 import trainScheduleConfig from '../../public/data/train_schedule_config.json';
 import { setSimulationConfigs, simulateOrder } from '../../src/simulation/simulationEngine.js';
 
-/** 与「牛湖→罗湖」等价的合成路径：4 号线 20 站 + 1 号线 7 站，共 27 站、72 分钟、1 次换乘 */
+/** 合成路径：27 站、72 分钟、1 次换乘。站点选取配合车池配比策略——
+ * 松岗/公明广场是「物流中心邻近 + 货运量」双因子配比下的有车站（各配 idle 待命车），
+ * 牛湖无配车，正好覆盖"本站待命车优先 / 无车跨站调度"两条分支。 */
 function makeRoute() {
   return {
     originStationName: '牛湖',
-    destinationStationName: '罗湖',
+    destinationStationName: '公明广场',
     totalDurationMin: 72,
     totalStationCount: 27,
-    transferStations: ['会展中心'],
+    transferStations: ['松岗'],
     segments: [
       {
         lineName: '地铁4号线(龙华线)',
         boardingStation: '牛湖',
-        alightingStation: '会展中心',
+        alightingStation: '松岗',
         stationCount: 20,
         durationMin: 52,
         direction: '福田口岸'
       },
       {
         lineName: '地铁1号线(罗宝线)',
-        boardingStation: '会展中心',
-        alightingStation: '罗湖',
+        boardingStation: '松岗',
+        alightingStation: '公明广场',
         stationCount: 7,
         durationMin: 20,
         direction: '罗湖'
@@ -143,15 +145,18 @@ describe('B. 注入 public/data/*.json 后结果必须完全相同', () => {
     expect(result.metrics.profit).toBe(EXPECTED.profit);
   });
 
-  it('AGV 按"站点池优先"分配：中转/终点用所在站待命车，起点无专用池时回退默认底座池', () => {
+  it('AGV 按"站点池优先"分配：中转/终点用所在站待命车，起点无配车时跨站调度', () => {
     const result = simulateOrder(ORDER, makeRoute());
     const [origin, transfer, destination] = result.agvPlan;
 
+    // 车池按「物流中心邻近 + 货运量」配比后不再有 default 底座池：
+    // 牛湖无配车 → 跨站调度第一台空闲车（枢纽池机动位）
     expect(origin.station).toBe('牛湖');
-    expect(origin.source).toBe('default-pool'); // 牛湖不在车池 homeStation 里
-    expect(transfer.station).toBe('会展中心');
+    expect(origin.source).toBe('cross-station');
+    // 松岗/公明广场有本站待命车（idle），站点池优先命中
+    expect(transfer.station).toBe('松岗');
     expect(transfer.source).toBe('station-pool');
-    expect(destination.station).toBe('罗湖');
+    expect(destination.station).toBe('公明广场');
     expect(destination.source).toBe('station-pool');
   });
 
@@ -269,7 +274,7 @@ describe('异常与边界', () => {
 });
 
 describe('作业明细：上/下车站点跟随列车段（与后端 simulation.py 同口径）', () => {
-  it('牛湖→罗湖 3 行明细：第 1 行跟随 4 号线段，第 2/3 行跟随 1 号线段', () => {
+  it('牛湖→公明广场 3 行明细：第 1 行跟随 4 号线段，第 2/3 行跟随 1 号线段', () => {
     const result = simulateOrder(ORDER, makeRoute());
     const rows = result.operationRows;
     expect(rows).toHaveLength(3);
@@ -278,9 +283,9 @@ describe('作业明细：上/下车站点跟随列车段（与后端 simulation.
       expect(row.boardingStop).not.toBe(row.AlightingStop);
     }
     expect(rows[0].boardingStop).toBe('牛湖');
-    expect(rows[0].AlightingStop).toBe('会展中心');
-    expect(rows[1].boardingStop).toBe('会展中心');
-    expect(rows[1].AlightingStop).toBe('罗湖');
-    expect(rows[2].AlightingStop).toBe('罗湖');
+    expect(rows[0].AlightingStop).toBe('松岗');
+    expect(rows[1].boardingStop).toBe('松岗');
+    expect(rows[1].AlightingStop).toBe('公明广场');
+    expect(rows[2].AlightingStop).toBe('公明广场');
   });
 });

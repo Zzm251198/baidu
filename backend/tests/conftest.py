@@ -70,23 +70,23 @@ def sample_route() -> dict:
     """
     return {
         "originStationName": "牛湖",
-        "destinationStationName": "罗湖",
+        "destinationStationName": "公明广场",
         "totalDurationMin": 72,
         "totalStationCount": 27,
-        "transferStations": ["会展中心"],
+        "transferStations": ["松岗"],
         "segments": [
             {
                 "lineName": "地铁4号线(龙华线)",
                 "boardingStation": "牛湖",
-                "alightingStation": "会展中心",
+                "alightingStation": "松岗",
                 "stationCount": 20,
                 "durationMin": 52,
                 "direction": "福田口岸",
             },
             {
                 "lineName": "地铁1号线(罗宝线)",
-                "boardingStation": "会展中心",
-                "alightingStation": "罗湖",
+                "boardingStation": "松岗",
+                "alightingStation": "公明广场",
                 "stationCount": 7,
                 "durationMin": 20,
                 "direction": "罗湖",
