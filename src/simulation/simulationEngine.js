@@ -152,11 +152,12 @@ function createTrainId(segment, departureTime) {
  * 旧实现每次都取第一个空闲车，导致一条多段路径的所有节点都绑同一台 AGV，
  * 与"接力（换车）"的业务语义直接矛盾。现在保证 N 个作业节点对应 N 台不同车。
  */
-function createAgvAllocator() {
+function createAgvAllocator(routeStations = []) {
   const agvs = Array.isArray(activeConfigs.agvPool.agvs) ? activeConfigs.agvPool.agvs : [];
   const available = agvs
     .filter((agv) => agv.status === 'idle')
     .map((agv) => ({ ...agv, taken: false }));
+  const routeStationSet = new Set(routeStations.map((s) => normalizeStation(s)));
 
   const take = (stationName, role, sequence, cargoWeightKg) => {
     const station = normalizeStation(stationName);
@@ -172,9 +173,13 @@ function createAgvAllocator() {
       source = 'default-pool';
     }
 
-    // 3) 跨站调度：仍有空闲车就调过来，避免不必要的兜底编号
+    // 3) 跨站调度（优先级：枢纽池机动位 > 驻站不在本路线上的车 > 数组序第一辆）。
+    //    不能盲取第一辆：新配比车池下每站往往只有 1 辆待命车，盲取会劫持
+    //    后续节点的本站车，让"站点池优先"名存实亡（评审发现的实际缺陷）。
     if (!picked && idle.length > 0) {
-      picked = idle[0];
+      picked = idle.find((agv) => normalizeStation(agv.homeStation, 'default') === '枢纽池')
+        ?? idle.find((agv) => !routeStationSet.has(normalizeStation(agv.homeStation, 'default')))
+        ?? idle[0];
       source = 'cross-station';
     }
 
@@ -255,7 +260,7 @@ function buildAgvPlan(routeSummary, trainPlan, input) {
     }
   ];
 
-  const allocate = createAgvAllocator();
+  const allocate = createAgvAllocator(nodes.map((node) => node.station));
 
   return nodes.map((node, index) => ({
     nodeId: `AGV-NODE-${index + 1}`,

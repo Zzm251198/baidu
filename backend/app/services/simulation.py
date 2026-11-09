@@ -131,7 +131,7 @@ def _create_train_id(segment: dict, departure_time: str) -> str:
     return f"{schedule['trainPrefix']}-{line_name}-{suffix}"
 
 
-def _create_agv_allocator():
+def _create_agv_allocator(route_stations=None):
     """池内车辆「用过即占用」，保证 N 个作业节点对应 N 台不同车。"""
     pool = load_config()["agvPool"]
     fallback_capacity = _to_number(pool.get("fallbackCapacityKg"), 900)
@@ -140,6 +140,7 @@ def _create_agv_allocator():
         for agv in pool.get("agvs", [])
         if agv.get("status") == "idle"
     ]
+    route_station_set = {_normalize_station(s) for s in (route_stations or [])}
 
     def take(station_name, role, sequence, cargo_weight_kg):
         station = _normalize_station(station_name)
@@ -151,7 +152,19 @@ def _create_agv_allocator():
             picked = next((a for a in idle if _normalize_station(a.get("homeStation"), "default") == "default"), None)
             source = "default-pool"
         if picked is None and idle:
-            picked = idle[0]
+            # 跨站调度优先级：枢纽池机动位 > 驻站不在本路线上的车 > 顺序第一辆。
+            # 盲取第一辆会劫持后续节点的本站待命车（每站常只有 1 辆待命车）。
+            picked = next(
+                (a for a in idle if _normalize_station(a.get("homeStation"), "default") == "枢纽池"),
+                None,
+            ) or next(
+                (
+                    a
+                    for a in idle
+                    if _normalize_station(a.get("homeStation"), "default") not in route_station_set
+                ),
+                None,
+            ) or idle[0]
             source = "cross-station"
 
         if picked is not None:
@@ -267,7 +280,9 @@ def _build_agv_plan(route: dict, train_plan: list[dict], order: dict, create_all
         }
     )
 
-    take = (create_allocator or _create_agv_allocator)()
+    # 跨站调度需要知道整条路线的站点集合，避免劫持后续节点的本站待命车
+    route_stations = [route["originStationName"], *route.get("transferStations", []), route["destinationStationName"]]
+    take = (create_allocator or _create_agv_allocator)(route_stations)
     plan: list[dict] = []
     for index, node in enumerate(nodes):
         allocation = take(node["station"], node["role"], index + 1, cargo_weight)

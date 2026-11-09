@@ -2,6 +2,7 @@ import React, { useId } from 'react';
 import type { StationStat } from '../src/data/stationStats';
 import type { AgvPoolEntry } from '../src/data/mockFleet';
 import { groupByBatteryBand } from '../src/hooks/useFleetVehicles';
+import { AgvChip } from './AgvChip';
 
 /**
  * 站点物流弹窗（监控页两种地图共用）。
@@ -96,8 +97,6 @@ interface StationLogisticsPanelProps {
     /** 该站部署的小车逐车明细（未部署为空/未传，显示"由枢纽池调配"） */
     agvs?: AgvPoolEntry[];
 }
-
-const AGV_STATUS_LABEL: Record<string, string> = { busy: '在运', idle: '空闲', charging: '充电中' };
 
 const BAND_META = [
     { key: 'low', label: '低电量', range: '< 30%' },
@@ -261,8 +260,11 @@ export const StationLogisticsPanel: React.FC<StationLogisticsPanelProps> = ({ st
                     </div>
                 ) : (
                     <div className="station-agv-bands custom-scrollbar">
-                        {BAND_META.map((band) => {
-                            const group = groupByBatteryBand(agvs)[band.key];
+                        {(() => {
+                            // 分组只算一次，头部徽章与三段共用（曾经每渲染重复算 4 次）
+                            const bands = groupByBatteryBand(agvs);
+                            return BAND_META.map((band) => {
+                            const group = bands[band.key];
                             if (group.length === 0) return null;
                             return (
                                 <div key={band.key} className="station-agv-band">
@@ -274,25 +276,13 @@ export const StationLogisticsPanel: React.FC<StationLogisticsPanelProps> = ({ st
                                     </div>
                                     <div className="station-agv-grid">
                                         {group.map((agv) => (
-                                            <div
-                                                key={agv.id}
-                                                className="station-agv-chip"
-                                                title={`${agv.id} · ${AGV_STATUS_LABEL[agv.status] ?? agv.status} · 载重 ${agv.capacityKg}kg`}
-                                            >
-                                                <span className="station-agv-chip-top">
-                                                    <i className={`station-agv-status station-agv-status-${agv.status}`} />
-                                                    <span className="station-agv-id">{agv.id.split('-').pop()}</span>
-                                                    <b className={`station-agv-battery station-agv-battery-${band.key}`}>{agv.battery}%</b>
-                                                </span>
-                                                <span className="station-agv-bar">
-                                                    <i className={`station-agv-fill station-agv-fill-${band.key}`} style={{ width: `${agv.battery}%` }} />
-                                                </span>
-                                            </div>
+                                            <AgvChip key={agv.id} agv={agv} band={band.key} />
                                         ))}
                                     </div>
                                 </div>
                             );
-                        })}
+                            });
+                        })()}
                     </div>
                 )}
             </div>

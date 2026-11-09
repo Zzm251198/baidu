@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { StationStat } from '../src/data/stationStats';
 import { StationLogisticsPanel, buildSampleStationData, type StationPanelData } from './StationLogisticsPanel';
+import { AGV_POOL } from '../src/data/mockFleet';
 
 // 百度地图 AK 从 .env.local 的 VITE_BMAP_SUBWAY_AK 读取（*.local 已被 .gitignore 排除，不入库）
 const BMAP_SUBWAY_AK = String(import.meta.env.VITE_BMAP_SUBWAY_AK ?? '');
@@ -31,6 +32,17 @@ export interface StationNode {
     lineId: string;
     lineName?: string;
 }
+
+/** 车池按驻站分组（静态文件算一次）：站点弹窗"该站小车"分区与监控页同一口径 */
+const AGVS_BY_STATION: Map<string, typeof AGV_POOL.agvs> = (() => {
+    const map = new Map<string, typeof AGV_POOL.agvs>();
+    for (const agv of AGV_POOL.agvs) {
+        const list = map.get(agv.homeStation);
+        if (list) list.push(agv);
+        else map.set(agv.homeStation, [agv]);
+    }
+    return map;
+})();
 
 interface SubwayMapProps {
     mode?: 'monitor' | 'simulation';
@@ -437,6 +449,7 @@ const SubwayMapComponent: React.FC<SubwayMapProps> = ({
                 <StationLogisticsPanel
                     station={selectedStation}
                     onClose={() => setSelectedStation(null)}
+                    agvs={AGVS_BY_STATION.get(selectedStation.name)}
                 />
             )}
             {error && (

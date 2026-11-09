@@ -1,8 +1,9 @@
 import React, { useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Bar, BarChart, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { AGV_FLEET, ALERTS, countAbnormalAlerts } from '../src/data/mockFleet';
-import { useFleetVehicles, groupByBatteryBand } from '../src/hooks/useFleetVehicles';
+import { AGV_FLEET, ALERTS, countAbnormalAlerts, buildFleetSnapshot } from '../src/data/mockFleet';
+import { groupByBatteryBand, POOL_FLEET_STATE, type FleetVehiclesState } from '../src/hooks/useFleetVehicles';
+import { AgvChip } from './AgvChip';
 import type { StationThroughput } from '../src/data/aggregations';
 import type { AlertItem } from '../src/data/types';
 
@@ -73,6 +74,8 @@ export interface RightPanelProps {
   alerts?: AlertItem[];
   /** 全量站点吞吐排行（弹层用）：运输数据窗口的完整静态明细 */
   stationRanking?: StationRankingRow[];
+  /** 车队逐车明细（App 的 useFleetVehicles 单实例下传，避免弹窗自挂 hook 重复请求） */
+  fleet?: FleetVehiclesState;
 }
 
 /** 独立大弹层外壳：与"纳入建模线路"弹层同一套视觉（白卡 + 遮罩 + 内部滚动） */
@@ -129,11 +132,11 @@ const ExpandButton: React.FC<{ onClick: () => void; label: string }> = ({ onClic
   </button>
 );
 
-const AGV_STATUS_LABEL: Record<string, string> = { busy: '在运', idle: '空闲', charging: '充电中' };
-
-/** 车队电量独立窗口：概览条 + 按站点分组的三电量段芯片网格 */
-const FleetBatteryModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
-  const fleet = useFleetVehicles();
+/** 车队电量独立窗口：概览条 + 按站点分组的三电量段芯片网格。
+ *  概览与明细都从同一个 fleet 状态派生（buildFleetSnapshot）——
+ *  曾经的坑：头部用静态 AGV_FLEET、明细用接口数据，接真实车队后会同屏两个口径。 */
+const FleetBatteryModal: React.FC<{ fleet: FleetVehiclesState; onClose: () => void }> = ({ fleet, onClose }) => {
+  const snapshot = useMemo(() => buildFleetSnapshot(fleet.agvs), [fleet.agvs]);
   const groups = useMemo(() => {
     return [...fleet.byStation.entries()]
       .map(([station, agvs]) => {
@@ -146,10 +149,10 @@ const FleetBatteryModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   }, [fleet.byStation]);
 
   const overview = [
-    { label: '车队总数', value: AGV_FLEET.total, unit: '台', cls: 'text-slate-900' },
-    { label: '在运', value: AGV_FLEET.active, unit: '台', cls: 'text-emerald-700' },
-    { label: '空闲', value: AGV_FLEET.idle, unit: '台', cls: 'text-slate-500' },
-    { label: '充电中', value: AGV_FLEET.charging, unit: '台', cls: 'text-amber-600' }
+    { label: '车队总数', value: snapshot.total, unit: '台', cls: 'text-slate-900' },
+    { label: '在运', value: snapshot.active, unit: '台', cls: 'text-emerald-700' },
+    { label: '空闲', value: snapshot.idle, unit: '台', cls: 'text-slate-500' },
+    { label: '充电中', value: snapshot.charging, unit: '台', cls: 'text-amber-600' }
   ];
 
   return (
@@ -157,7 +160,7 @@ const FleetBatteryModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
       wide
       title="小车电量监控 · 全车队明细"
       subtitle={`按站点分组，三电量段分层（低 <30% / 中 30–60% / 高 >60%）${fleet.source === 'fallback' ? ' · 接口不可用已回退本地车池' : ''}`}
-      badge={<span className="text-xs font-semibold bg-emerald-600/10 text-emerald-800 border border-emerald-600/20 px-2 py-0.5 rounded-full">{AGV_FLEET.total} 台</span>}
+      badge={<span className="text-xs font-semibold bg-emerald-600/10 text-emerald-800 border border-emerald-600/20 px-2 py-0.5 rounded-full">{snapshot.total} 台</span>}
       onClose={onClose}
     >
       {/* 概览条 */}
@@ -171,12 +174,12 @@ const FleetBatteryModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
       </div>
       {/* 三段占比横条 */}
       <div className="flex h-2.5 rounded-full overflow-hidden mb-1" aria-hidden="true">
-        {AGV_FLEET.battery.map((slice) => (
+        {snapshot.battery.map((slice) => (
           <div key={slice.name} style={{ width: `${slice.value}%`, background: slice.color }} />
         ))}
       </div>
       <div className="flex justify-between text-[10px] text-slate-500 mb-4">
-        {AGV_FLEET.battery.map((slice) => (
+        {snapshot.battery.map((slice) => (
           <span key={slice.name} className="inline-flex items-center gap-1">
             <i className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: slice.color }} />
             {slice.name} {slice.value}%
@@ -213,20 +216,7 @@ const FleetBatteryModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                       </span>
                       <div className="station-agv-grid station-agv-grid--wide flex-1">
                         {list.map((agv) => (
-                          <div
-                            key={agv.id}
-                            className="station-agv-chip"
-                            title={`${agv.id} · ${AGV_STATUS_LABEL[agv.status] ?? agv.status} · 电量 ${agv.battery}% · 载重 ${agv.capacityKg}kg`}
-                          >
-                            <span className="station-agv-chip-top">
-                              <i className={`station-agv-status station-agv-status-${agv.status}`} />
-                              <span className="station-agv-id">{agv.id.split('-').pop()}</span>
-                              <b className={`station-agv-battery station-agv-battery-${band}`}>{agv.battery}%</b>
-                            </span>
-                            <span className="station-agv-bar">
-                              <i className={`station-agv-fill station-agv-fill-${band}`} style={{ width: `${agv.battery}%` }} />
-                            </span>
-                          </div>
+                          <AgvChip key={agv.id} agv={agv} band={band} />
                         ))}
                       </div>
                     </div>
@@ -302,7 +292,7 @@ const StationThroughputModal: React.FC<{ rows: StationRankingRow[]; onClose: () 
   );
 };
 
-export const RightPanel: React.FC<RightPanelProps> = ({ topStations = [], alerts, stationRanking = [] }) => {
+export const RightPanel: React.FC<RightPanelProps> = ({ topStations = [], alerts, stationRanking = [], fleet }) => {
   const logs = alerts && alerts.length > 0 ? alerts : ALERTS;
   const deviceData = AGV_FLEET.battery;
   const rankData = topStations;
@@ -420,7 +410,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({ topStations = [], alerts
         </div>
       </section>
 
-      {fleetOpen && <FleetBatteryModal onClose={() => setFleetOpen(false)} />}
+      {fleetOpen && <FleetBatteryModal fleet={fleet ?? POOL_FLEET_STATE} onClose={() => setFleetOpen(false)} />}
       {throughputOpen && <StationThroughputModal rows={stationRanking} onClose={() => setThroughputOpen(false)} />}
     </div>
   );

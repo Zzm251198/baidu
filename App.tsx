@@ -793,7 +793,7 @@ const App: React.FC = () => {
                 </section>
               </div>
               <div className="lg:col-span-2 h-full flex flex-col overflow-hidden">
-                <RightPanel topStations={topStations} alerts={alerts} stationRanking={stationRanking} />
+                <RightPanel topStations={topStations} alerts={alerts} stationRanking={stationRanking} fleet={fleetVehicles} />
               </div>
             </div>
           </div>

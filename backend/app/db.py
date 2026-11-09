@@ -6,6 +6,7 @@ import json
 import random
 import sqlite3
 from contextlib import contextmanager
+from functools import lru_cache
 from pathlib import Path
 from typing import Iterator
 
@@ -163,12 +164,19 @@ def load_line_definitions() -> list[dict]:
     return LINE_DEFINITIONS
 
 
+@lru_cache(maxsize=1)
 def load_agv_pool_agvs() -> list[dict]:
     """逐车明细：现阶段直接读 agv_pool.json；未来接真实小车数据时
-    只需把这里换成查表/消息网关，接口层不变。"""
-    if not AGV_POOL_PATH.exists():
+    只需把这里换成查表/消息网关，接口层不变。
+
+    lru_cache：3448 行 JSON 不该每个请求都重读（调用方均为只读，可共享引用）；
+    损坏/缺失文件返回空列表，让 /api/fleet/vehicles 走"0 台"兜底而不是 500。"""
+    try:
+        if not AGV_POOL_PATH.exists():
+            return []
+        pool = json.loads(AGV_POOL_PATH.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
         return []
-    pool = json.loads(AGV_POOL_PATH.read_text(encoding="utf-8"))
     return pool.get("agvs", [])
 
 

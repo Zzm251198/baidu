@@ -31,8 +31,9 @@ ALGORITHM_KEY = "capacity-first"
 ALGORITHM_LABEL = "大运力优先"
 
 
-def _create_capacity_first_allocator():
-    """池内车辆「用过即占用」；选择键 = (容量降序, 电量降序, 池内顺序)。"""
+def _create_capacity_first_allocator(route_stations=None):
+    """池内车辆「用过即占用」；选择键 = (容量降序, 电量降序, 池内顺序)。
+    route_stations 仅为保持与基线分配器相同的注入签名（本策略按容量选车，不使用它）。"""
     pool = load_config()["agvPool"]
     fallback_capacity = _to_number(pool.get("fallbackCapacityKg"), 900)
     # 记录池内原始顺序，保证同容量同电量时结果稳定（确定性）

@@ -160,6 +160,34 @@ describe('B. 注入 public/data/*.json 后结果必须完全相同', () => {
     expect(destination.source).toBe('station-pool');
   });
 
+  it('跨站调度不劫持后续节点的本站待命车（松岗唯一的待命车留给松岗）', () => {
+    // 牛湖/车公庙都无配车、松岗有唯一待命车：两个无车站先后跨站调度时，
+    // 必须用枢纽池机动位/非路线站的车，不允许把松岗的本站车抢走
+    const songgangIdle = (agvPoolJson as any).agvs.find(
+      (a: any) => a.homeStation === '松岗' && a.status === 'idle'
+    );
+    expect(songgangIdle).toBeTruthy();
+
+    const base = makeRoute();
+    const route = {
+      ...base,
+      destinationStationName: '松岗',
+      transferStations: ['车公庙'],
+      segments: [
+        { ...base.segments[0], alightingStation: '车公庙' },
+        { ...base.segments[1], boardingStation: '车公庙', alightingStation: '松岗' }
+      ]
+    };
+    const [origin, transfer, destination] = simulateOrder(ORDER, route).agvPlan;
+
+    expect(origin.source).toBe('cross-station');
+    expect(transfer.source).toBe('cross-station');
+    expect(origin.agvId).not.toBe(songgangIdle.id);
+    expect(transfer.agvId).not.toBe(songgangIdle.id);
+    expect(destination.source).toBe('station-pool');
+    expect(destination.agvId).toBe(songgangIdle.id);
+  });
+
   it('三个节点必须是三台不同的 AGV（旧 bug：全部绑同一台车）', () => {
     const result = simulateOrder(ORDER, makeRoute());
     const ids = result.agvPlan.map((agv: any) => agv.agvId);

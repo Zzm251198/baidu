@@ -143,6 +143,27 @@ def test_agv_allocation_prefers_station_pool(sample_order, sample_route):
     assert destination["station"] == "公明广场"
     assert destination["source"] == "station-pool"
 
+    # 与前端 metrics.test 同场景：跨站调度不得劫持后续节点的本站待命车
+    songgang_idle = next(
+        a for a in simulation.load_config()["agvPool"]["agvs"]
+        if a.get("homeStation") == "松岗" and a.get("status") == "idle"
+    )
+    route = dict(sample_route)
+    route["destinationStationName"] = "松岗"
+    route["transferStations"] = ["车公庙"]
+    route["segments"] = [
+        dict(sample_route["segments"][0], alightingStation="车公庙"),
+        dict(sample_route["segments"][1], boardingStation="车公庙", alightingStation="松岗"),
+    ]
+    plan = simulation.simulate(sample_order, route)["agvPlan"]
+    origin2, transfer2, destination2 = plan
+    assert origin2["source"] == "cross-station"
+    assert transfer2["source"] == "cross-station"
+    assert origin2["agvId"] != songgang_idle["id"]
+    assert transfer2["agvId"] != songgang_idle["id"]
+    assert destination2["source"] == "station-pool"
+    assert destination2["agvId"] == songgang_idle["id"]
+
 
 def test_agv_ids_are_distinct(sample_order, sample_route):
     """三个作业节点必须是三台不同的车（历史 bug：全部绑同一台）。"""

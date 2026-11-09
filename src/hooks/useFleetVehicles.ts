@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { API_BASE } from '../data/apiBase';
 import { fetchWithTimeout, describeHttpError, READ_TIMEOUT_MS } from '../data/fetchWithTimeout';
-import { AGV_POOL, type AgvPoolEntry } from '../data/mockFleet';
+import { AGV_POOL, batteryBand, type AgvPoolEntry } from '../data/mockFleet';
 import { dataSource } from '../data/source';
 
 /**
@@ -17,6 +17,8 @@ import { dataSource } from '../data/source';
 
 export interface FleetVehiclesState {
   byStation: Map<string, AgvPoolEntry[]>;
+  /** 全量逐车明细（车队弹窗的概览统计从它派生，保证同屏单口径） */
+  agvs: AgvPoolEntry[];
   total: number;
   source: 'pool' | 'http' | 'fallback';
   error: string;
@@ -33,8 +35,10 @@ function groupByStation(agvs: AgvPoolEntry[]): Map<string, AgvPoolEntry[]> {
   return map;
 }
 
-const LOCAL_STATE: FleetVehiclesState = {
+/** 本地车池快照（hook 未注入时的兜底，弹层/卡片共用同一引用） */
+export const POOL_FLEET_STATE: FleetVehiclesState = {
   byStation: groupByStation(AGV_POOL.agvs),
+  agvs: AGV_POOL.agvs,
   total: AGV_POOL.agvs.length,
   source: 'pool',
   error: ''
@@ -46,7 +50,7 @@ interface HttpVehiclesResponse {
 }
 
 export function useFleetVehicles(): FleetVehiclesState {
-  const [state, setState] = useState<FleetVehiclesState>(LOCAL_STATE);
+  const [state, setState] = useState<FleetVehiclesState>(POOL_FLEET_STATE);
 
   useEffect(() => {
     if (dataSource.kind !== 'http') return;
@@ -66,13 +70,13 @@ export function useFleetVehicles(): FleetVehiclesState {
             battery: a.battery,
             capacityKg: a.capacityKg
         }));
-        setState({ byStation: groupByStation(agvs), total: agvs.length, source: 'http', error: '' });
+        setState({ byStation: groupByStation(agvs), agvs, total: agvs.length, source: 'http', error: '' });
       })
       .catch((error: unknown) => {
         if (cancelled) return;
         console.warn('[fleet] 逐车明细接口不可用，已回退本地车池：', error);
         setState({
-          ...LOCAL_STATE,
+          ...POOL_FLEET_STATE,
           source: 'fallback',
             error: error instanceof Error ? error.message : '逐车明细加载失败'
         });
@@ -86,20 +90,11 @@ export function useFleetVehicles(): FleetVehiclesState {
   return state;
 }
 
-/** 电量三段分组（与全局分层同口径：>60 高 / 30-60 中 / <30 低），供弹窗与单测复用 */
-export type BatteryBand = 'low' | 'medium' | 'high';
+/** 电量三段判定：全局唯一实现在 mockFleet.batteryBand，这里仅转发（避免双份口径漂移） */
+export type BatteryBand = ReturnType<typeof batteryBand>;
 
-export function batteryBandOf(battery: number): BatteryBand {
-  if (battery > 60) return 'high';
-  if (battery >= 30) return 'medium';
-  return 'low';
-}
-
-export function groupByBatteryBand(agvs: AgvPoolEntry[]): Record<BatteryBand, AgvPoolEntry[]> {
-  const result: Record<BatteryBand, AgvPoolEntry[]> = { low: [], medium: [], high: [] };
-  for (const agv of agvs) result[batteryBandOf(agv.battery)].push(agv);
+export function groupByBatteryBand(agvs: AgvPoolEntry[]): Record<'low' | 'medium' | 'high', AgvPoolEntry[]> {
+  const result: Record<'low' | 'medium' | 'high', AgvPoolEntry[]> = { low: [], medium: [], high: [] };
+  for (const agv of agvs) result[batteryBand(agv.battery)].push(agv);
   return result;
 }
-
-/** 供组件兜底用的稳定空 Map（避免每次渲染新引用） */
-export const EMPTY_FLEET_MAP: Map<string, AgvPoolEntry[]> = new Map();

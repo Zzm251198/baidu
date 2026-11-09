@@ -28,8 +28,10 @@ export const AGV_POOL = agvPoolJson as unknown as {
   agvs: AgvPoolEntry[];
 };
 
-/** 电量分档：充足 > 60，中等 30-60，低 < 30 */
-function batteryBand(battery: number): 'high' | 'medium' | 'low' {
+/** 电量分档：充足 > 60，中等 30-60，低 < 30。
+ *  全局唯一实现（导出）：右侧饼图、站点弹窗分组、车队弹窗分组都复用同一份，
+ *  曾经的坑是在两个模块各写一份，阈值改动只改一边就会同屏出现两种口径。 */
+export function batteryBand(battery: number): 'high' | 'medium' | 'low' {
   if (battery > 60) return 'high';
   if (battery >= 30) return 'medium';
   return 'low';
@@ -76,6 +78,9 @@ export function buildFleetSnapshot(agvs: AgvPoolEntry[] = AGV_POOL.agvs): FleetS
     ]
   };
 }
+
+/** 小车状态 → 中文标签（全局唯一实现，站点弹窗与车队弹窗共用） */
+export const AGV_STATUS_LABEL: Record<string, string> = { busy: '在运', idle: '空闲', charging: '充电中' };
 
 export const AGV_FLEET: FleetSnapshot = buildFleetSnapshot();
 

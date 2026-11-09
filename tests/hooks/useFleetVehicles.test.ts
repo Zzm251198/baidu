@@ -1,7 +1,8 @@
 // 车队逐车明细的分组与分段口径：站点弹窗"该站小车"分区的数字都从这里派生。
 // 分段规则必须与 mockFleet.batteryBand（全局分层）一致：>60 高 / 30–60 中 / <30 低。
 import { describe, expect, it } from 'vitest';
-import { batteryBandOf, groupByBatteryBand } from '../../src/hooks/useFleetVehicles';
+import { groupByBatteryBand } from '../../src/hooks/useFleetVehicles';
+import { batteryBand as batteryBandOf } from '../../src/data/mockFleet';
 import type { AgvPoolEntry } from '../../src/data/mockFleet';
 
 const make = (id: string, battery: number, homeStation = '岗厦北', status: AgvPoolEntry['status'] = 'idle'): AgvPoolEntry => ({
