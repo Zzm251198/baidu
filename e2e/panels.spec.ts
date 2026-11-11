@@ -66,4 +66,18 @@ test.describe('右侧面板独立窗口', () => {
     await modal.click({ position: { x: 8, y: 300 } });
     await expect(modal).toHaveCount(0);
   });
+
+  test('异常监控：负载率与低电车两类规则告警实时生成', async ({ page }) => {
+    await waitForDashboard(page);
+
+    // 规则一：站点负载率 ≥80%（按严重度展示前 5 条）
+    const overload = page.getByText(/站点负载率 \d+%，达到 80% 告警阈值/);
+    await expect(overload.first()).toBeVisible();
+    expect(await overload.count()).toBe(5);
+
+    // 规则二：低电量小车占比 >60%（车池编排后 5 个站 75%）
+    const lowBattery = page.getByText(/低电量小车 \d+\/\d+ 辆（\d+%），超过 60% 告警阈值/);
+    await expect(lowBattery.first()).toBeVisible();
+    expect(await lowBattery.count()).toBe(5);
+  });
 });

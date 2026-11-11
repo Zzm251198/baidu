@@ -446,49 +446,49 @@
   },
   {
    "id": "AGV-0064",
-   "homeStation": "荔林",
+   "homeStation": "宝龙",
    "status": "busy",
    "battery": 63,
    "capacityKg": 927
   },
   {
    "id": "AGV-0065",
-   "homeStation": "桃源村",
+   "homeStation": "楼村",
    "status": "busy",
    "battery": 66,
    "capacityKg": 925
   },
   {
    "id": "AGV-0066",
-   "homeStation": "沙蚝",
+   "homeStation": "梨园",
    "status": "busy",
    "battery": 88,
    "capacityKg": 952
   },
   {
    "id": "AGV-0067",
-   "homeStation": "茜坑",
+   "homeStation": "龙井",
    "status": "busy",
    "battery": 87,
    "capacityKg": 926
   },
   {
    "id": "AGV-0068",
-   "homeStation": "碧头",
+   "homeStation": "塘尾",
    "status": "busy",
    "battery": 88,
    "capacityKg": 906
   },
   {
    "id": "AGV-0069",
-   "homeStation": "梦海",
+   "homeStation": "中大",
    "status": "busy",
    "battery": 94,
    "capacityKg": 803
   },
   {
    "id": "AGV-0070",
-   "homeStation": "坪山中心",
+   "homeStation": "公明广场",
    "status": "busy",
    "battery": 67,
    "capacityKg": 961
@@ -866,49 +866,49 @@
   },
   {
    "id": "AGV-0124",
-   "homeStation": "荔林",
+   "homeStation": "沙田",
    "status": "busy",
    "battery": 82,
    "capacityKg": 888
   },
   {
    "id": "AGV-0125",
-   "homeStation": "桃源村",
+   "homeStation": "白石塘",
    "status": "busy",
    "battery": 81,
    "capacityKg": 844
   },
   {
    "id": "AGV-0126",
-   "homeStation": "沙蚝",
+   "homeStation": "西丽湖",
    "status": "busy",
    "battery": 97,
    "capacityKg": 985
   },
   {
    "id": "AGV-0127",
-   "homeStation": "茜坑",
+   "homeStation": "会展城",
    "status": "busy",
    "battery": 61,
    "capacityKg": 935
   },
   {
    "id": "AGV-0128",
-   "homeStation": "碧头",
+   "homeStation": "茶光",
    "status": "busy",
    "battery": 79,
    "capacityKg": 979
   },
   {
    "id": "AGV-0129",
-   "homeStation": "梦海",
+   "homeStation": "海上田园南",
    "status": "busy",
    "battery": 77,
    "capacityKg": 945
   },
   {
    "id": "AGV-0130",
-   "homeStation": "坪山中心",
+   "homeStation": "荔林",
    "status": "busy",
    "battery": 92,
    "capacityKg": 854
@@ -1286,49 +1286,49 @@
   },
   {
    "id": "AGV-0184",
-   "homeStation": "荔林",
+   "homeStation": "国展",
    "status": "busy",
    "battery": 48,
    "capacityKg": 975
   },
   {
    "id": "AGV-0185",
-   "homeStation": "桃源村",
+   "homeStation": "碧眼",
    "status": "busy",
    "battery": 50,
    "capacityKg": 846
   },
   {
    "id": "AGV-0186",
-   "homeStation": "沙蚝",
+   "homeStation": "大安",
    "status": "busy",
    "battery": 45,
    "capacityKg": 940
   },
   {
    "id": "AGV-0187",
-   "homeStation": "茜坑",
+   "homeStation": "百鸽笼",
    "status": "busy",
    "battery": 41,
    "capacityKg": 895
   },
   {
    "id": "AGV-0188",
-   "homeStation": "碧头",
+   "homeStation": "布心",
    "status": "busy",
    "battery": 37,
    "capacityKg": 991
   },
   {
    "id": "AGV-0189",
-   "homeStation": "梦海",
+   "homeStation": "松岗",
    "status": "busy",
    "battery": 57,
    "capacityKg": 824
   },
   {
    "id": "AGV-0190",
-   "homeStation": "坪山中心",
+   "homeStation": "桃源村",
    "status": "busy",
    "battery": 42,
    "capacityKg": 830
@@ -1566,147 +1566,147 @@
   },
   {
    "id": "AGV-0224",
-   "homeStation": "宝龙",
+   "homeStation": "荔林",
    "status": "charging",
    "battery": 13,
    "capacityKg": 820
   },
   {
    "id": "AGV-0225",
-   "homeStation": "沙田",
+   "homeStation": "荔林",
    "status": "charging",
    "battery": 25,
    "capacityKg": 857
   },
   {
    "id": "AGV-0226",
-   "homeStation": "国展",
+   "homeStation": "荔林",
    "status": "charging",
    "battery": 13,
    "capacityKg": 978
   },
   {
    "id": "AGV-0227",
-   "homeStation": "楼村",
+   "homeStation": "桃源村",
    "status": "charging",
    "battery": 13,
    "capacityKg": 911
   },
   {
    "id": "AGV-0228",
-   "homeStation": "白石塘",
+   "homeStation": "桃源村",
    "status": "charging",
    "battery": 9,
    "capacityKg": 832
   },
   {
    "id": "AGV-0229",
-   "homeStation": "碧眼",
+   "homeStation": "桃源村",
    "status": "charging",
    "battery": 9,
    "capacityKg": 956
   },
   {
    "id": "AGV-0230",
-   "homeStation": "梨园",
+   "homeStation": "沙蚝",
    "status": "charging",
    "battery": 15,
    "capacityKg": 873
   },
   {
    "id": "AGV-0231",
-   "homeStation": "西丽湖",
+   "homeStation": "沙蚝",
    "status": "charging",
    "battery": 25,
    "capacityKg": 935
   },
   {
    "id": "AGV-0232",
-   "homeStation": "大安",
+   "homeStation": "沙蚝",
    "status": "charging",
    "battery": 19,
    "capacityKg": 951
   },
   {
    "id": "AGV-0233",
-   "homeStation": "龙井",
+   "homeStation": "茜坑",
    "status": "charging",
    "battery": 24,
    "capacityKg": 830
   },
   {
    "id": "AGV-0234",
-   "homeStation": "会展城",
+   "homeStation": "茜坑",
    "status": "charging",
    "battery": 24,
    "capacityKg": 900
   },
   {
    "id": "AGV-0235",
-   "homeStation": "百鸽笼",
+   "homeStation": "茜坑",
    "status": "charging",
    "battery": 24,
    "capacityKg": 984
   },
   {
    "id": "AGV-0236",
-   "homeStation": "塘尾",
+   "homeStation": "碧头",
    "status": "charging",
    "battery": 24,
    "capacityKg": 803
   },
   {
    "id": "AGV-0237",
-   "homeStation": "茶光",
+   "homeStation": "碧头",
    "status": "charging",
    "battery": 15,
    "capacityKg": 860
   },
   {
    "id": "AGV-0238",
-   "homeStation": "布心",
+   "homeStation": "碧头",
    "status": "charging",
    "battery": 12,
    "capacityKg": 959
   },
   {
    "id": "AGV-0239",
-   "homeStation": "中大",
+   "homeStation": "梦海",
    "status": "charging",
    "battery": 25,
    "capacityKg": 940
   },
   {
    "id": "AGV-0240",
-   "homeStation": "海上田园南",
+   "homeStation": "梦海",
    "status": "charging",
    "battery": 8,
    "capacityKg": 965
   },
   {
    "id": "AGV-0241",
-   "homeStation": "松岗",
+   "homeStation": "梦海",
    "status": "charging",
    "battery": 13,
    "capacityKg": 988
   },
   {
    "id": "AGV-0242",
-   "homeStation": "公明广场",
+   "homeStation": "坪山中心",
    "status": "charging",
    "battery": 17,
    "capacityKg": 899
   },
   {
    "id": "AGV-0243",
-   "homeStation": "荔林",
+   "homeStation": "坪山中心",
    "status": "charging",
    "battery": 17,
    "capacityKg": 985
   },
   {
    "id": "AGV-0244",
-   "homeStation": "桃源村",
+   "homeStation": "坪山中心",
    "status": "charging",
    "battery": 24,
    "capacityKg": 925

@@ -306,7 +306,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({ topStations = [], alerts
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 to-purple-500"></div>
         <h3 className="font-bold text-lg text-gray-100 mb-3 flex items-center flex-shrink-0 relative z-10">
           <i className="fa fa-bell-o text-red-500 mr-2 animate-pulse"></i>
-          异常监控（示例）
+          异常监控
           <span className="ml-2 text-xs bg-red-500/10 text-red-400 px-2 py-0.5 rounded-full border border-red-500/20">
             {countAbnormalAlerts(logs)} 个异常
           </span>

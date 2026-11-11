@@ -51,6 +51,7 @@ import {
   summarize
 } from './src/data/aggregations';
 import { buildStationIndex } from './src/data/stationStats';
+import { buildDynamicAlerts } from './src/analysis/dynamicAlerts';
 
 type TabKey = 'monitor' | 'data' | 'simulation';
 
@@ -225,10 +226,7 @@ const App: React.FC = () => {
   );
   const waybills = bundle?.waybills ?? EMPTY_WAYBILLS;
   const fleet = bundle?.fleet ?? AGV_FLEET;
-  const alerts = bundle?.alerts ?? MOCK_ALERTS;
-
-  // 铃铛徽标：error + warning 的真实条数（此前是写死的 3）
-  const abnormalCount = useMemo(() => countAbnormalAlerts(alerts), [alerts]);
+  const sourceAlerts = bundle?.alerts ?? MOCK_ALERTS;
 
   const lineOptions = useMemo(
     () => [
@@ -322,6 +320,20 @@ const App: React.FC = () => {
       }))
       .sort((a, b) => b.volumeTon - a.volumeTon);
   }, [stationIndex, lineStationsByName]);
+
+  // 动态规则告警：站点负载率 ≥80% / 站点低电小车占比 >60%（由运单聚合与车队明细实时推导），
+  // 与数据源事件合并展示——动态规则在前，"示例事件"退居其后
+  const dynamicAlerts = useMemo(
+    () => buildDynamicAlerts({
+      stationIndex,
+      byStation: fleetVehicles.byStation,
+      timeText: new Date().toLocaleTimeString('zh-CN', { hour12: false })
+    }),
+    [stationIndex, fleetVehicles]
+  );
+  const alerts = useMemo(() => [...dynamicAlerts, ...sourceAlerts], [dynamicAlerts, sourceAlerts]);
+  // 铃铛徽标：error + warning 的真实条数（含动态规则告警）
+  const abnormalCount = useMemo(() => countAbnormalAlerts(alerts), [alerts]);
 
   // 换线路后，原先选中的车站/运单号可能已不在候选里 → 自动回落，避免"永远 0 条"
   useEffect(() => {
