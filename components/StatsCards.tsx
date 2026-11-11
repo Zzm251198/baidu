@@ -105,9 +105,10 @@ export const StatsCards: React.FC<StatsCardsProps> = ({
 
   return (
     <>
-    {/* grid-rows-4 = repeat(4, minmax(0,1fr))：四卡严格均分列高，
+    {/* 全宽仪表盘行：xl 一行四卡、中屏 2×2（2026-11 布局重排，原为窄列 4 行）
+        旧注释：四卡严格均分列高，
        矮窗口（1366×768 左栏约 600px）下不会因内容多寡互相挤压 */}
-    <div className="grid grid-cols-1 grid-rows-4 gap-3 h-full px-1 min-h-0">
+    <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 px-1">
       {cards.map((card) => {
         const isLinesCard = card.label === '纳入建模线路';
         return (

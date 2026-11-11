@@ -38,20 +38,36 @@ async function waitForDashboard(page: Page): Promise<void> {
 test.describe('布局：1920×929 一屏', () => {
   test.use({ viewport: VIEWPORT });
 
-  test('监控页无纵向溢出', async ({ page }) => {
+  test('监控页首屏完整：KPI 与地图在视口内，无横向溢出', async ({ page }) => {
     await waitForDashboard(page);
 
-    const overflow = await overflowY(page);
-    expect(overflow, `监控页纵向溢出了 ${overflow}px`).toBeLessThanOrEqual(1);
+    // 2026-11 布局重排为仪表盘纵向流（KPI 全宽 / 地图全宽 / 底部三面板横排）：
+    // 页面允许纵向滚动，锁定的红线改为——首屏必须完整装下 KPI 行与地图（演示第一眼），
+    // 且不出现横向滚动条（纵向滚动属于设计，横向溢出才是布局坏了）
+    const firstScreen = await page.evaluate(() => {
+      const kpi = document.querySelector('.stat-card') as HTMLElement | null;
+      const mapTitle = [...document.querySelectorAll('span')].find((el) => el.textContent.trim() === '深圳轨道物流线网图');
+      const overflowX = Math.max(
+        document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        document.body.scrollWidth - document.body.clientWidth
+      );
+      return {
+        kpiVisible: !!kpi && kpi.getBoundingClientRect().bottom <= window.innerHeight,
+        mapTitleVisible: !!mapTitle && mapTitle.getBoundingClientRect().top < window.innerHeight,
+        overflowX
+      };
+    });
+    expect(firstScreen.kpiVisible, 'KPI 卡应在首屏内完整可见').toBe(true);
+    expect(firstScreen.mapTitleVisible, '地图应在首屏内开始呈现').toBe(true);
+    expect(firstScreen.overflowX, `监控页横向溢出了 ${firstScreen.overflowX}px`).toBeLessThanOrEqual(1);
 
-    // 同时记录一次真实尺寸，方便失败时对照
-    const size = await page.evaluate(() => ({
-      inner: { w: window.innerWidth, h: window.innerHeight },
-      scrollHeight: document.documentElement.scrollHeight,
-      clientHeight: document.documentElement.clientHeight
-    }));
-    expect(size.inner).toEqual({ w: VIEWPORT.width, h: VIEWPORT.height });
-    expect(size.scrollHeight).toBe(size.clientHeight);
+    // 底部三面板在滚动后可见（异常监控/吞吐/电量横排）
+    await page.evaluate(() => {
+      const panel = [...document.querySelectorAll('section')].find((s) => s.textContent.includes('异常监控'));
+      panel?.scrollIntoView({ block: 'center' });
+    });
+    await expect(page.getByText('热门站点吞吐量')).toBeVisible();
+    await expect(page.getByText('小车电量监控')).toBeVisible();
 
     await page.screenshot({ path: 'test-results/monitor-1920x929.png', fullPage: false });
   });

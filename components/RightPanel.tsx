@@ -299,10 +299,10 @@ export const RightPanel: React.FC<RightPanelProps> = ({ topStations = [], alerts
   const [fleetOpen, setFleetOpen] = useState(false);
   const [throughputOpen, setThroughputOpen] = useState(false);
   return (
-    <div className="flex flex-col gap-4 h-full w-full bg-transparent relative">
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 w-full bg-transparent relative items-stretch">
       <div className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none"></div>
 
-      <section className="relative rounded-xl p-4 border border-black/5 bg-black/10 backdrop-blur-xl flex-[4] flex flex-col overflow-hidden shadow-lg shadow-emerald-500/2">
+      <section className="relative rounded-xl p-4 border border-black/5 bg-black/10 backdrop-blur-xl h-[360px] flex flex-col overflow-hidden shadow-lg shadow-emerald-500/2">
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 to-purple-500"></div>
         <h3 className="font-bold text-lg text-gray-100 mb-3 flex items-center flex-shrink-0 relative z-10">
           <i className="fa fa-bell-o text-red-500 mr-2 animate-pulse"></i>
@@ -332,7 +332,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({ topStations = [], alerts
         </div>
       </section>
 
-      <section className="relative rounded-xl p-4 border border-black/5 bg-black/10 backdrop-blur-xl flex-[3.5] flex flex-col overflow-hidden shadow-lg shadow-emerald-500/2">
+      <section className="relative rounded-xl p-4 border border-black/5 bg-black/10 backdrop-blur-xl h-[360px] flex flex-col overflow-hidden shadow-lg shadow-emerald-500/2">
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-emerald-400"></div>
         <h3 className="font-bold text-lg text-gray-100 mb-2 flex items-center flex-shrink-0 relative z-10">
           <i className="fa fa-trophy text-yellow-400 mr-2"></i>
@@ -357,7 +357,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({ topStations = [], alerts
         </div>
       </section>
 
-      <section className="relative rounded-xl p-4 border border-black/5 bg-black/10 backdrop-blur-xl flex-[2.5] flex flex-col overflow-hidden shadow-lg shadow-emerald-500/2">
+      <section className="relative rounded-xl p-4 border border-black/5 bg-black/10 backdrop-blur-xl h-[360px] flex flex-col overflow-hidden shadow-lg shadow-emerald-500/2">
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-green-500 to-emerald-400"></div>
         <h3 className="font-bold text-lg text-gray-100 mb-4 flex items-center flex-shrink-0 relative z-10">
           <i className="fa fa-battery-three-quarters text-green-400 mr-2 animate-pulse-slow"></i>

@@ -770,8 +770,11 @@ const App: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex-grow min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-6">
-              <div className="lg:col-span-2 h-full flex flex-col overflow-hidden">
+            {/* 2026-11 布局重排：原 12 列骨架（KPI 窄列+地图 8+右栏 2）把三个功能面板挤在
+                295px 宽里；改为仪表盘纵向流——KPI 全宽一行 / 地图全宽 / 底部三面板横排，
+                容器整体滚动，演示动线 = 首屏 KPI+地图，下滚看三面板 */}
+            <div className="flex-grow min-h-0 overflow-y-auto custom-scrollbar flex flex-col gap-6 pr-1">
+              <div className="flex-shrink-0">
                 <StatsCards
                   activeAgv={fleet.active}
                   totalAgv={fleet.total}
@@ -783,7 +786,7 @@ const App: React.FC = () => {
                   avgDurationMin={overallSummary.avgDurationMin}
                 />
               </div>
-              <div className="lg:col-span-8 h-full flex flex-col overflow-hidden">
+              <div className="h-[54vh] min-h-[420px] flex-shrink-0 flex flex-col overflow-hidden">
                 <section className="monitor-map-panel h-full flex flex-col overflow-hidden">
                   <div className="monitor-map-title flex items-center justify-between flex-shrink-0">
                     <span className="flex items-center gap-2.5">
@@ -804,7 +807,7 @@ const App: React.FC = () => {
                   </div>
                 </section>
               </div>
-              <div className="lg:col-span-2 h-full flex flex-col overflow-hidden">
+              <div className="flex-shrink-0">
                 <RightPanel topStations={topStations} alerts={alerts} stationRanking={stationRanking} fleet={fleetVehicles} />
               </div>
             </div>
