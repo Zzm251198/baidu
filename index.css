@@ -122,6 +122,14 @@ body {
 .station-logistics-panel {
   z-index: 1000;
   width: min(560px, calc(100% - 32px));
+  /* 加了"该站小车"分区后内容可达 700px+，矮屏会被地图容器裁掉底半截——
+     整体限高 + 纵向滚动兜底（内部小车分区自身还有一层 250px 滚动）。
+     注意：本规则块内不要再写 overflow: hidden（历史规则曾把 auto 覆盖掉，
+     症状是矮屏内容被裁而不是可滚动）；切角由上面的 clip-path 负责 */
+  max-height: calc(100% - 32px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 18px;
   border: 1px solid rgba(0, 168, 98, 0.55);
   border-radius: 14px;
@@ -135,7 +143,6 @@ body {
     0 0 15px rgba(0, 255, 255, 0.2),
     0 24px 70px rgba(15, 23, 42, 0.22);
   clip-path: polygon(0 0, calc(100% - 24px) 0, 100% 24px, 100% 100%, 24px 100%, 0 calc(100% - 24px));
-  overflow: hidden;
 }
 
 .station-logistics-panel::before {
@@ -171,8 +178,17 @@ body {
 }
 
 .station-logistics-header {
-  position: relative;
-  z-index: 1;
+  position: sticky;
+  top: -18px; /* 抵消面板 18px 内边距，吸顶时贴住面板顶 */
+  z-index: 2;
+  /* 与面板同款底色：滚动时内容从标题下穿过去而不是透出来 */
+  background:
+    linear-gradient(135deg, rgba(20, 184, 166, 0.13), rgba(239, 246, 255, 0.12) 38%, rgba(255, 255, 255, 0.95)),
+    rgba(255, 255, 255, 0.95);
+  border-radius: 13px 13px 0 0;
+  padding-top: 2px;
+  padding-bottom: 6px;
+  margin-bottom: 4px;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -597,6 +613,10 @@ body {
   .station-logistics-panel {
     width: calc(100% - 32px);
     padding: 14px;
+  }
+
+  .station-logistics-header {
+    top: -14px; /* 跟随小屏断点的 14px 内边距 */
   }
 
   .station-logistics-metrics,

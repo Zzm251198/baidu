@@ -123,7 +123,7 @@ export const StationLogisticsPanel: React.FC<StationLogisticsPanelProps> = ({ st
     const peakHourVolume = Math.max(...station.data.hourTrend);
 
     return (
-        <section className="station-logistics-panel absolute left-4 top-4 max-w-[calc(100%-32px)] text-emerald-50">
+        <section className="station-logistics-panel custom-scrollbar absolute left-4 top-4 max-w-[calc(100%-32px)] text-emerald-50">
             <div className="station-logistics-corner station-logistics-corner-left"></div>
             <div className="station-logistics-corner station-logistics-corner-right"></div>
 
