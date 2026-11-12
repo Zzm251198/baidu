@@ -1,6 +1,6 @@
 # 深圳轨道物流 AGV 仿真系统
 
-基于 React 19 + Vite 6 + 百度地图地铁独立库（BMapSub）的城市轨道货运可视化与调度仿真平台。
+基于 React 19 + Vite 6 的城市轨道货运可视化与调度仿真平台：监控页用百度地图 JS API（真实深圳底图 + 真实走位地铁线网），仿真页查路依赖百度地铁独立库（BMapSub）。
 
 ## 功能
 
@@ -30,7 +30,7 @@ AK 申请：[百度地图开放平台控制台](https://lbsyun.baidu.com/apicons
 
 ```bash
 npm run typecheck   # 类型检查
-npm run test        # 前端单元测试（Vitest，195 例，约 2 秒）
+npm run test        # 前端单元测试（Vitest，210 例，约 2 秒）
 npm run test:e2e    # 端到端测试（Playwright，16 例，约 1 分钟；用本机 Chrome，会自动拉起 dev server）
 ```
 
@@ -39,11 +39,11 @@ npm run test:e2e    # 端到端测试（Playwright，16 例，约 1 分钟；用
 ```powershell
 cd backend
 .\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
-.\.venv\Scripts\python.exe -m pytest        # 52 例
+.\.venv\Scripts\python.exe -m pytest        # 53 例
 ```
 
 E2E 覆盖人眼最容易漏的基线：**1920×929 下一屏不出现纵向滚动**、
-**数据页筛选链路 620 → 32（线路）→ 6（品类）→ 2（月份）真的会变**、
+**数据页筛选链路 492 → 32（线路）→ 6（品类）→ 2（月份）真的会变**（纯地铁 16 线口径，2026-11 起）、
 **导出 Excel 真的能下载到合法 xlsx**、**地图 SDK 挂掉时仿真页仍可选线路**。
 
 CI（GitHub Actions）三个 job：类型+单测+打包 / pytest+数据口径自检 / Playwright E2E。
@@ -96,7 +96,8 @@ VITE_API_BASE=/api             # dev 由 vite.config.ts 代理到 127.0.0.1:8000
 App.tsx                       主入口：三页 Tab + 仿真状态管理
 index.html / index.tsx        挂载点
 components/
-  SubwayMap.tsx               百度地铁地图（AK 加载、路线查询、站点弹窗）
+  SubwayMap.tsx               百度地铁示意图（仿真页：AK 加载、路线查询、站点弹窗）
+  GeoMetroMap.tsx             监控页真实底图地图（百度 JS API + 烘焙线网数据 + 仓库层 + 实时路况）
   SimulationInsightPanel.tsx  仿真结果看板（指标卡 / T1-T5 作业链 / 换乘风险）
   ChartsPanel.tsx             货运数据页图表（纯展示，数据由上层聚合后传入）
   RightPanel.tsx              异常监控 / 站点吞吐 / AGV 电量
@@ -146,7 +147,7 @@ GET {VITE_API_BASE}/alerts
   所有数字都由同一份运单集聚合而来，改筛选条件图表会随之变化。
 - 数据仍是**演示数据**（页面已标注）。换真实数据只需实现 `httpSource` 对应的 4 个接口。
 - 依赖在线资源：百度地铁库、Tailwind CDN、Font Awesome CDN，需联网运行。
-- 路线查询依赖百度 `BMapSub.Direction`；无网络、AK 失效或起终点在城际/云巴等非常规线路上时，
+- 路线查询依赖百度 `BMapSub.Direction`；无网络或 AK 失效时自动回退本地路径引擎；
   会自动降级到本地线网引擎（覆盖 1/2/3/5/11/14 号线），两套都失败才提示更换站点。
 - 仿真页右下的地图是**缩略视图**：百度地铁独立库的缩放接口是实例闭包、无法从外部控制，
   约 200px 高度放不下整张深圳线网。因此该面板改为「缩略地图 + 分段行程列表」，
