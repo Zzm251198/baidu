@@ -134,8 +134,7 @@ jobs:
               if fail is not None:
                   name = case.get('name', '?')
                   cls = case.get('classname', '')
-                  msg = (fail.get('message') or '').split('
-')[0][:220]
+                  msg = (fail.get('message') or '').split('\n')[0][:220]
                   print(f'::error title=E2E 失败::{cls} > {name} :: {msg}')
           PY
 
