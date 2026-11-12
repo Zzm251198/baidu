@@ -803,7 +803,7 @@ const App: React.FC = () => {
                   <div className="monitor-map-frame flex-1 min-h-0">
                     {/* 监控页用真实底图地图（真实深圳地图 + 真实走位线网）；
                         仿真页仍用 SubwayMap 示意图（查路依赖 BMapSub） */}
-                    <GeoMetroMap onMapLoaded={setMapStations} stationIndex={stationIndex} fleetByStation={fleetVehicles.byStation} />
+                    <GeoMetroMap onMapLoaded={setMapStations} stationIndex={stationIndex} fleetByStation={fleetVehicles.byStation} lineLoad={lineLoadData} />
                   </div>
                 </section>
               </div>

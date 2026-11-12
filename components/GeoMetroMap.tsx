@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
 import type { StationStat } from '../src/data/stationStats';
 import type { AgvPoolEntry } from '../src/data/mockFleet';
+import { shortenLineName, type LineLoadPoint } from '../src/data/aggregations';
 import type { StationNode } from './SubwayMap';
 import { StationLogisticsPanel, buildSampleStationData, type StationPanelData } from './StationLogisticsPanel';
 import networkJson from '../src/data/szMetroNetwork.json';
@@ -130,11 +131,13 @@ interface GeoMetroMapProps {
     stationIndex?: Map<string, StationStat>;
     /** 车队逐车明细（按站点分组）：站点弹窗"该站小车"分区的数据源 */
     fleetByStation?: Map<string, AgvPoolEntry[]>;
+    /** 线路负载（货量/运力/装载率）：线宽与线路详情弹窗的数据源 */
+    lineLoad?: LineLoadPoint[];
     /** 运输路线结果（算法输出）；变化时自动重绘 */
     warehouseRoutes?: WarehouseRoute[];
 }
 
-const GeoMetroMapComponent: React.FC<GeoMetroMapProps> = ({ onMapLoaded, stationIndex, fleetByStation, warehouseRoutes }) => {
+const GeoMetroMapComponent: React.FC<GeoMetroMapProps> = ({ onMapLoaded, stationIndex, fleetByStation, lineLoad, warehouseRoutes }) => {
     const rawId = useId();
     const containerId = `geo-map-${rawId.replace(/[^a-zA-Z0-9]/g, '')}`;
     const containerRef = useRef<HTMLDivElement>(null);
@@ -144,8 +147,15 @@ const GeoMetroMapComponent: React.FC<GeoMetroMapProps> = ({ onMapLoaded, station
     onMapLoadedRef.current = onMapLoaded;
     const routesRef = useRef(warehouseRoutes);
     routesRef.current = warehouseRoutes;
+    const lineLoadRef = useRef(lineLoad);
+    lineLoadRef.current = lineLoad;
 
     const [selectedStation, setSelectedStation] = useState<{ name: string; data: StationPanelData } | null>(null);
+    // 点线路弹出的线路详情（线宽与货运量成正比，弹窗给出精确数字）
+    const [selectedLine, setSelectedLine] = useState<{
+        id: string; label: string; color: string; stationCount: number;
+        load: number | null; capacity: number | null; rate: number | null;
+    } | null>(null);
     const [mapError, setMapError] = useState<string | null>(null);
     // 实时路况图层开关（默认关：路况红黄绿与彩色线网叠加较花，演示需要时一键打开）
     const [trafficOn, setTrafficOn] = useState(false);
@@ -282,11 +292,23 @@ const GeoMetroMapComponent: React.FC<GeoMetroMapProps> = ({ onMapLoaded, station
                 const zoomFactor = (z: number) => Math.min(1.6, Math.max(0.55, 0.55 + (z - 10) * 0.15));
                 const scaled = (base: number, f: number) => Math.max(8, Math.round(base * f));
 
-                const linePairs: { casing: any; colored: any }[] = [];
+                const linePairs: { casing: any; colored: any; baseCasing: number; baseLine: number }[] = [];
                 const stationMarks: { marker: any; color: string; big: boolean }[] = [];
                 const warehouseMarks: { marker: any }[] = [];
 
-                // 线路：白色描边打底 + 官方线色覆盖（真实走位 = 相邻站坐标直连）
+                // 线路：白色描边打底 + 官方线色覆盖（真实走位 = 相邻站坐标直连）。
+                // 线宽与装载率成正比（3~8px）：16 条线在市中心高度重叠，同宽无法分辨繁忙程度。
+                // 备选指标对比：各线"货运量"天然相近（前 8 站 × 32 单）挤成一档；
+                // 装载率（货量/设计运力）分布 43%~89%，平滑散开且业务语义更准（繁忙度）
+                const loadByShort = new Map<string, LineLoadPoint>(
+                    (lineLoadRef.current ?? []).map((item) => [item.name, item])
+                );
+                const rates = [...loadByShort.values()].map((item) => item.rate);
+                const minRate = Math.min(...rates);
+                const maxRate = Math.max(...rates);
+                // 底宽 3.5：缩放后细线不细于 ~3px，保证点击命中区；最粗 8.5 与细线拉开两倍以上
+                const lineWeight = (rate: number) => 3.5 + ((rate - minRate) / Math.max(1, maxRate - minRate)) * 5;
+
                 const allPoints: any[] = [];
                 for (const line of network.lines) {
                     const pts = line.stations
@@ -294,19 +316,31 @@ const GeoMetroMapComponent: React.FC<GeoMetroMapProps> = ({ onMapLoaded, station
                         .filter(Boolean);
                     if (pts.length < 2) continue;
                     if (line.loop) pts.push(pts[0]);
+                    const stat = loadByShort.get(shortenLineName(line.label));
+                    const baseLine = stat ? lineWeight(stat.rate) : BASE.line;
+                    const baseCasing = baseLine + 3;
                     const casing = new BMap.Polyline(pts, {
                         strokeColor: '#ffffff',
-                        strokeWeight: BASE.casing,
+                        strokeWeight: baseCasing,
                         strokeOpacity: 0.85
                     });
                     const colored = new BMap.Polyline(pts, {
                         strokeColor: line.color,
-                        strokeWeight: BASE.line,
+                        strokeWeight: baseLine,
                         strokeOpacity: 0.95
                     });
+                    colored.addEventListener('click', () => setSelectedLine({
+                        id: line.id,
+                        label: line.label,
+                        color: line.color,
+                        stationCount: line.stations.length,
+                        load: stat?.load ?? null,
+                        capacity: stat?.capacity ?? null,
+                        rate: stat?.rate ?? null
+                    }));
                     map.addOverlay(casing);
                     map.addOverlay(colored);
-                    linePairs.push({ casing, colored });
+                    linePairs.push({ casing, colored, baseCasing, baseLine });
                     allPoints.push(...pts);
                 }
 
@@ -414,9 +448,9 @@ const GeoMetroMapComponent: React.FC<GeoMetroMapProps> = ({ onMapLoaded, station
                     for (const { marker } of warehouseMarks) {
                         marker.setIcon(warehouseIcon(scaled(BASE.warehouse, f)));
                     }
-                    for (const { casing, colored } of linePairs) {
-                        casing.setStrokeWeight(Math.max(1.5, Math.round(BASE.casing * f)));
-                        colored.setStrokeWeight(Math.max(1.5, Math.round(BASE.line * f)));
+                    for (const { casing, colored, baseCasing, baseLine } of linePairs) {
+                        casing.setStrokeWeight(Math.max(1.5, Math.round(baseCasing * f)));
+                        colored.setStrokeWeight(Math.max(1.5, Math.round(baseLine * f)));
                     }
                 };
                 zoomHandler = () => {
@@ -505,6 +539,10 @@ const GeoMetroMapComponent: React.FC<GeoMetroMapProps> = ({ onMapLoaded, station
                     <i className="inline-block w-0 h-0 border-l-[5px] border-r-[5px] border-b-[9px] border-l-transparent border-r-transparent border-b-amber-500" />
                     物流仓库 {warehouses.length}
                 </span>
+                <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/85 border border-black/10 text-[10px] text-slate-600 backdrop-blur-sm">
+                    <i className="inline-block w-3 border-t-[3px] border-emerald-500 rounded-full" />
+                    线宽 ≈ 装载率
+                </span>
                 {warehouseRoutes && warehouseRoutes.length > 0 && (
                     <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/85 border border-black/10 text-[10px] text-slate-600 backdrop-blur-sm">
                         <i className="inline-block w-3 border-t-2 border-dashed border-blue-600" />
@@ -512,6 +550,36 @@ const GeoMetroMapComponent: React.FC<GeoMetroMapProps> = ({ onMapLoaded, station
                     </span>
                 )}
             </div>
+            {selectedLine && (
+                <div className="absolute right-3 top-12 z-[3] w-64 rounded-xl border border-black/10 bg-white/95 backdrop-blur-md shadow-lg overflow-hidden">
+                    <div className="flex items-center gap-2 px-3 py-2 border-b border-black/5">
+                        <span className="w-1.5 h-5 rounded-full flex-shrink-0" style={{ background: selectedLine.color }} />
+                        <span className="font-bold text-sm text-slate-900 truncate flex-1">{selectedLine.id}</span>
+                        <button
+                            type="button"
+                            aria-label="关闭线路详情"
+                            onClick={() => setSelectedLine(null)}
+                            className="w-6 h-6 rounded-md border border-black/10 text-slate-500 hover:bg-black/5 text-xs flex-shrink-0"
+                        >
+                            <i className="fa fa-times" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                    <div className="px-3 py-2.5 space-y-1.5 text-xs">
+                        <div className="flex justify-between"><span className="text-slate-500">车站数</span><b className="text-slate-800">{selectedLine.stationCount} 站</b></div>
+                        <div className="flex justify-between"><span className="text-slate-500">期间货量</span><b className="text-slate-800">{selectedLine.load != null ? `${selectedLine.load} 吨` : '—'}</b></div>
+                        <div className="flex justify-between"><span className="text-slate-500">设计运力</span><b className="text-slate-800">{selectedLine.capacity != null ? `${selectedLine.capacity} 吨` : '—'}</b></div>
+                        {selectedLine.rate != null && (
+                            <div>
+                                <div className="flex justify-between mb-1"><span className="text-slate-500">装载率</span><b className={selectedLine.rate >= 80 ? 'text-red-600' : selectedLine.rate >= 50 ? 'text-amber-600' : 'text-emerald-600'}>{selectedLine.rate}%</b></div>
+                                <div className="h-1.5 rounded-full bg-black/5 overflow-hidden">
+                                    <i className="block h-full rounded-full" style={{ width: `${Math.min(100, selectedLine.rate)}%`, background: selectedLine.color }} />
+                                </div>
+                            </div>
+                        )}
+                        <p className="text-[10px] text-slate-400 pt-1 border-t border-black/5">线宽与装载率（繁忙度）成正比；点击其他线路可切换</p>
+                    </div>
+                </div>
+            )}
             {selectedStation && (
                 <StationLogisticsPanel
                     station={selectedStation}
