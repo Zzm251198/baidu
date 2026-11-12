@@ -116,7 +116,28 @@ jobs:
       - name: 运行 E2E
         env:
           CI: 'true'
-        run: npx playwright test
+          PLAYWRIGHT_JUNIT_OUTPUT_NAME: test-results/junit.xml
+        run: npx playwright test --reporter=line,junit
+
+      # 失败用例名写进 annotations（日志 API 需要写权限，annotations 公开可读）
+      - name: 标注失败用例
+        if: failure()
+        run: |
+          python - <<'PY'
+          import xml.etree.ElementTree as ET
+          try:
+              tree = ET.parse('test-results/junit.xml')
+          except Exception:
+              raise SystemExit(0)
+          for case in tree.iter('testcase'):
+              fail = next(iter(list(case.iter('failure')) + list(case.iter('error'))), None)
+              if fail is not None:
+                  name = case.get('name', '?')
+                  cls = case.get('classname', '')
+                  msg = (fail.get('message') or '').split('
+')[0][:220]
+                  print(f'::error title=E2E 失败::{cls} > {name} :: {msg}')
+          PY
 
       # 失败时把截图与报告留下来，不然只能对着日志猜
       - name: 上传失败现场
