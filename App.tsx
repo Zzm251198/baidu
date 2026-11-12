@@ -9,6 +9,9 @@ import { RightPanel } from './components/RightPanel';
 import { ChartsPanel } from './components/ChartsPanel';
 import { SimulationInsightPanel, type RouteData } from './components/SimulationInsightPanel';
 import { SimStage } from './components/SimStage';
+import { BatchSimPanel } from './components/BatchSimPanel';
+import { runBatchSimulation, type BatchResult } from './src/simulation/batchSimulator';
+import { AGV_POOL } from './src/data/mockFleet';
 import { OrderTimeline, type TimelineEvent } from './components/OrderTimeline';
 import { ToastStack, useToasts } from './components/Toast';
 import { AlgorithmCompare } from './components/AlgorithmCompare';
@@ -86,6 +89,11 @@ const App: React.FC = () => {
   });
   const [simResult, setSimResult] = useState<SimResult | null>(null);
   const [simulationOutput, setSimulationOutput] = useState<any | null>(null);
+  // 仿真模式：单票推演（DES 时间线）/ 批量仿真（N 单共享车队与班次容量）
+  const [simMode, setSimMode] = useState<'single' | 'batch'>('single');
+  const [batchOrderCount, setBatchOrderCount] = useState(30);
+  const [batchWindowMinutes, setBatchWindowMinutes] = useState(120);
+  const [batchResult, setBatchResult] = useState<BatchResult | null>(null);
   const [isSimulating, setIsSimulating] = useState(false);
   const [routeRequestKey, setRouteRequestKey] = useState(0);
   // 结果归因文本（路径策略 + 计算来源），随结果一起清空/写入，供效益看板显示
@@ -430,6 +438,24 @@ const App: React.FC = () => {
    * 仿真主管线（百度与本地策略共用）：路径已定 → 组订单 → 后端/本地编排 → 落结果。
    * 抽出来是因为插点 A 接入后有两条入口：百度回调与本地策略直达。
    */
+  /** 批量仿真：N 个订单在时间窗内到达，共享 248 台车队池与班次柜位（同步计算，毫秒级） */
+  const runBatchSim = useCallback(() => {
+    const result = runBatchSimulation({
+      orderCount: batchOrderCount,
+      windowStartMin: 600,
+      windowMinutes: batchWindowMinutes,
+      seed: `batch-${batchOrderCount}-${batchWindowMinutes}`,
+      transferPenaltyStations: 3,
+      headwayMin: 6,
+      slotsPerTrain: 4,
+      chargeMinutes: 45,
+      agvs: AGV_POOL.agvs,
+      lines: canonicalLines
+    });
+    setBatchResult(result);
+    showToast(`批量仿真完成：${result.metrics.completed}/${result.metrics.totalOrders} 单完成，总利润 ${result.metrics.totalProfit} 元`, 'success');
+  }, [batchOrderCount, batchWindowMinutes, canonicalLines]);
+
   const runSimulationPipeline = useCallback(async (effectiveRoute: any, routeSourceNote: string) => {
     const cargoValue = Number(simParams.cargoValue);
 
@@ -947,10 +973,76 @@ const App: React.FC = () => {
                   <div className="ml-4 h-0.5 flex-1 bg-gradient-to-r from-emerald-500/50 to-transparent rounded-full"></div>
                 </h3>
 
+                {/* 模式切换：单票推演（DES 过程）/ 批量仿真（资源竞争） */}
+                <div className="flex rounded-lg border border-emerald-500/20 overflow-hidden flex-shrink-0 relative z-10 mb-1">
+                  <button
+                    type="button"
+                    onClick={() => setSimMode('single')}
+                    className={`flex-1 px-3 py-1.5 text-xs font-semibold transition-colors ${simMode === 'single' ? 'bg-emerald-500/20 text-emerald-100' : 'text-gray-400 hover:bg-black/10'}`}
+                  >
+                    <i className="fa fa-play-circle mr-1.5" aria-hidden="true"></i>单票推演
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSimMode('batch')}
+                    className={`flex-1 px-3 py-1.5 text-xs font-semibold transition-colors ${simMode === 'batch' ? 'bg-cyan-500/20 text-cyan-100' : 'text-gray-400 hover:bg-black/10'}`}
+                  >
+                    <i className="fa fa-layer-group mr-1.5" aria-hidden="true"></i>批量仿真
+                  </button>
+                </div>
+
                 {/* min-h-0 + 内部滚动：矮窗口（如笔记本半屏）下新增的算法策略区不会把
                     「开始仿真」按钮挤出 overflow-hidden 的可视区——E2E 是 1920×929 全屏，
                     测不到小窗口裁剪，这里必须自守 */}
                 <div className="space-y-6 relative z-10 flex-grow flex flex-col min-h-0 overflow-y-auto custom-scrollbar pr-1">
+                  {simMode === 'batch' && (
+                    <div className="space-y-5 p-5 bg-gray-900/20 rounded-lg border border-cyan-500/15 backdrop-blur-sm">
+                      <label className="text-xs font-bold text-cyan-300 flex items-center">
+                        <span className="w-2.5 h-2.5 rounded-full bg-cyan-500 mr-2 shadow-lg shadow-cyan-500/20"></span>
+                        批量仿真参数
+                      </label>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-[11px] text-gray-400 mb-1 block">订单数量</label>
+                          <select
+                            className="bg-gray-900/60 border border-cyan-500/30 rounded-lg px-4 py-2.5 text-sm text-cyan-100 focus:border-cyan-400 focus:outline-none appearance-none cursor-pointer w-full"
+                            value={batchOrderCount}
+                            onChange={(e) => setBatchOrderCount(Number(e.target.value))}
+                          >
+                            {[10, 30, 50, 100].map((n) => <option key={n} value={n} className="bg-gray-800">{n} 单</option>)}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-[11px] text-gray-400 mb-1 block">到达时间窗</label>
+                          <select
+                            className="bg-gray-900/60 border border-cyan-500/30 rounded-lg px-4 py-2.5 text-sm text-cyan-100 focus:border-cyan-400 focus:outline-none appearance-none cursor-pointer w-full"
+                            value={batchWindowMinutes}
+                            onChange={(e) => setBatchWindowMinutes(Number(e.target.value))}
+                          >
+                            {[60, 120, 180].map((n) => <option key={n} value={n} className="bg-gray-800">{n} 分钟</option>)}
+                          </select>
+                        </div>
+                      </div>
+                      <p className="text-[11px] text-gray-400 leading-relaxed">
+                        订单在时间窗内陆续到达，<b className="text-cyan-200">共享 248 台车队池</b>（本站待命 &gt; 枢纽池 &gt; 跨站调度）与
+                        <b className="text-cyan-200">列车班次柜位</b>（间隔 6 分钟 / 每班 4 柜，满则等下一班）；低电车(&lt;25%)回充 45 分钟。
+                      </p>
+                      <button
+                        type="button"
+                        onClick={runBatchSim}
+                        className="w-full py-3 rounded-xl bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-400/40 text-cyan-100 font-semibold text-sm transition-all hover:shadow-lg hover:shadow-cyan-500/20"
+                      >
+                        <i className="fa fa-play-circle mr-2" aria-hidden="true"></i>开始批量仿真
+                      </button>
+                      {batchResult && (
+                        <div className="text-[11px] text-emerald-300 bg-emerald-500/5 border border-emerald-500/15 rounded-lg px-3 py-2">
+                          已完成 {batchResult.metrics.completed}/{batchResult.metrics.totalOrders} 单 · 利润 {batchResult.metrics.totalProfit} 元 · 利用率 {batchResult.metrics.utilizationRate}%（右侧推演可回放）
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {simMode === 'single' && (
+                  <>
                   <div className="space-y-4 p-5 bg-gray-900/20 rounded-lg border border-emerald-500/10 backdrop-blur-sm">
                     <label className="text-xs font-bold text-emerald-400 flex items-center">
                       <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 mr-2 shadow-lg shadow-emerald-500/20"></span>
@@ -1116,17 +1208,23 @@ const App: React.FC = () => {
                       )}
                     </button>
                   </div>
+                  </>
+                  )}
                 </div>
               </div>
 
               <div className="lg:col-span-8 w-full bg-transparent">
                 <div className="bg-transparent rounded-xl p-6 border border-emerald-500/20 relative overflow-hidden h-full min-h-[620px] flex flex-col">
-                  {/* 推演舞台：把"瞬间出结果"的公式运算展开成按时钟推进的事件过程（2026-11 仿真升级） */}
-                  {simulationOutput?.success && (
+                  {/* 推演舞台：单票 = DES 事件时间线；批量 = N 单资源竞争推演 + 运营指标 */}
+                  {simMode === 'batch' && batchResult ? (
+                    <div className="flex-shrink-0 mb-4">
+                      <BatchSimPanel result={batchResult} windowStartMin={600} />
+                    </div>
+                  ) : simulationOutput?.success ? (
                     <div className="flex-shrink-0 mb-4">
                       <SimStage output={simulationOutput} sourceNote={simSourceText} />
                     </div>
-                  )}
+                  ) : null}
                   <div className="absolute top-0 left-0 w-20 h-20 border-t border-l border-emerald-400/30 rounded-tl-xl pointer-events-none"></div>
                   <div className="absolute bottom-0 right-0 w-20 h-20 border-b border-r border-emerald-400/30 rounded-br-xl pointer-events-none"></div>
                   <h3 className="font-bold text-emerald-300 mb-6 flex items-center relative z-10 flex-shrink-0">

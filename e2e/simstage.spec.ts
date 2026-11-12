@@ -40,4 +40,27 @@ test.describe('推演舞台', () => {
     await page.getByTitle('跳到完成').click();
     await expect(page.getByText(/推演完成：/)).toBeVisible({ timeout: 5_000 });
   });
+
+  test('批量仿真：N 单共享资源推演 + 运营指标', async ({ page }) => {
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await expect(page.getByText('186 辆')).toBeVisible({ timeout: 30_000 });
+    await page.getByRole('button', { name: '仿真模拟' }).click();
+    await page.waitForTimeout(400);
+
+    // 切批量模式并运行（默认 30 单 / 120 分钟窗）
+    await page.getByRole('button', { name: /批量仿真/ }).first().click();
+    await page.getByRole('button', { name: '开始批量仿真' }).click();
+
+    await expect(page.getByText('批量仿真时钟')).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText('完成订单')).toBeVisible();
+    await expect(page.getByText('车辆利用率', { exact: true })).toBeVisible();
+    await expect(page.getByText('班次满载率', { exact: true })).toBeVisible();
+    const events = page.locator('.sim-event');
+    expect(await events.count()).toBeGreaterThanOrEqual(30);
+
+    // 跳到完成 → 批量汇总事件
+    await page.getByTitle('跳到完成').click();
+    await expect(page.getByText(/批量仿真完成/).first()).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText(/已完成 30\/30 单/)).toBeVisible();
+  });
 });
