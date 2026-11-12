@@ -8,6 +8,7 @@ import { AGV } from './components/agv.tsx';
 import { RightPanel } from './components/RightPanel';
 import { ChartsPanel } from './components/ChartsPanel';
 import { SimulationInsightPanel, type RouteData } from './components/SimulationInsightPanel';
+import { SimStage } from './components/SimStage';
 import { OrderTimeline, type TimelineEvent } from './components/OrderTimeline';
 import { ToastStack, useToasts } from './components/Toast';
 import { AlgorithmCompare } from './components/AlgorithmCompare';
@@ -1119,7 +1120,13 @@ const App: React.FC = () => {
               </div>
 
               <div className="lg:col-span-8 w-full bg-transparent">
-                <div className="bg-transparent rounded-xl p-6 border border-emerald-500/20 relative overflow-hidden h-full min-h-[440px] flex flex-col">
+                <div className="bg-transparent rounded-xl p-6 border border-emerald-500/20 relative overflow-hidden h-full min-h-[620px] flex flex-col">
+                  {/* 推演舞台：把"瞬间出结果"的公式运算展开成按时钟推进的事件过程（2026-11 仿真升级） */}
+                  {simulationOutput?.success && (
+                    <div className="flex-shrink-0 mb-4">
+                      <SimStage output={simulationOutput} sourceNote={simSourceText} />
+                    </div>
+                  )}
                   <div className="absolute top-0 left-0 w-20 h-20 border-t border-l border-emerald-400/30 rounded-tl-xl pointer-events-none"></div>
                   <div className="absolute bottom-0 right-0 w-20 h-20 border-b border-r border-emerald-400/30 rounded-br-xl pointer-events-none"></div>
                   <h3 className="font-bold text-emerald-300 mb-6 flex items-center relative z-10 flex-shrink-0">
