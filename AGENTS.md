@@ -17,9 +17,9 @@
 - 远程仓库：`Zzm251198/baidu`（public），push 后自动跑 `.github/workflows/ci.yml`，三个 job 均绿
 - 验证基线（回归对表，2026-11 纯地铁口径）：186 辆 / 16 线 / 492 单 / 36 分钟 / 13 异常（含动态规则告警：负载≥80 前 5 条 + 低电占比>60 共 5 条）；牛湖→公明广场 72 分钟 / 27 站 / 1 换乘 / 收入 603.00 成本 125.10 利润 477.90；1920×929 监控页首屏完整（2026-11 布局重排为纵向流，允许滚动、禁横向溢出），数据页/仿真页仍一屏
 - 环境坑：本机 workspace-write 沙箱不可用（temp 缺失），npm/Python/Chrome 相关命令需 danger-full-access；PowerShell 不要用 `Get-Content | ConvertFrom-Json` 处理中文 UTF-8
-- 测试：`npm run test`（Vitest，210 例）/ `npm run typecheck`（tsc --noEmit）/ `npm run build`
+- 测试：`npm run test`（Vitest，230 例）/ `npm run typecheck`（tsc --noEmit）/ `npm run build`；发布用 `npm run release`（详见下方 dist 坑）
 - 后端测试：`cd backend; .venv\Scripts\python.exe -m pytest`（53 例，含前后端口径对拍）；CI 见 `.github/workflows/ci.yml`
-- E2E：`npm run test:e2e`（Playwright 16 例，用系统 Chrome `channel: 'chrome'`，未开 3000 时由 webServer 自动拉起）；CI 也有 e2e job（用下载的 Chromium + `--with-deps`）
+- E2E：`npm run test:e2e`（Playwright 21 例，用系统 Chrome `channel: 'chrome'`，未开 3000 时由 webServer 自动拉起）；CI 也有 e2e job（用下载的 Chromium + `--with-deps`）
 - 离线兜底：仿真页线路/站点下拉优先用**数据源线网**（`lineInfos`），地图 SDK 不可用时仍可用（无 AK / 离线 / `file://` / CI）。`e2e/offlineFallback.spec.ts` 用 route 拦截百度验证这条
 - 多方案对比：`src/analysis/planCompare.ts`（纯逻辑，34 例单测）——路径按签名去重（均衡/时间优先常同路）、
   路径×算法笛卡尔积、帕累托前沿标推荐（不用加权分）。基线不带 `agvCapacityHeadroomKg`，
@@ -32,6 +32,6 @@
 - pytest 9 坑：`-q` 模式不再打印末尾 "N passed" 统计行，PowerShell 管道下更难见——判据用 exit code（0 = 全过）或 `--junitxml` 读 tests/failures 属性，别用肉眼找统计行
 - 杀进程坑：按命令行子串 `pip` 过滤 python 进程会误杀（multiprocessing spawn 的命令行含 `pipe` 字样也命中）——要匹配 `' -m pip '` 带空格的精确串，或用任务树整体停。**判定"孤儿"必须先查父进程是否存活**：uvicorn `--reload` 的应答子进程经 multiprocessing spawn 出来时用的是**基础解释器路径**（Program Files\Python311，不是 .venv），长得和 pip 残留一模一样——2026-11 曾把它当孤儿杀掉，结果主进程持有 socket 不应答（端口在听、health 超时），只能整树重启
 - 构建坑：若 `npm run build` 报 `[vite:esbuild-transpile] remove ...Temp\esbuild-xxx: Access is denied`，先 `$env:TEMP=$env:TMP=<工作区内可写目录>` 再构建（esbuild 删不掉系统临时文件）。**千万别用 `Get-Process esbuild | Stop-Process` 清"残留"**——那可能是正在跑的 dev server 的 esbuild 服务，杀了以后 vite 所有转译 500（"The service is no longer running"）
-- dist 坑：`dist/index.html` 是手动构建的快照——代码更新后它不会自动跟进，**演示/拷 U 盘前必须重新 `npm run build`**（2026-11 曾出现 dist 落后源码 5 个提交、缺多个已修复特性）。验证 dist 是否含某特性：用 `[System.IO.File]::ReadAllText($p, UTF8)` 读再搜——PowerShell 5.1 的 `Get-Content` 对无 BOM UTF-8 按 GBK 读，中文字符串必搜不到（假阴性）
+- dist 坑：`dist/index.html` 是手动构建的快照——代码更新后它不会自动跟进。**演示/拷 U 盘前必须 `npm run release`**（= build + 功能标记校验 + 生成 `release/演示版-<日期>-<commit>.html` 与使用说明；校验不过会失败退出）。标记必须选**会渲染到页面**的文案（注释里的字会被构建剥离——第一版用「推演舞台」就踩了这个坑）。2026-11 曾两次出现 dist 落后源码若干提交。手工验证 dist 是否含某特性：用 `[System.IO.File]::ReadAllText($p, UTF8)` 读再搜——PowerShell 5.1 的 `Get-Content` 对无 BOM UTF-8 按 GBK 读，中文字符串必搜不到（假阴性）
 - 依赖坑：本机 npm 10.9.x 装 vitest 会崩在 `#loadPeerSet`；用 `npx -y npm@11 install` 绕过。切记 `--legacy-peer-deps` 会漏装 peer（`react-is` 被裁掉会直接导致 recharts 打包失败）
 - 审计坑：本机 registry 指向 npmmirror，它不实现 audit 接口（报 NOT_IMPLEMENTED）——跑 `npm audit --registry=https://registry.npmjs.org`。npm 11 会警告 esbuild postinstall 被 allowScripts 拦截：无碍，esbuild 0.25 起用可选依赖放平台二进制，构建/测试照常。2026-11 已修至 audit 归零（vite 6.4 + vitest 4.1.12），后续新增依赖后建议复跑一次

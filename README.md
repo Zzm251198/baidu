@@ -81,9 +81,26 @@ VITE_API_BASE=/api             # dev 由 vite.config.ts 代理到 127.0.0.1:8000
 
 ## 分发到别的机器（单文件版）
 
-1. `npm run build` 生成 `dist/index.html`（约 700KB，JS/CSS 已全部内联成一个文件）
-2. 把这一个文件拷到目标机器（U 盘 / 微信 / 网盘均可），双击用 Chrome 或 Edge 打开即可运行
-3. 需要联网：运行时加载百度地铁库、Tailwind 与 Font Awesome 的 CDN 资源
+一条命令完成发布：
+
+```bash
+npm run release
+```
+
+它会依次做三件事，任何一步失败都会直接报错退出：
+
+1. **构建**：`vite build` 产出 `dist/index.html`（JS/CSS 全内联）
+2. **校验**：检查产物里是否含最新功能的界面标记（`仿真时钟`/`批量仿真时钟`/`车辆利用率`/`多方案对比`/`导出 Excel`）
+   —— 专治"忘了重建就发出去"：曾两次出现 `dist` 落后源码若干提交
+3. **打包**：复制为 `release/演示版-<日期>-<commit>.html`，并生成 `release/使用说明.txt`（含版本、SHA256、能力边界）
+
+然后把 `release/` 里那个 html 拷到目标机器（U 盘 / 微信 / 网盘均可），双击用 Chrome 或 Edge 打开。
+
+说明：
+
+- 需要联网：运行时加载百度地图 SDK、Tailwind 与 Font Awesome 的 CDN 资源
+- **单文件版没有后端**：导出 Excel、派车算法「大运力优先」、批量仿真、审计记录不可用
+- 只想快速复查现有 `dist`：`node scripts/release.mjs --skip-build`（npm 11 不会把 `--` 后的参数透传，所以别用 `npm run release -- --skip-build`）
 
 说明：
 
