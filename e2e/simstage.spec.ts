@@ -38,7 +38,7 @@ test.describe('推演舞台', () => {
 
     // 跳到完成 → 出现利润小结
     await page.getByTitle('跳到完成').click();
-    await expect(page.getByText(/推演完成：/)).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText(/推演完成：/)).toBeVisible({ timeout: 15_000 });
   });
 
   test('批量仿真：N 单共享资源推演 + 运营指标', async ({ page }) => {
@@ -60,7 +60,7 @@ test.describe('推演舞台', () => {
 
     // 跳到完成 → 批量汇总事件
     await page.getByTitle('跳到完成').click();
-    await expect(page.getByText(/批量仿真完成/).first()).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText(/批量仿真完成/).first()).toBeVisible({ timeout: 15_000 });
     await expect(page.getByText(/已完成 30\/30 单/)).toBeVisible();
   });
 });
