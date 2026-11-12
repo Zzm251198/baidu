@@ -39,7 +39,7 @@ from .schemas import (
     WaybillOut,
     WaybillUpdate,
 )
-from .services import export_excel, simulation
+from .services import alert_rules, export_excel, simulation
 from .services import simulation_capacity
 
 # 调度算法注册表（插点 B）：新增算法在这里登记一行即可，路由/落库/导出全复用。
@@ -311,11 +311,21 @@ def list_fleet_vehicles(station: str | None = Query(default=None, description="�
 
 @app.get("/api/alerts", response_model=list[AlertOut])
 def list_alerts() -> list[AlertOut]:
+    """告警 = 动态规则（负载率/低电量，现算）+ 静态种子事件（示例）。
+
+    动态规则下沉到这里，是为了让"接口数字"与"页面数字"永远一致：
+    此前前端自己算 10 条、接口只给 6 条，页面上 13 个异常在接口里查不到。
+    """
     with get_conn() as conn:
         rows = conn.execute("SELECT * FROM alerts ORDER BY time DESC").fetchall()
+        dynamic = alert_rules.build_dynamic_alerts(conn)
+
     return [
-        AlertOut(id=row["id"], time=row["time"], type=row["type"], message=row["message"], station=row["station"])
-        for row in rows
+        *[AlertOut(**item) for item in dynamic],
+        *[
+            AlertOut(id=row["id"], time=row["time"], type=row["type"], message=row["message"], station=row["station"])
+            for row in rows
+        ],
     ]
 
 

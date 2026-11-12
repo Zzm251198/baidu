@@ -1,0 +1,9 @@
+{
+  "_comment": "动态告警规则阈值（前后端共用；前端在 mock 模式下也用同一份口径）",
+  "overloadThreshold": 80,
+  "overloadErrorThreshold": 90,
+  "maxOverloadAlerts": 5,
+  "lowBatteryBandMax": 30,
+  "lowBatteryRatioThreshold": 0.6,
+  "minCarsPerStation": 2
+}

@@ -147,13 +147,26 @@ def test_fleet_vehicles(client):
 
 
 def test_alerts(client):
-    """告警：6 条，其中 error + warning 共 3 条（监控卡片上的"异常"数）。"""
-    alerts = client.get("/api/alerts").json()
-    assert len(alerts) == 6
+    """告警 = 动态规则（现算）+ 种子事件；接口必须与页面口径一致。
 
+    2026-11：动态规则（负载率/低电量）从"前端自己算"下沉到后端，
+    原因是接口只返 6 条、页面显示 13 条，答辩时一查就矛盾。
+    """
+    alerts = client.get("/api/alerts").json()
+
+    # 6 条种子（其中 3 条 info/success）+ 5 条负载率 + 5 条低电量 = 16 条
+    assert len(alerts) == 16, "6 条种子 + 10 条动态规则"
     abnormal = [a for a in alerts if a["type"] in ("error", "warning")]
-    assert len(abnormal) == 3
+    # 页面徽标显示的就是这个数（3 条种子异常 + 10 条动态）
+    assert len(abnormal) == 13
     assert {a["type"] for a in alerts} <= {"error", "warning", "info", "success"}
+
+    # 动态规则在前、种子事件在后（与前端原有展示顺序一致）
+    assert alerts[0]["id"] < 0
+    assert any("站点负载率" in a["message"] for a in alerts)
+    assert any("低电量小车" in a["message"] for a in alerts)
+    # id 唯一（动态用负数，避免与种子 1..6 撞号）
+    assert len({a["id"] for a in alerts}) == len(alerts)
 
 
 def test_cost_estimate(client):

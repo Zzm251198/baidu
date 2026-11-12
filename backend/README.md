@@ -73,7 +73,7 @@ backend/
 | PATCH | `/api/waybills/{waybillNo}` | 局部更新 |
 | DELETE | `/api/waybills/{waybillNo}` | 删除（成功 204） |
 | GET | `/api/fleet` | 车队快照 `{total, active, idle, lowBattery, charging, battery[]}` |
-| GET | `/api/alerts` | 告警列表 |
+| GET | `/api/alerts` | 告警列表：**10 条动态规则（负载率≥80 前 5 + 低电占比>60，现算）+ 6 条种子事件**；阈值见 `public/data/alert_rules.json` |
 | POST | `/api/simulate` | **调度仿真**：输入订单 + 路径，返回列车/AGV 编排、指标、风险 |
 | GET | `/api/simulations` | 最近的仿真运行记录（审计用） |
 | POST | `/api/cost/estimate` | 成本/时效测算（供后续接算法复用） |

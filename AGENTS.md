@@ -15,10 +15,10 @@
 - 深圳轨道物流 AGV 仿真系统：React 19 + Vite 6 + 百度地铁库 + Python/FastAPI/SQLite
 - 分支 `main`（原 `refactor/p0-remediation` 已快进合并，远程同名分支保留作参考）；前端 3000、后端 8000（`VITE_DATA_SOURCE=mock|http`）
 - 远程仓库：`Zzm251198/baidu`（public），push 后自动跑 `.github/workflows/ci.yml`，三个 job 均绿
-- 验证基线（回归对表，2026-11 纯地铁口径）：186 辆 / 16 线 / 492 单 / 36 分钟 / 13 异常（含动态规则告警：负载≥80 前 5 条 + 低电占比>60 共 5 条）；牛湖→公明广场 72 分钟 / 27 站 / 1 换乘 / 收入 603.00 成本 125.10 利润 477.90；1920×929 监控页首屏完整（2026-11 布局重排为纵向流，允许滚动、禁横向溢出），数据页/仿真页仍一屏
+- 验证基线（回归对表，2026-11 纯地铁口径）：186 辆 / 16 线 / 492 单 / 36 分钟 / 13 异常（含动态规则告警：负载≥80 前 5 条 + 低电占比>60 共 5 条）；**`/api/alerts` 返回 16 条（13 条异常 = 3 种子 + 10 动态），动态规则已下沉后端（`services/alert_rules.py`），接口与页面同源**；牛湖→公明广场 72 分钟 / 27 站 / 1 换乘 / 收入 603.00 成本 125.10 利润 477.90；1920×929 监控页首屏完整（2026-11 布局重排为纵向流，允许滚动、禁横向溢出），数据页/仿真页仍一屏
 - 环境坑：本机 workspace-write 沙箱不可用（temp 缺失），npm/Python/Chrome 相关命令需 danger-full-access；PowerShell 不要用 `Get-Content | ConvertFrom-Json` 处理中文 UTF-8
 - 测试：`npm run test`（Vitest，230 例）/ `npm run typecheck`（tsc --noEmit）/ `npm run build`；发布用 `npm run release`（详见下方 dist 坑）
-- 后端测试：`cd backend; .venv\Scripts\python.exe -m pytest`（53 例，含前后端口径对拍）；CI 见 `.github/workflows/ci.yml`
+- 后端测试：`cd backend; .venv\Scripts\python.exe -m pytest`（57 例，含前后端口径对拍与告警规则）；CI 见 `.github/workflows/ci.yml`
 - E2E：`npm run test:e2e`（Playwright 21 例，用系统 Chrome `channel: 'chrome'`，未开 3000 时由 webServer 自动拉起）；CI 也有 e2e job（用下载的 Chromium + `--with-deps`）
 - 离线兜底：仿真页线路/站点下拉优先用**数据源线网**（`lineInfos`），地图 SDK 不可用时仍可用（无 AK / 离线 / `file://` / CI）。`e2e/offlineFallback.spec.ts` 用 route 拦截百度验证这条
 - 多方案对比：`src/analysis/planCompare.ts`（纯逻辑，34 例单测）——路径按签名去重（均衡/时间优先常同路）、

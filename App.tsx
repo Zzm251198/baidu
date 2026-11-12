@@ -330,15 +330,19 @@ const App: React.FC = () => {
       .sort((a, b) => b.volumeTon - a.volumeTon);
   }, [stationIndex, lineStationsByName]);
 
-  // 动态规则告警：站点负载率 ≥80% / 站点低电小车占比 >60%（由运单聚合与车队明细实时推导），
-  // 与数据源事件合并展示——动态规则在前，"示例事件"退居其后
+  // 动态规则告警：站点负载率 ≥80% / 站点低电小车占比 >60%
+  // http 模式下这两条规则已由后端计算并合并进 /api/alerts（接口即真相，避免两套口径）；
+  // mock 模式没有后端，仍由前端推导，保证两种模式体验一致。
   const dynamicAlerts = useMemo(
-    () => buildDynamicAlerts({
-      stationIndex,
-      byStation: fleetVehicles.byStation,
-      timeText: new Date().toLocaleTimeString('zh-CN', { hour12: false })
-    }),
-    [stationIndex, fleetVehicles]
+    () =>
+      sourceKind === 'http'
+        ? []
+        : buildDynamicAlerts({
+            stationIndex,
+            byStation: fleetVehicles.byStation,
+            timeText: new Date().toLocaleTimeString('zh-CN', { hour12: false })
+          }),
+    [fleetVehicles, sourceKind, stationIndex]
   );
   const alerts = useMemo(() => [...dynamicAlerts, ...sourceAlerts], [dynamicAlerts, sourceAlerts]);
   // 铃铛徽标：error + warning 的真实条数（含动态规则告警）

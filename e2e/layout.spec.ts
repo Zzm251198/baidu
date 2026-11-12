@@ -102,7 +102,9 @@ test.describe('监控页 KPI 口径', () => {
     expect(text).toContain('来自 492 条运单');
     expect(text).toContain('16 条'); // 纳入建模线路（纯地铁口径）
     expect(text).toContain('36 分钟'); // 平均运输时效
-    expect(text).toContain('3 个异常'); // error + warning
+    // 异常数 = 3 条种子异常 + 10 条动态规则（负载率 5 + 低电量 5）
+    // 用正则卡边界：toContain('3 个异常') 会被 "13 个异常" 子串命中，是假通过
+    expect(text).toMatch(/(^|[^0-9])13 个异常/);
   });
 
   test('页面没有未捕获的 JS 异常', async ({ page }) => {
