@@ -59,8 +59,10 @@ describe('buildEventTimeline：仿真结果 → 事件时间线', () => {
         expect(events[0].detail).toContain('牛湖');
         expect(events[0].detail).toContain('公明广场');
         const done = events[events.length - 1];
-        expect(done.detail).toContain('603');
-        expect(done.detail).toContain('477.9');
+        // 用完整片段断言：toContain('603') 会匹配 "1603"/"6030"，等于没测
+        expect(done.detail).toContain('收入 603 元');
+        expect(done.detail).toContain('成本 125.1 元');
+        expect(done.detail).toContain('利润 477.9 元');
     });
 
     it('非法输入返回空序列（不抛异常）', () => {

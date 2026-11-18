@@ -34,15 +34,19 @@ describe('networkGraph：全网规划', () => {
         expect(graph.stations.length).toBe(stationCount);
     });
 
-    it('跨线 OD 含换乘段，直达 OD 单段', () => {
-        const cross = planRouteOnGraph(graph, '松岗', '公明广场', 3);
+    it('跨线 OD 含换乘段，同线 OD 直达单段', () => {
+        // 赤湾（2 号线）→ 布吉（5 号线）：必须换乘。实测 2 次换乘 / 3 段。
+        // （旧版这里用 松岗→公明广场 当"跨线"，两者同在 6 号线，断言 >=0 恒真 → 什么都没测）
+        const cross = planRouteOnGraph(graph, '赤湾', '布吉', 3);
         expect(cross).not.toBeNull();
-        expect(cross!.transferCount).toBeGreaterThanOrEqual(0);
-        expect(cross!.totalStationCount).toBeGreaterThan(0);
+        expect(cross!.transferCount).toBe(2);
+        expect(cross!.segments).toHaveLength(3);
 
-        const direct = planRouteOnGraph(graph, '赤湾', '布吉', 3);
+        // 前海湾 → 岗厦北 同属 11 号线：直达，0 换乘 / 1 段
+        const direct = planRouteOnGraph(graph, '前海湾', '岗厦北', 3);
         expect(direct).not.toBeNull();
-        if (direct!.transferCount === 0) expect(direct!.segments).toHaveLength(1);
+        expect(direct!.transferCount).toBe(0);
+        expect(direct!.segments).toHaveLength(1);
     });
 
     it('不存在的站返回 null（不抛异常）', () => {
@@ -64,9 +68,10 @@ describe('runBatchSimulation：批量推演', () => {
         const m = result.metrics;
         expect(m.completed + m.noRoute + m.noAgv).toBe(30);
         expect(m.completed).toBeGreaterThan(0);
-        expect(m.utilizationRate).toBeGreaterThanOrEqual(0);
+        // 0 是"恒真下界"：这组配置（30 单 / 248 台车）实测利用率 4.6%，必须真的 > 0
+        expect(m.utilizationRate).toBeGreaterThan(0);
         expect(m.utilizationRate).toBeLessThanOrEqual(100);
-        expect(m.trainFillRate).toBeGreaterThanOrEqual(0);
+        expect(m.trainFillRate).toBeGreaterThan(0);
         expect(m.trainFillRate).toBeLessThanOrEqual(100);
     });
 

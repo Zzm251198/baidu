@@ -54,6 +54,23 @@ def test_low_battery_rule_excludes_pool_and_tiny_samples():
     assert keys == sorted(keys)
 
 
+def test_congestion_index_normalized_and_sorted(client):
+    """p90 归一化的不变量（与前端 stationStats 一致）：
+    最高站必须是 100、全部落在 0-100、结果按指数降序。
+    """
+    from app.db import get_conn
+
+    with get_conn() as conn:
+        stats = alert_rules._station_congestion(conn)
+
+    assert stats, "库里有运单就必须能算出站点指数"
+    assert stats[0]["congestionIndex"] == 100, "p90 归一化失效时不会有站达到 100"
+    assert all(0 <= item["congestionIndex"] <= 100 for item in stats)
+
+    indexes = [item["congestionIndex"] for item in stats]
+    assert indexes == sorted(indexes, reverse=True), "必须按指数降序返回"
+
+
 def test_dynamic_ids_do_not_collide_with_seed_alerts(client):
     """动态告警 id 用负数，和种子事件 1..N 不冲突。"""
     resp = client.get("/api/alerts").json()

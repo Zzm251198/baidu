@@ -57,14 +57,6 @@ export function buildNetworkGraph(lines: GraphLine[]): NetworkGraph {
     return { neighbors, stationLines, stations: [...stationLines.keys()] };
 }
 
-interface DjNode {
-    /** 累计代价（站数 + 换乘惩罚） */
-    cost: number;
-    /** 到达该站时所乘线路（null = 起点未上车） */
-    viaLine: string | null;
-    prevStation: string | null;
-}
-
 /** Dijkstra：换乘惩罚按"等效站数"计入（与单票引擎 ROUTE_STRATEGIES 同思路）。 */
 export function planRouteOnGraph(
     graph: NetworkGraph,
@@ -75,40 +67,60 @@ export function planRouteOnGraph(
     if (!graph.neighbors.has(from) || !graph.neighbors.has(to)) return null;
     if (from === to) return null;
 
-    const best = new Map<string, DjNode>();
-    best.set(from, { cost: 0, viaLine: null, prevStation: null });
-    // 小顶堆用数组排序代替（站数 ≤ 数百，性能足够且确定性直观）
-    const queue: Array<{ station: string; cost: number; line: string | null }> = [{ station: from, cost: 0, line: null }];
+    // ⚠ 状态必须是 (站点, 当前线路)，不能只用站点：
+    // 边代价依赖"从哪条线过来"（换乘要加惩罚），只按站点记录最优会丢掉
+    // "到达贵一点但不用换乘"的更优解——实测 12.3 万组 OD 中有 25% 因此次优。
+    const keyOf = (station: string, line: string | null) => `${station}\u0000${line ?? ''}`;
+
+    const startKey = keyOf(from, null);
+    const best = new Map<string, number>([[startKey, 0]]);
+    const parent = new Map<string, { station: string; line: string | null; viaLine: string }>();
     const settled = new Set<string>();
+
+    // 小顶堆用数组排序代替（状态数 ≈ 站点数 × 线路数，性能足够且确定性直观）
+    const queue: Array<{ station: string; line: string | null; cost: number }> = [
+        { station: from, line: null, cost: 0 }
+    ];
+
+    let goalKey: string | null = null;
 
     while (queue.length > 0) {
         queue.sort((a, b) => a.cost - b.cost);
         const current = queue.shift()!;
-        if (settled.has(current.station)) continue;
-        settled.add(current.station);
-        if (current.station === to) break;
+        const currentKey = keyOf(current.station, current.line);
+        if (settled.has(currentKey)) continue;
+        settled.add(currentKey);
+
+        if (current.station === to) {
+            goalKey = currentKey;
+            break;
+        }
 
         for (const edge of graph.neighbors.get(current.station) ?? []) {
-            const nextCost = current.cost + 1 + (current.line && edge.lineName !== current.line ? transferPenaltyStations : 0);
-            const known = best.get(edge.station);
-            if (!known || nextCost < known.cost) {
-                best.set(edge.station, { cost: nextCost, viaLine: edge.lineName, prevStation: current.station });
-                queue.push({ station: edge.station, cost: nextCost, line: edge.lineName });
+            const step = 1 + (current.line && edge.lineName !== current.line ? transferPenaltyStations : 0);
+            const nextCost = current.cost + step;
+            const nextKey = keyOf(edge.station, edge.lineName);
+            if (nextCost < (best.get(nextKey) ?? Infinity)) {
+                best.set(nextKey, nextCost);
+                parent.set(nextKey, { station: current.station, line: current.line, viaLine: edge.lineName });
+                queue.push({ station: edge.station, line: edge.lineName, cost: nextCost });
             }
         }
     }
 
-    if (!best.has(to)) return null;
+    if (!goalKey) return null;
 
     // 回溯路径 → 压成分段
     const hops: Array<{ from: string; to: string; lineName: string }> = [];
-    let cursor = to;
-    while (cursor !== from) {
-        const node = best.get(cursor);
-        if (!node?.prevStation) return null;
-        hops.unshift({ from: node.prevStation, to: cursor, lineName: node.viaLine! });
-        cursor = node.prevStation;
+    let cursor = goalKey;
+    while (cursor !== startKey) {
+        const node = parent.get(cursor);
+        if (!node) return null;
+        const station = cursor.split('\u0000')[0];
+        hops.unshift({ from: node.station, to: station, lineName: node.viaLine });
+        cursor = keyOf(node.station, node.line);
     }
+
     const segments: GraphSegment[] = [];
     for (const hop of hops) {
         const last = segments[segments.length - 1];
