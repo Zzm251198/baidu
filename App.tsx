@@ -8,6 +8,7 @@ import { AGV } from './components/agv.tsx';
 import { RightPanel } from './components/RightPanel';
 import { ChartsPanel } from './components/ChartsPanel';
 import { SimulationInsightPanel, type RouteData } from './components/SimulationInsightPanel';
+import { MonteCarloPanel } from './components/MonteCarloPanel';
 import { SimStage } from './components/SimStage';
 import { BatchSimPanel } from './components/BatchSimPanel';
 import { runBatchSimulation, type BatchResult } from './src/simulation/batchSimulator';
@@ -89,6 +90,8 @@ const App: React.FC = () => {
   });
   const [simResult, setSimResult] = useState<SimResult | null>(null);
   const [simulationOutput, setSimulationOutput] = useState<any | null>(null);
+  // 蒙特卡洛的输入快照：本次仿真的订单 + 路径（供"跑 N 次"复用）
+  const [mcSource, setMcSource] = useState<{ input: Record<string, unknown>; route: any } | null>(null);
   // 仿真模式：单票推演（DES 时间线）/ 批量仿真（N 单共享车队与班次容量）
   const [simMode, setSimMode] = useState<'single' | 'batch'>('single');
   const [batchOrderCount, setBatchOrderCount] = useState(30);
@@ -493,6 +496,9 @@ const App: React.FC = () => {
       cargoCount: simParams.cargoMode === 'count' ? cargoValue : Math.max(1, Math.ceil(cargoValue / 60)),
       startTime: '10:00'
     };
+
+    // 记录本次订单/路径，供蒙特卡洛（N 次随机推演）复用同一口径
+    setMcSource({ input: orderInput, route: effectiveRoute });
 
     // 数据源是 http 时，编排与测算交给后端（可复现、可审计）；
     // 后端不可用则回退本地引擎，保证演示不中断。
@@ -1342,6 +1348,7 @@ const App: React.FC = () => {
                   exportUrl={buildExportUrl(simulationOutput?.runId)}
                   sourceNote={simSourceText}
                 />
+                <MonteCarloPanel input={mcSource?.input ?? null} route={mcSource?.route ?? null} />
               </div>
             </div>
           </div>

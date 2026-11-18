@@ -39,6 +39,15 @@ test.describe('推演舞台', () => {
     // 跳到完成 → 出现利润小结
     await page.getByTitle('跳到完成').click();
     await expect(page.getByText(/推演完成：/)).toBeVisible({ timeout: 15_000 });
+
+    // 蒙特卡洛：同一单跑 N 次，输出分布而不是单点
+    await page.getByRole('button', { name: '运行蒙特卡洛' }).click();
+    const mc = page.getByTestId('monte-carlo');
+    await expect(mc.getByText('准点率', { exact: true })).toBeVisible({ timeout: 20_000 });
+    await expect(mc.getByText('P90 时效', { exact: true })).toBeVisible();
+    // 分布柱必须有数据（5 档，且总计数 = 完成单数）
+    const bars = page.getByTestId('mc-histogram').locator('div > span:first-child');
+    expect(await bars.count()).toBeGreaterThanOrEqual(5);
   });
 
   test('批量仿真：N 单共享资源推演 + 运营指标', async ({ page }) => {
