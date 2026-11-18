@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { SubwayMap, StationNode } from './components/SubwayMap';
 import { GeoMetroMap } from './components/GeoMetroMap';
@@ -108,6 +108,8 @@ const App: React.FC = () => {
   const [alertsOpen, setAlertsOpen] = useState(false);
   // 算法插点：路径策略（插点 A）与调度算法（插点 B）
   const [routeStrategy, setRouteStrategy] = useState<'smart' | 'balanced' | 'fewer' | 'faster'>('smart');
+  // 「智能推荐」的看门狗：百度回调不来（无 AK/离线）时回退本地策略，避免点了没反应
+  const smartFallbackTimer = useRef<number | null>(null);
   const [schedulingAlgorithm, setSchedulingAlgorithm] = useState<'baseline' | 'capacity-first'>('baseline');
   // 非 baseline 算法跑完后，同步跑一次基线用于对比卡（null = 无对比）
   const [baselineOutput, setBaselineOutput] = useState<any | null>(null);
@@ -425,6 +427,21 @@ const App: React.FC = () => {
     if (routeStrategy === 'smart') {
       // 智能推荐：交给 SubwayMap 查百度路径，结果回调 handleBaiduRouteResult
       setRouteRequestKey((value) => value + 1);
+
+      // 兜底：无 AK / 离线 / SDK 未加载时百度回调永远不会来，
+      // 以前表现为"点了开始仿真没有任何反应"。8 秒拿不到结果就回退本地均衡策略。
+      if (smartFallbackTimer.current !== null) window.clearTimeout(smartFallbackTimer.current);
+      smartFallbackTimer.current = window.setTimeout(() => {
+        smartFallbackTimer.current = null;
+        const fallback = planLocalRoute(simParams.startStationName, simParams.endStationName, 'balanced');
+        if (fallback) {
+          showToast('智能推荐不可用（地图未加载），已回退本地均衡策略', 'warning');
+          void runSimulationPipeline(fallback, '｜本地·均衡（智能推荐不可用）');
+        } else {
+          setIsSimulating(false);
+          showToast('智能推荐不可用，且起终点不在本地骨干网（1/2/3/5/11/14 号线）内，请更换站点', 'error');
+        }
+      }, 8000);
       return;
     }
 
@@ -613,6 +630,11 @@ const App: React.FC = () => {
   }, [endLineName, showToast, simParams, sourceKind, startLineName]);
 
   const handleBaiduRouteResult = useCallback(async (payload: any) => {
+    // 百度结果到了 → 撤销智能推荐的兜底定时器
+    if (smartFallbackTimer.current !== null) {
+      window.clearTimeout(smartFallbackTimer.current);
+      smartFallbackTimer.current = null;
+    }
     const cargoValue = Number(simParams.cargoValue);
 
     if (!simParams.startStationName || !simParams.endStationName || !Number.isFinite(cargoValue) || cargoValue <= 0) {

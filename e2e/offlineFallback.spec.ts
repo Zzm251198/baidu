@@ -43,4 +43,29 @@ test.describe('地图 SDK 不可用时的兜底', () => {
     // 页面不能因为地图加载失败而抛未捕获异常
     await expect(page.getByText('仿真参数配置')).toBeVisible();
   });
+
+  test('无 AK 时「智能推荐」自动回退本地策略，仿真仍能跑出看板', async ({ page }) => {
+    // 回归 2026-11 的 CI 失败：默认策略是「智能推荐」（走百度），
+    // 没有 AK 时百度回调永远不来 → 点「开始仿真」后整整 90 秒没有任何反应。
+    await page.route(/api\.map\.baidu\.com|map\.baidu\.com|bdimg\.com/, (route) => route.abort());
+
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await expect(page.getByText('186 辆')).toBeVisible({ timeout: 30_000 });
+    await page.getByRole('button', { name: '仿真模拟' }).click();
+
+    const selects = page.locator('select');
+    const pick = async (sel: typeof selects, key: string) =>
+      (await sel.locator('option').allTextContents()).find((text) => new RegExp(`(^|[^0-9])${key}`).test(text));
+    // 明确选跨线 OD：2 号线 赤湾 → 5 号线 布吉（同线或同站会被本地引擎判为不可规划）
+    await selects.nth(0).selectOption({ label: await pick(selects.nth(0), '2号线') });
+    await selects.nth(1).selectOption({ label: '赤湾' });
+    await selects.nth(2).selectOption({ label: await pick(selects.nth(2), '5号线') });
+    await selects.nth(3).selectOption({ label: '布吉' });
+
+    await page.getByPlaceholder('请输入数值').fill('800');
+    await page.getByRole('button', { name: '开始仿真' }).click();
+
+    // 兜底定时器 8 秒 + 本地推演，20 秒内必须出看板
+    await expect(page.getByText('运单执行与效益评估看板')).toBeVisible({ timeout: 20_000 });
+  });
 });
