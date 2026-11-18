@@ -68,11 +68,26 @@ describe('runBatchSimulation：批量推演', () => {
         const m = result.metrics;
         expect(m.completed + m.noRoute + m.noAgv).toBe(30);
         expect(m.completed).toBeGreaterThan(0);
-        // 0 是"恒真下界"：这组配置（30 单 / 248 台车）实测利用率 4.6%，必须真的 > 0
+        // 0 是"恒真下界"：这组配置（30 单 / 248 台车）实测全体 4.5%、在用车 46.6%
         expect(m.utilizationRate).toBeGreaterThan(0);
         expect(m.utilizationRate).toBeLessThanOrEqual(100);
         expect(m.trainFillRate).toBeGreaterThan(0);
         expect(m.trainFillRate).toBeLessThanOrEqual(100);
+    });
+
+    it('利用率双口径：在用车利用率必然高于全体（分母只算真出车的），台数合法', () => {
+        const m = result.metrics;
+        expect(m.carsUsed).toBeGreaterThan(0);
+        expect(m.carsUsed).toBeLessThanOrEqual(248);
+        expect(m.activeUtilizationRate).toBeGreaterThan(m.utilizationRate);
+        expect(m.activeUtilizationRate).toBeLessThanOrEqual(100);
+    });
+
+    it('低电回充可见：默认阈值 40% 下，池内低电车释放后回池补电', () => {
+        // 车池 37 台 idle 车电量都 ≥60%，只有低电的 busy/charging 车会在释放时触发。
+        // 旧口径（阈值 25% + 30 单）实测永远 0 台，"回充"在演示里看不到。
+        expect(result.metrics.chargeEvents).toBeGreaterThan(0);
+        expect(result.events.some((e) => e.detail.includes('回充'))).toBe(true);
     });
 
     it('事件时间线单调且以批量汇总收尾', () => {

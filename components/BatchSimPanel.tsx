@@ -55,8 +55,9 @@ export const BatchSimPanel: React.FC<{ result: BatchResult; windowStartMin: numb
         { label: '完成订单', value: `${doneCount}/${m.totalOrders}`, unit: '单', cls: 'text-slate-900' },
         { label: '累计利润', value: player.done ? m.totalProfit : '推演中', unit: '元', cls: 'text-emerald-700' },
         { label: '平均时效', value: m.avgDurationMin ?? '—', unit: '分', cls: 'text-slate-900' },
-        { label: '车辆利用率', value: m.utilizationRate, unit: '%', cls: 'text-blue-700' },
+        { label: '在用车利用率', value: m.activeUtilizationRate, unit: '%', cls: 'text-blue-700' },
         { label: '班次满载率', value: m.trainFillRate, unit: '%', cls: 'text-amber-600' },
+        { label: '回充', value: m.chargeEvents, unit: '台', cls: 'text-slate-500' },
         { label: '跨站调度', value: m.crossStationDispatches, unit: '次', cls: 'text-slate-500' }
     ];
 

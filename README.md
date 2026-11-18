@@ -24,6 +24,16 @@ npm run build               # 生产构建（输出 dist/）
 AK 申请：[百度地图开放平台控制台](https://lbsyun.baidu.com/apiconsole/key)。
 建议为 AK 配置 Referer 白名单，防止被盗刷配额。
 
+**一键起前后端（Windows，推荐）**：
+
+```powershell
+.\start-all.ps1          # 前端 mock 模式（不依赖后端，断网也能演示）
+.\start-all.ps1 -Http    # 前端 http 模式（真实调用后端接口，含审计/导出）
+```
+
+脚本会先做端口预检（3000/8000 被占时给出清理命令），再各弹一个窗口起服务；关窗口即停服务。
+（用 `-ExecutionPolicy Bypass`：本机默认策略会拦未签名脚本。）
+
 前端默认跑在**本地模拟数据**上，不启动后端也能完整演示。
 
 ## 测试

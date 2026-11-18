@@ -53,8 +53,10 @@ test.describe('推演舞台', () => {
 
     await expect(page.getByText('批量仿真时钟')).toBeVisible({ timeout: 10_000 });
     await expect(page.getByText('完成订单')).toBeVisible();
-    await expect(page.getByText('车辆利用率', { exact: true })).toBeVisible();
+    await expect(page.getByText('在用车利用率', { exact: true })).toBeVisible();
     await expect(page.getByText('班次满载率', { exact: true })).toBeVisible();
+    // 低电回充必须可见（旧口径下这个数恒为 0）
+    await expect(page.getByText('回充', { exact: true })).toBeVisible();
     const events = page.locator('.sim-event');
     expect(await events.count()).toBeGreaterThanOrEqual(30);
 

@@ -23,6 +23,10 @@ export interface BatchSimConfig {
     slotsPerTrain: number;
     /** 低电车充电时长（分钟） */
     chargeMinutes: number;
+    /** 回池补电的触发电量（%），默认 40：机会充电——低电车释放/交付后先补电再待命 */
+    chargeBelowBattery?: number;
+    /** 每分钟耗电（%），默认 0.15（= 9%/小时，重载 AGV 量级） */
+    batteryDropPerMin?: number;
     /** 车队池（含状态与驻站） */
     agvs: AgvPoolEntry[];
     /** 线网（name + 全站表） */
@@ -64,8 +68,12 @@ export interface BatchMetrics {
     totalCost: number;
     totalProfit: number;
     avgDurationMin: number | null;
-    /** AGV 利用率 = 忙时 / (车数 × 时长) */
+    /** AGV 利用率 = 忙时 / (全部车数 × 时长)：分母含未出车，量级偏小 */
     utilizationRate: number;
+    /** 在用车利用率 = 忙时 / (实际出车数 × 时长)：更能反映调度效率，演示主看这个 */
+    activeUtilizationRate: number;
+    /** 本次实际出过车的台数 */
+    carsUsed: number;
     /** 班次满载率 = 占用柜位 / 总柜位 */
     trainFillRate: number;
     crossStationDispatches: number;
@@ -133,16 +141,40 @@ export function runBatchSimulation(config: BatchSimConfig): BatchResult {
     const pushEvent = (item: BatchEventItem) => events.push(item);
 
     // 车队运行时状态（只调度 idle 的车；低电的转充电，充满回池）
-    const fleet: AgvRuntime[] = config.agvs.map((a) => ({
+    const fleet: AgvRuntime[] = config.agvs.map((a, index) => ({
         id: a.id, homeStation: a.homeStation, battery: a.battery,
         status: a.status === 'charging' ? 'charging' : a.status === 'busy' ? 'busy' : 'idle',
-        // 初始 busy/charging 的车：busy 按 30 分钟释放、charging 按剩余充电时间释放
-        freeAt: config.windowStartMin + (a.status === 'busy' ? 30 : a.status === 'charging' ? config.chargeMinutes : 0),
+        // 初始 busy/charging 的车：按编号错峰释放（否则 25 台同时在 +30 分钟回池，
+        // 时间线上看像"瞬间全城换电"，也不符合实际交班节奏）
+        freeAt: config.windowStartMin
+            + (a.status === 'busy' ? 20 + (index % 25) : a.status === 'charging' ? 10 + (index % 20) : 0),
         busyMinutes: 0
     }));
+
+    const chargeBelow = config.chargeBelowBattery ?? 40;
+    const dropPerMin = config.batteryDropPerMin ?? 0.15;
+    let chargeEvents = 0;
+
+    // 释放到期车辆：充电中的补满再待命；刚释放的若电量不足，先去补电（这才是低电车回充的真实触发点）
     const releaseDue = (now: number) => {
         for (const agv of fleet) {
-            if (agv.status !== 'idle' && agv.freeAt <= now) agv.status = 'idle';
+            if (agv.status === 'idle' || agv.freeAt > now) continue;
+
+            if (agv.status === 'charging') {
+                agv.battery = 100;
+                agv.status = 'idle';
+                agv.freeAt = 0;
+                continue;
+            }
+
+            if (agv.battery < chargeBelow) {
+                agv.status = 'charging';
+                agv.freeAt = now + config.chargeMinutes;
+                chargeEvents += 1;
+            } else {
+                agv.status = 'idle';
+                agv.freeAt = 0;
+            }
         }
     };
 
@@ -179,7 +211,6 @@ export function runBatchSimulation(config: BatchSimConfig): BatchResult {
 
     const perOrder: BatchOrderResult[] = [];
     let crossStation = 0;
-    let chargeEvents = 0;
     let simEnd = config.windowStartMin + config.windowMinutes;
 
     for (const order of orders) {
@@ -247,11 +278,11 @@ export function runBatchSimulation(config: BatchSimConfig): BatchResult {
         });
         simEnd = Math.max(simEnd, doneMin);
 
-        // AGV 释放：电量按作业时长递减（每 10 分钟 1%），低于 25 转充电
+        // AGV 释放：电量按作业时长递减（默认 1%/10 分钟），低于阈值转充电
         pick.status = 'busy';
         pick.busyMinutes += duration;
-        pick.battery = Math.max(2, pick.battery - Math.ceil(duration / 10));
-        if (pick.battery < 25) {
+        pick.battery = Math.max(2, pick.battery - Math.ceil(duration * dropPerMin));
+        if (pick.battery < chargeBelow) {
             pick.status = 'charging';
             pick.freeAt = doneMin + config.chargeMinutes;
             chargeEvents += 1;
@@ -281,7 +312,13 @@ export function runBatchSimulation(config: BatchSimConfig): BatchResult {
     const totalProfit = Math.round(completed.reduce((s, o) => s + (o.profit ?? 0), 0) * 100) / 100;
     const avgDuration = completed.length > 0 ? Math.round(completed.reduce((s, o) => s + (o.actualMin ?? 0), 0) / completed.length) : null;
     const fleetSpanMin = Math.max(1, simEnd - config.windowStartMin);
-    const utilizationRate = Math.min(100, Math.round(fleet.reduce((s, a) => s + a.busyMinutes, 0) / (fleet.length * fleetSpanMin) * 1000) / 10);
+    const busyTotal = fleet.reduce((s, a) => s + a.busyMinutes, 0);
+    const utilizationRate = Math.min(100, Math.round(busyTotal / (fleet.length * fleetSpanMin) * 1000) / 10);
+    // 双口径：248 台车里只有几十台真出车时，全体分母会把利用率压到个位数（看着像系统闲置）
+    const carsUsed = fleet.filter((a) => a.busyMinutes > 0).length;
+    const activeUtilizationRate = carsUsed > 0
+        ? Math.min(100, Math.round(busyTotal / (carsUsed * fleetSpanMin) * 1000) / 10)
+        : 0;
     const slotTotal = [...trainSlots.keys()].length * config.slotsPerTrain;
     const slotUsed = [...trainSlots.values()].reduce((s, v) => s + v, 0);
     const trainFillRate = slotTotal > 0 ? Math.round((slotUsed / slotTotal) * 1000) / 10 : 0;
@@ -292,7 +329,7 @@ export function runBatchSimulation(config: BatchSimConfig): BatchResult {
         noRoute: perOrder.filter((o) => o.status === 'no-route').length,
         noAgv: perOrder.filter((o) => o.status === 'no-agv').length,
         totalRevenue, totalCost, totalProfit, avgDurationMin: avgDuration,
-        utilizationRate, trainFillRate,
+        utilizationRate, activeUtilizationRate, carsUsed, trainFillRate,
         crossStationDispatches: crossStation,
         chargeEvents,
         finalClockMin: simEnd
@@ -301,7 +338,7 @@ export function runBatchSimulation(config: BatchSimConfig): BatchResult {
     pushEvent({
         time: simEnd, clock: clock(simEnd), kind: 'summary',
         title: '批量仿真完成',
-        detail: `${completed.length}/${config.orderCount} 单完成 · 利润 ${totalProfit} 元 · 平均时效 ${avgDuration ?? '—'} 分 · 车辆利用率 ${utilizationRate}% · 班次满载 ${trainFillRate}%`
+        detail: `${completed.length}/${config.orderCount} 单完成 · 利润 ${totalProfit} 元 · 平均时效 ${avgDuration ?? '—'} 分 · 在用车利用率 ${activeUtilizationRate}%（全体 ${utilizationRate}%）· 班次满载 ${trainFillRate}% · 回充 ${chargeEvents} 台`
     });
     events.sort((a, b) => a.time - b.time);
 
