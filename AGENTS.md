@@ -17,12 +17,13 @@
 - 远程仓库：`Zzm251198/baidu`（public），push 后自动跑 `.github/workflows/ci.yml`，三个 job 均绿
 - 验证基线（回归对表，2026-11 纯地铁口径）：186 辆 / 16 线 / 492 单 / 36 分钟 / 13 异常（含动态规则告警：负载≥80 前 5 条 + 低电占比>60 共 5 条）；**`/api/alerts` 返回 16 条（13 条异常 = 3 种子 + 10 动态），动态规则已下沉后端（`services/alert_rules.py`），接口与页面同源**；牛湖→公明广场 72 分钟 / 27 站 / 1 换乘 / 收入 603.00 成本 125.10 利润 477.90；1920×929 监控页首屏完整（2026-11 布局重排为纵向流，允许滚动、禁横向溢出），数据页/仿真页仍一屏
 - 环境坑：本机 workspace-write 沙箱不可用（temp 缺失），npm/Python/Chrome 相关命令需 danger-full-access；PowerShell 不要用 `Get-Content | ConvertFrom-Json` 处理中文 UTF-8
-- 测试：`npm run test`（Vitest，241 例）/ `npm run typecheck`（tsc --noEmit）/ `npm run build`；发布用 `npm run release`（详见下方 dist 坑）
+- 测试：`npm run test`（Vitest，248 例）/ `npm run typecheck`（tsc --noEmit）/ `npm run build`；发布用 `npm run release`（详见下方 dist 坑）
 - 后端测试：`cd backend; .venv\Scripts\python.exe -m pytest`（58 例，含前后端口径对拍与告警规则）；CI 见 `.github/workflows/ci.yml`
 - E2E：`npm run test:e2e`（Playwright 22 例，用系统 Chrome `channel: 'chrome'`，未开 3000 时由 webServer 自动拉起）；CI 也有 e2e job（用下载的 Chromium + `--with-deps`）
 - 离线兜底：仿真页线路/站点下拉优先用**数据源线网**（`lineInfos`），地图 SDK 不可用时仍可用（无 AK / 离线 / `file://` / CI）。`e2e/offlineFallback.spec.ts` 用 route 拦截百度验证这条
 - 离线兜底（第二层）：「智能推荐」是异步回调（百度查路），无 AK/离线时回调永远不来 → 8 秒看门狗回退本地均衡策略并 toast（`App.tsx` 的 `smartFallbackTimer`）。以前表现为"点开始仿真没反应"，CI E2E 曾因此红
 - 蒙特卡洛：`src/simulation/monteCarlo.ts`（7 例单测）——同一单跑 N 次，延误 U(0,15) 分、故障率 1%、准点线 80 分；输出准点率/P50/P90/利润 P10~P90 + 5 档直方图。**复用 `simulateOrder` 计费**，口径与单票一致；同 seed 同结果。UI 在 `components/MonteCarloPanel.tsx`（按钮组，别用 select——页面 select 数量被 E2E 断言为 6）
+- 批量多场景：`src/simulation/batchMonteCarlo.ts`（7 例单测）——换 N 个种子（= N 种订单到达场景）各跑一次批量仿真，输出完成率/利润 P10~P90/P90 时效/回充均值。种子只改 OD 与到达时刻，不改车队与班次参数，所以各场景可比；同 seedBase 可复现。UI 在 `BatchSimPanel` 底部「跑多场景」（30 场景约 0.2 秒）
 - 多方案对比：`src/analysis/planCompare.ts`（纯逻辑，34 例单测）——路径按签名去重（均衡/时间优先常同路）、
   路径×算法笛卡尔积、帕累托前沿标推荐（不用加权分）。基线不带 `agvCapacityHeadroomKg`，
   调用方必须补算后放进 `PlanResult.headroomKg`，否则该项在比较中"看不见"，所有方案都会被标推荐

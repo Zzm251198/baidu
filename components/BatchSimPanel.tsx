@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef } from 'react';
 import { SIM_SPEED_STEPS, useSimPlayback } from '../src/simulation/desRunner';
 import type { BatchResult, BatchEventItem } from '../src/simulation/batchSimulator';
+import type { BatchMonteCarloResult } from '../src/simulation/batchMonteCarlo';
 
 /**
  * 批量仿真舞台：N 个订单共享车队池与班次容量的推演过程 + 整体运营指标。
@@ -23,7 +24,14 @@ function clock(min: number): string {
     return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
 }
 
-export const BatchSimPanel: React.FC<{ result: BatchResult; windowStartMin: number }> = ({ result, windowStartMin }) => {
+export const BatchSimPanel: React.FC<{
+    result: BatchResult;
+    windowStartMin: number;
+    /** 多场景分析结果（换 N 个种子各跑一次） */
+    monteCarlo?: BatchMonteCarloResult | null;
+    onRunMonteCarlo?: () => void;
+    mcRunning?: boolean;
+}> = ({ result, windowStartMin, monteCarlo, onRunMonteCarlo, mcRunning }) => {
     const totalMin = Math.max(1, result.metrics.finalClockMin - windowStartMin);
     const player = useSimPlayback(totalMin);
     const absoluteClock = windowStartMin + player.clock;
@@ -122,6 +130,42 @@ export const BatchSimPanel: React.FC<{ result: BatchResult; windowStartMin: numb
                     );
                 })}
             </div>
+
+            {/* 多场景分析：换 N 个种子（= N 种订单到达场景）各跑一次，看吞吐/利润稳不稳 */}
+            <div className="border-t border-black/5 px-3 py-2" data-testid="batch-monte-carlo">
+                <div className="flex items-center justify-between gap-2">
+                    <div className="text-[11px] text-slate-500">
+                        多场景分析{monteCarlo ? `（${monteCarlo.runs} 种到达场景）` : '：换 N 个种子各跑一次，看分布而不是单次运气'}
+                    </div>
+                    <button
+                        type="button"
+                        onClick={onRunMonteCarlo}
+                        disabled={!onRunMonteCarlo || mcRunning}
+                        className="text-[11px] px-2.5 py-1 rounded-lg bg-violet-600 text-white hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    >
+                        {mcRunning ? '推演中…' : '跑多场景'}
+                    </button>
+                </div>
+
+                {monteCarlo && (
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 mt-2">
+                        <McCell label="完成率" value={`${monteCarlo.completionRate.mean}%`} hint={`最差场景 ${monteCarlo.completionRate.worst}%`} />
+                        <McCell label="总利润区间" value={`${monteCarlo.profit.p10}~${monteCarlo.profit.p90}`} hint={`中位 ${monteCarlo.profit.p50} 元`} />
+                        <McCell label="P90 平均时效" value={`${monteCarlo.avgDuration.p90} 分`} hint={`P50 ${monteCarlo.avgDuration.p50} 分`} />
+                        <McCell label="回充均值" value={`${monteCarlo.chargeEvents.mean} 台`} hint={`在用车利用率 P90 ${monteCarlo.activeUtilization.p90}%`} />
+                    </div>
+                )}
+            </div>
         </div>
     );
 };
+
+function McCell({ label, value, hint }: { label: string; value: string; hint: string }) {
+    return (
+        <div className="rounded-lg border border-slate-100 bg-violet-50/40 px-2 py-1.5">
+            <div className="text-[10px] text-slate-500">{label}</div>
+            <div className="text-sm font-semibold text-violet-700">{value}</div>
+            <div className="text-[10px] text-slate-400">{hint}</div>
+        </div>
+    );
+}

@@ -73,5 +73,12 @@ test.describe('推演舞台', () => {
     await page.getByTitle('跳到完成').click();
     await expect(page.getByText(/批量仿真完成/).first()).toBeVisible({ timeout: 15_000 });
     await expect(page.getByText(/已完成 30\/30 单/)).toBeVisible();
+
+    // 多场景分析：换 30 个种子各跑一次，看分布而不是单次运气
+    await page.getByRole('button', { name: '跑多场景' }).click();
+    const mc = page.getByTestId('batch-monte-carlo');
+    await expect(mc.getByText('完成率', { exact: true })).toBeVisible({ timeout: 20_000 });
+    await expect(mc.getByText('总利润区间', { exact: true })).toBeVisible();
+    await expect(mc.getByText('P90 平均时效', { exact: true })).toBeVisible();
   });
 });

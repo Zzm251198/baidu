@@ -138,7 +138,7 @@ export function runMonteCarlo(
 }
 
 /** 把时长切成 5 档（按实际最小/最大分箱，标签给区间中点） */
-function buildHistogram(sorted: number[]): Array<{ label: string; count: number }> {
+export function buildHistogram(sorted: number[]): Array<{ label: string; count: number }> {
     if (sorted.length === 0) return [];
 
     const min = sorted[0];

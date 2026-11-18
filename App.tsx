@@ -12,6 +12,7 @@ import { MonteCarloPanel } from './components/MonteCarloPanel';
 import { SimStage } from './components/SimStage';
 import { BatchSimPanel } from './components/BatchSimPanel';
 import { runBatchSimulation, type BatchResult } from './src/simulation/batchSimulator';
+import { runBatchMonteCarlo, type BatchMonteCarloResult } from './src/simulation/batchMonteCarlo';
 import { AGV_POOL } from './src/data/mockFleet';
 import { OrderTimeline, type TimelineEvent } from './components/OrderTimeline';
 import { ToastStack, useToasts } from './components/Toast';
@@ -97,6 +98,9 @@ const App: React.FC = () => {
   const [batchOrderCount, setBatchOrderCount] = useState(30);
   const [batchWindowMinutes, setBatchWindowMinutes] = useState(120);
   const [batchResult, setBatchResult] = useState<BatchResult | null>(null);
+  // 批量多场景分析（换 N 个种子 = N 种到达场景）
+  const [batchMc, setBatchMc] = useState<BatchMonteCarloResult | null>(null);
+  const [batchMcRunning, setBatchMcRunning] = useState(false);
   const [isSimulating, setIsSimulating] = useState(false);
   const [routeRequestKey, setRouteRequestKey] = useState(0);
   // 结果归因文本（路径策略 + 计算来源），随结果一起清空/写入，供效益看板显示
@@ -462,22 +466,40 @@ const App: React.FC = () => {
    * 仿真主管线（百度与本地策略共用）：路径已定 → 组订单 → 后端/本地编排 → 落结果。
    * 抽出来是因为插点 A 接入后有两条入口：百度回调与本地策略直达。
    */
-  /** 批量仿真：N 个订单在时间窗内到达，共享 248 台车队池与班次柜位（同步计算，毫秒级） */
+  /** 批量仿真的配置（单次运行与多场景分析共用，保证口径一致） */
+  const buildBatchConfig = () => ({
+    orderCount: batchOrderCount,
+    windowStartMin: 600,
+    windowMinutes: batchWindowMinutes,
+    seed: `batch-${batchOrderCount}-${batchWindowMinutes}`,
+    transferPenaltyStations: 3,
+    headwayMin: 6,
+    slotsPerTrain: 4,
+    chargeMinutes: 45,
+    agvs: AGV_POOL.agvs,
+    lines: canonicalLines
+  });
+
   const runBatchSim = useCallback(() => {
-    const result = runBatchSimulation({
-      orderCount: batchOrderCount,
-      windowStartMin: 600,
-      windowMinutes: batchWindowMinutes,
-      seed: `batch-${batchOrderCount}-${batchWindowMinutes}`,
-      transferPenaltyStations: 3,
-      headwayMin: 6,
-      slotsPerTrain: 4,
-      chargeMinutes: 45,
-      agvs: AGV_POOL.agvs,
-      lines: canonicalLines
-    });
+    const result = runBatchSimulation(buildBatchConfig());
     setBatchResult(result);
+    setBatchMc(null);
     showToast(`批量仿真完成：${result.metrics.completed}/${result.metrics.totalOrders} 单完成，总利润 ${result.metrics.totalProfit} 元`, 'success');
+  }, [batchOrderCount, batchWindowMinutes, canonicalLines]);
+
+  /** 多场景分析：30 种到达场景各跑一次，输出完成率/利润/时效的分布 */
+  const runBatchMultiScenario = useCallback(() => {
+    setBatchMcRunning(true);
+    window.setTimeout(() => {
+      try {
+        setBatchMc(runBatchMonteCarlo(buildBatchConfig(), {
+          runs: 30,
+          seedBase: `batch-${batchOrderCount}-${batchWindowMinutes}`
+        }));
+      } finally {
+        setBatchMcRunning(false);
+      }
+    }, 0);
   }, [batchOrderCount, batchWindowMinutes, canonicalLines]);
 
   const runSimulationPipeline = useCallback(async (effectiveRoute: any, routeSourceNote: string) => {
@@ -1250,7 +1272,13 @@ const App: React.FC = () => {
                   {/* 推演舞台：单票 = DES 事件时间线；批量 = N 单资源竞争推演 + 运营指标 */}
                   {simMode === 'batch' && batchResult ? (
                     <div className="flex-shrink-0 mb-4">
-                      <BatchSimPanel result={batchResult} windowStartMin={600} />
+                      <BatchSimPanel
+                    result={batchResult}
+                    windowStartMin={600}
+                    monteCarlo={batchMc}
+                    onRunMonteCarlo={runBatchMultiScenario}
+                    mcRunning={batchMcRunning}
+                  />
                     </div>
                   ) : simulationOutput?.success ? (
                     <div className="flex-shrink-0 mb-4">
